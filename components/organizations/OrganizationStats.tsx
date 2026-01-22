@@ -10,7 +10,7 @@ interface OrganizationStatsProps {
 
 export default function OrganizationStats({ organizations }: OrganizationStatsProps) {
     const totalOrgs = organizations.length;
-    const totalEmployees = organizations.reduce((sum, org) => sum + org.employee_count, 0);
+    const totalEmployees = organizations.reduce((sum, org) => sum + org.employeeCount, 0);
     const avgEmployees = totalOrgs > 0 ? Math.round(totalEmployees / totalOrgs) : 0;
 
     return (
