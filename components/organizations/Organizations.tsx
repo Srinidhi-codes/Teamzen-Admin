@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Department, Designation, OfficeLocation, Organizations } from "@/types/admin";
+import { Organizations } from "@/types/admin";
 import OrganizationStats from "./OrganizationStats";
 import OrganizationList from "./OrganizationList";
 import CreateOrganizationForm from "./CreateOrganizationForm";
@@ -10,11 +10,11 @@ import { AddDepartmentForm, AddDesignationForm, AddOfficeForm } from "./Organiza
 import OfficeLocationList from "./OfficeLocationList";
 import DepartmentList from "./DepartmentsList";
 import DesignationList from "./DesignationList";
-import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOfficeLocations, useGraphQLOrganizations } from "@/lib/graphql/organization/organizatioHook";
+import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOfficeLocations, useGraphQLOrganizations, useGraphQLUpdateOrganizationMutation, useGraphQLOrganizationMutation } from "@/lib/graphql/organization/organizatioHook";
+import { toast } from "sonner";
+import { Organization } from "@/lib/graphql/organization/types";
 
 export default function OrganizationsPage() {
-    // const [organizations, setOrganizations] = useState<Organizations[]>(mockOrgs);
-
     // Form Visibility State
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [showOfficeForm, setShowOfficeForm] = useState(false);
@@ -25,42 +25,33 @@ export default function OrganizationsPage() {
     const { officeLocations, isOfficeLocationsLoading, isOfficeLocationsError, refetchOfficeLocations } = useGraphQLOfficeLocations()
     const { departments, isDepartmentsLoading, isDepartmentsError, refetchDepartments } = useGraphQLDepartments()
     const { designations, isDesignationsLoading, isDesignationsError, refetchDesignations } = useGraphQLDesignations()
+    const { createOrganization } = useGraphQLOrganizationMutation();
 
-    const mappedOrganizations: Organizations[] = organizations?.map((org) => ({
-        id: org.id,
-        name: org.name,
-        description: "",
-        manager_id: 0,
-        employee_count: 0,
-        created_at: org.createdAt,
-    })) || [];
 
     const handleCreateOrg = async (data: any) => {
-        // Simulate API call
-        setShowOfficeForm(true)
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        const newOrg: Organizations = {
-            id: Math.random(),
-            name: data.name,
-            description: data.headquarters_address || "New Organization",
-            manager_id: 0,
-            employee_count: 0,
-            created_at: new Date().toISOString().split('T')[0],
-        };
-
-        // setOrganizations([...organizations, newOrg]);
-        setShowCreateForm(false);
-
-        // Optionally ask to add details
-        if (confirm("Organization created! Do you want to add an office location now?")) {
-            setShowOfficeForm(true);
+        try {
+            await createOrganization({
+                name: data.name,
+                gstNumber: data.gstNumber,
+                panNumber: data.panNumber,
+                registrationNumber: data.registrationNumber,
+                headquartersAddress: data.headquartersAddress,
+                logo: data.logo,
+                isActive: true
+            });
+            toast.success("Organization created successfully");
+            setShowCreateForm(false);
+            if (confirm("Organization created! Do you want to add an office location now?")) {
+                setShowOfficeForm(true);
+            }
+        } catch (error) {
+            console.error(error);
         }
     };
 
     const handleDelete = (id: number | string) => {
         if (confirm('Are you sure you want to delete this organization?')) {
-            // setOrganizations(organizations.filter(o => o.id !== id));
+            // Delete logic here
         }
     }
 
@@ -76,6 +67,9 @@ export default function OrganizationsPage() {
         setter(true);
     }
 
+    // Convert organizations to expected admin type if needed for Stats, but Stats might need update too.
+    // Actually organizationStats likely uses the same Organization type if I update it.
+
     return (
         <div className="space-y-8 animate-fadeIn pb-20">
             {/* Header */}
@@ -87,7 +81,7 @@ export default function OrganizationsPage() {
             </div>
 
             {/* Stats */}
-            {/* <OrganizationStats organizations={organizations} /> */}
+            {/* <OrganizationStats organizations={organizations || []} /> */}
 
             {/* Main Content */}
             <div className="space-y-6">
@@ -104,9 +98,8 @@ export default function OrganizationsPage() {
                     </div>
 
                     <OrganizationList
-                        organizations={mappedOrganizations}
+                        organizations={organizations || []}
                         onEdit={(org) => console.log("Edit", org)}
-                        onDelete={handleDelete}
                         onViewEmployees={(org) => console.log("View", org)}
                     />
 
@@ -139,7 +132,7 @@ export default function OrganizationsPage() {
                                 onSubmit={async () => {
                                     await new Promise(r => setTimeout(r, 1000));
                                     setShowOfficeForm(false);
-                                    setShowDeptForm(true); // Wizard like flow? Or just close. Let's just close for now.
+                                    setShowDeptForm(true);
                                 }}
                             />
                         )}

@@ -1,14 +1,14 @@
-import { OrganizationResponse, OfficeLocationResponse, DepartmentResponse, DesignationResponse, CreateOrganizationInput, CreateOfficeLocationInput, CreateDepartmentInput, CreateDesignationInput, OrganizationInput, DepartmentInput, DesignationInput } from "./types";
+import { OrganizationResponse, OfficeLocationResponse, DepartmentResponse, DesignationResponse, CreateOrganizationInput, CreateOfficeLocationInput, CreateDepartmentInput, CreateDesignationInput, OrganizationInput, DepartmentInput, DesignationInput, UpdateOfficeLocationInput } from "./types";
 import { GET_ORGANIZATIONS, GET_OFFICE_LOCATIONS, GET_DEPARTMENTS, GET_DESIGNATIONS } from "./queries";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { ACTIVATE_DEPARTMENT, ACTIVATE_DESIGNATION, ACTIVATE_OFFICE_LOCATION, ACTIVATE_ORGANIZATION, CREATE_DEPARTMENT, CREATE_DESIGNATION, CREATE_OFFICE_LOCATION, CREATE_ORGANIZATION, SUSPEND_DEPARTMENT, SUSPEND_DESIGNATION, SUSPEND_OFFICE_LOCATION, SUSPEND_ORGANIZATION, UPDATE_DEPARTMENT, UPDATE_DESIGNATION, UPDATE_OFFICE_LOCATION, UPDATE_ORGANIZATION } from "./mutations";
 import { toast } from "sonner";
 
 export function useGraphQLOrganizations(){
+
     const {data, loading, error, refetch} = useQuery<OrganizationResponse>(GET_ORGANIZATIONS,{
         fetchPolicy: 'cache-and-network',
     })
-
 
     return{
         organizations: data?.organizations,
@@ -177,7 +177,7 @@ export function useGraphQLUpdateOfficeLocationMutation(){
         }
     })
 
-    const updateOfficeLocation = async (input: OfficeLocationInput) => {
+    const updateOfficeLocation = async (input: UpdateOfficeLocationInput) => {
         const response = await updateOfficeLocationMutation({
             variables: { input },
         })
