@@ -3,9 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { UserSlice, createUserSlice } from './slices/userSlice';
 import { LeaveSlice, createLeaveSlice } from './slices/leaveSlice';
 import { AttendanceSlice, createAttendanceSlice } from './slices/attendanceSlice';
+import { OrganizationSlice, createOrganizationSlice } from './slices/organizationSlice';
 
 // Combine all slice types
-type StoreState = UserSlice & LeaveSlice & AttendanceSlice;
+type StoreState = UserSlice & LeaveSlice & AttendanceSlice & OrganizationSlice;
 
 export const useStore = create<StoreState>()(
   persist(
@@ -13,6 +14,7 @@ export const useStore = create<StoreState>()(
       ...createUserSlice(...a),
       ...createLeaveSlice(...a),
       ...createAttendanceSlice(...a),
+      ...createOrganizationSlice(...a),
     }),
     {
       name: 'payroll-app-storage', // unique name for localStorage key

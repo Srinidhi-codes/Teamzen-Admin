@@ -1,28 +1,92 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FormInput } from "../common/FormInput";
+import { useGraphQLOrganizationMutation, useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizatioHook";
+import Image from "next/image";
+import { toast } from "sonner";
+import { Textarea } from "../ui/textarea";
 
 interface CreateOrganizationFormProps {
+    orgEditData?: any;
     onCancel: () => void;
     onSubmit: (data: any) => Promise<void>;
 }
 
 export default function CreateOrganizationForm({
+    orgEditData,
     onCancel,
     onSubmit,
 }: CreateOrganizationFormProps) {
-    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        name: "",
+        gstNumber: "",
+        panNumber: "",
+        headquartersAddress: "",
+        logo: null as string | null,
+        registrationNumber: "",
+        isActive: true,
+    });
+
+    useEffect(() => {
+        if (orgEditData) {
+            setFormData({
+                name: orgEditData.name || "",
+                gstNumber: orgEditData.gstNumber || "",
+                panNumber: orgEditData.panNumber || "",
+                headquartersAddress: orgEditData.headquartersAddress || orgEditData.description || "",
+                logo: orgEditData.logo?.url || null,
+                registrationNumber: orgEditData.registrationNumber || "",
+                isActive: orgEditData.isActive ?? true,
+            })
+        }
+    }, [orgEditData])
+
+    const { createOrganization, isCreatingOrganizationLoading, isCreatingOrganizationError } = useGraphQLOrganizationMutation();
+    const { updateOrganization, isUpdatingOrganizationLoading, isUpdatingOrganizationError } = useGraphQLUpdateOrganizationMutation();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
-        // Gather form data
-        const formData = new FormData(e.target as HTMLFormElement);
-        const data = Object.fromEntries(formData.entries());
+        try {
+            if (orgEditData) {
+                await updateOrganization({
+                    ...formData,
+                    id: orgEditData.id,
+                    logo: formData.logo || "" // backend expects string
+                });
+                toast.success("Organization updated successfully");
+            } else {
+                await createOrganization({
+                    ...formData,
+                    logo: formData.logo || ""
+                });
+                toast.success("Organization created successfully");
+            }
 
-        await onSubmit(data);
-        setLoading(false);
+            // Reset form
+            setFormData({
+                name: "",
+                gstNumber: "",
+                panNumber: "",
+                headquartersAddress: "",
+                logo: null,
+                registrationNumber: "",
+                isActive: true,
+            });
+
+            // Notify parent to close
+            onSubmit(formData);
+        } catch (error) {
+            // Error is handled by the hook's onError
+        }
     };
 
     return (
@@ -38,24 +102,75 @@ export default function CreateOrganizationForm({
             </div>
 
             <form id="create-org-form" className="space-y-6" onSubmit={handleSubmit}>
+                <div className="w-22 h-22 bg-linear-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-2xl overflow-hidden">
+                    {formData.logo ? (
+                        <Image
+                            width={100}
+                            height={100}
+                            src={formData.logo}
+                            alt="Profile"
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <>
+                            {formData.name ? formData.name.charAt(0).toUpperCase() : "N/A"}
+                        </>
+                    )}
+                </div>
                 <div className="space-y-5">
                     <FormInput
                         label="Organization Name"
                         name="name"
                         required
                         placeholder="e.g. Acme Corp"
+                        value={formData.name}
+                        onChange={handleChange}
                     />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <FormInput
+                            label="City"
+                            name="city"
+                            placeholder="City"
+                            value={formData.city}
+                            onChange={handleChange}
+                        />
+                        <FormInput
+                            label="State"
+                            name="state"
+                            placeholder="State"
+                            value={formData.state}
+                            onChange={handleChange}
+                        />
+                        <FormInput
+                            label="Country"
+                            name="country"
+                            placeholder="Country"
+                            onChange={handleChange}
+                            value={formData.country}
+                        />
+                    </div> */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        {/* <FormInput
+                            label="Zip Code"
+                            name="zipCode"
+                            placeholder="zip code"
+                            value={formData.zipCode}
+                            onChange={handleChange}
+                        /> */}
                         <FormInput
                             label="GST Number"
-                            name="gst_number"
-                            placeholder="Optional"
+                            name="gstNumber"
+                            placeholder="GST Number"
+                            value={formData.gstNumber}
+                            onChange={handleChange}
                         />
                         <FormInput
                             label="PAN Number"
-                            name="pan_number"
-                            placeholder="Optional"
+                            name="panNumber"
+                            placeholder="PAN Number"
+                            value={formData.panNumber}
+                            onChange={handleChange}
                         />
                     </div>
 
@@ -63,26 +178,14 @@ export default function CreateOrganizationForm({
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Headquarters Address
                         </label>
-                        <textarea
-                            name="headquarters_address"
+                        <Textarea
+                            name="headquartersAddress"
                             rows={3}
                             required
-                            className="w-full textarea resize-none"
                             placeholder="Enter full address"
+                            value={formData.headquartersAddress}
+                            onChange={handleChange}
                         />
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <input
-                            type="checkbox"
-                            name="is_active"
-                            defaultChecked
-                            id="is_active"
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <label htmlFor="is_active" className="text-sm text-gray-700 font-medium">
-                            Active Status
-                        </label>
                     </div>
                 </div>
 
@@ -91,16 +194,16 @@ export default function CreateOrganizationForm({
                         type="button"
                         onClick={onCancel}
                         className="btn-secondary"
-                        disabled={loading}
+                        disabled={isCreatingOrganizationLoading}
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         className="btn-primary min-w-[140px]"
-                        disabled={loading}
+                        disabled={isCreatingOrganizationLoading}
                     >
-                        {loading ? "Saving..." : "Save Organization"}
+                        {isCreatingOrganizationLoading ? "Saving..." : "Save Organization"}
                     </button>
                 </div>
             </form>
