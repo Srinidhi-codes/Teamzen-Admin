@@ -48,15 +48,15 @@ export interface Designation {
 }
 
 export interface OfficeLocationResponse {
-    officeLocations: OfficeLocation;
+    officeLocations: OfficeLocation[];
 }
 
 export interface DepartmentResponse {
-    departments: Department;
+    departments: Department[];
 }
 
 export interface DesignationResponse {
-    designations: Designation;
+    designations: Designation[];
 }
 
 export interface OrganizationResponse {

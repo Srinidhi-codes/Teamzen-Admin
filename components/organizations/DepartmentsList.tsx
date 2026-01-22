@@ -7,7 +7,7 @@ import { Card } from "../common/Card";
 interface DepartmentListProps {
     departments: Department[];
     onEdit: (org: Department) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: number | string) => void;
     onViewEmployees: (org: Department) => void;
 }
 
