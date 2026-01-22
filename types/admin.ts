@@ -30,7 +30,7 @@ export interface Organizations {
 }
 
 export interface OfficeLocation {
-  id: number;
+  id: number | string;
   name: string;
   address: string;
   city: string;
@@ -41,22 +41,22 @@ export interface OfficeLocation {
   loginTime: string;
   logoutTime: string;
   isActive: boolean;
-  organization_id: number;
+  organization_id?: number;
 }
 
 export interface Designation {
-  id: number;
+  id: number | string;
   name: string;
   isActive: boolean;
-  organization?: Organizations;
+  organization?: { name: string; id?: number | string } | Organizations;
   description: string;
 }
 
 export interface Department {
-  id: number;
+  id: number | string;
   name: string;
   isActive: boolean;
-  organization?: Organizations;
+  organization?: { name: string; id?: number | string } | Organizations;
   description: string;
 }
 

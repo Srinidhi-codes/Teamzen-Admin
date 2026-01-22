@@ -64,7 +64,7 @@ export default function ReportsPage() {
                     alt="Analytics"
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/70 to-transparent flex items-center">
+                <div className="absolute inset-0 bg-linear-to-r from-indigo-900/70 to-transparent flex items-center">
                     <div className="px-8 text-white">
                         <h2 className="text-xl font-bold">Data-Driven Insights</h2>
                         <p className="mt-1 text-sm">Make informed decisions with real-time analytics</p>
@@ -136,7 +136,7 @@ export default function ReportsPage() {
                                 cx="50%"
                                 cy="50%"
                                 labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                label={({ name, percent }: { name?: string; percent?: number }) => `${name || ''} ${((percent || 0) * 100).toFixed(0)}%`}
                                 outerRadius={100}
                                 fill="#8884d8"
                                 dataKey="value"
@@ -165,7 +165,7 @@ export default function ReportsPage() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis />
-                        <Tooltip formatter={(value: number) => `₹${(value / 1000000).toFixed(2)}M`} />
+                        <Tooltip formatter={(value?: number) => `₹${((value || 0) / 1000000).toFixed(2)}M`} />
                         <Legend />
                         <Bar dataKey="gross" fill="#4F46E5" name="Gross Salary" />
                         <Bar dataKey="deductions" fill="#EF4444" name="Deductions" />

@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Plus, Edit, Trash2, Mail, Phone, Download } from "lucide-react";
-import { Column } from "../admin/DataTable";
-import { DataTable } from "../common/DataTable";
+import { Column, DataTable } from "../admin/DataTable";
 import { Employee } from "@/types/admin";
 
 // Mock data - replace with actual API calls
