@@ -127,7 +127,7 @@ export default function OrganizationsPage() {
                     </div>
 
                     <OfficeLocationList
-                        officeLocations={officeLocations}
+                        officeLocations={officeLocations || []}
                         onEdit={(org) => console.log("Edit", org)}
                         onDelete={handleDelete}
                         onViewEmployees={(org) => console.log("View", org)}
@@ -153,7 +153,7 @@ export default function OrganizationsPage() {
                     </div>
 
                     <DepartmentList
-                        departments={departments}
+                        departments={departments || []}
                         onEdit={(org) => console.log("Edit", org)}
                         onDelete={handleDelete}
                         onViewEmployees={(org) => console.log("View", org)}
@@ -190,7 +190,7 @@ export default function OrganizationsPage() {
                     </div>
 
                     <DesignationList
-                        designations={designations}
+                        designations={designations || []}
                         onEdit={(org) => console.log("Edit", org)}
                         onDelete={handleDelete}
                         onViewEmployees={(org) => console.log("View", org)}

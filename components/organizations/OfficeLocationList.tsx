@@ -7,7 +7,7 @@ import { Card } from "../common/Card";
 interface OfficeLocationListProps {
     officeLocations: OfficeLocation[];
     onEdit: (org: OfficeLocation) => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: number | string) => void;
     onViewEmployees: (org: OfficeLocation) => void;
 }
 

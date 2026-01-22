@@ -9,6 +9,7 @@ export const GET_ORGANIZATIONS = gql`
                 url
             }
             gstNumber
+            employeeCount
             panNumber
             headquartersAddress
             isActive
@@ -33,6 +34,7 @@ export const GET_OFFICE_LOCATIONS = gql`
             latitude
             longitude
             geoRadiusMeters
+            organizationId
             isActive
             createdAt
         }
