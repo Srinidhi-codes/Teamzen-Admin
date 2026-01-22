@@ -24,7 +24,8 @@ export interface Organizations {
   name: string;
   description: string;
   manager_id: number;
-  employee_count: number;
+  employeeCount: number;
+  isActive: boolean;
   created_at: string;
 }
 
