@@ -2,102 +2,46 @@
 import { useState } from "react";
 import { Plus, Edit, Trash2, Mail, Phone, Download } from "lucide-react";
 import { Column, DataTable } from "../admin/DataTable";
-import { Employee } from "@/types/admin";
+import { User } from "@/lib/graphql/users/types";
+import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
 
-// Mock data - replace with actual API calls
-const mockEmployees: Employee[] = [
-    {
-        id: 1,
-        employee_id: "EMP001",
-        first_name: "John",
-        last_name: "Doe",
-        email: "john.doe@company.com",
-        phone_number: "9876543210",
-        date_of_birth: "1990-05-15",
-        gender: "Male",
-        department: "Engineering",
-        designation: "Senior Developer",
-        employment_type: "Full-time",
-        date_of_joining: "2020-01-15",
-        manager: "Jane Smith",
-        role: "employee",
-        is_active: true,
-        office_location: "Bangalore",
-    },
-    {
-        id: 2,
-        employee_id: "EMP002",
-        first_name: "Jane",
-        last_name: "Smith",
-        email: "jane.smith@company.com",
-        phone_number: "9876543211",
-        date_of_birth: "1988-08-22",
-        gender: "Female",
-        department: "Engineering",
-        designation: "Engineering Manager",
-        employment_type: "Full-time",
-        date_of_joining: "2018-03-10",
-        manager: "CEO",
-        role: "manager",
-        is_active: true,
-        office_location: "Bangalore",
-    },
-    {
-        id: 3,
-        employee_id: "EMP003",
-        first_name: "Mike",
-        last_name: "Johnson",
-        email: "mike.johnson@company.com",
-        phone_number: "9876543212",
-        date_of_birth: "1992-11-30",
-        gender: "Male",
-        department: "Sales",
-        designation: "Sales Executive",
-        employment_type: "Full-time",
-        date_of_joining: "2021-06-01",
-        manager: "Sarah Williams",
-        role: "employee",
-        is_active: true,
-        office_location: "Mumbai",
-    },
-];
+
 
 export default function EmployeesPage() {
-    const [employees] = useState<Employee[]>(mockEmployees);
-    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
-
-    const columns: Column<Employee>[] = [
+    const { users, isUsersLoading, isUsersError, refetchUsers } = useGraphQLUsers();
+    const columns: Column<User>[] = [
         {
-            key: "employee_id",
+            key: "id",
             label: "Employee ID",
             sortable: true,
         },
         {
-            key: "first_name",
+            key: "firstName",
             label: "Name",
             sortable: true,
-            render: (employee) => (
+            render: (user) => (
                 <div>
                     <div className="font-medium text-gray-900">
-                        {employee.first_name} {employee.last_name}
+                        {user.firstName} {user.lastName}
                     </div>
-                    <div className="text-sm text-gray-500">{employee.designation}</div>
+                    <div className="text-sm text-gray-500">{user.designation?.name}</div>
                 </div>
             ),
         },
         {
             key: "email",
             label: "Contact",
-            render: (employee) => (
+            render: (user) => (
                 <div>
                     <div className="flex items-center text-sm text-gray-900">
                         <Mail className="w-4 h-4 mr-1" />
-                        {employee.email}
+                        {user.email}
                     </div>
                     <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Phone className="w-4 h-4 mr-1" />
-                        {employee.phone_number}
+                        {user.phoneNumber}
                     </div>
                 </div>
             ),
@@ -106,41 +50,41 @@ export default function EmployeesPage() {
             key: "department",
             label: "Department",
             sortable: true,
-            render: (employee) => (
+            render: (user) => (
                 <span className="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                    {employee.department}
+                    {user.department?.name}
                 </span>
             ),
         },
         {
-            key: "employment_type",
+            key: "employmentType",
             label: "Type",
             sortable: true,
         },
         {
-            key: "is_active",
+            key: "isActive",
             label: "Status",
             sortable: true,
-            render: (employee) => (
+            render: (user) => (
                 <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${employee.is_active
+                    className={`px-2 py-1 text-xs font-semibold rounded-full ${user.isActive
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                         }`}
                 >
-                    {employee.is_active ? "Active" : "Inactive"}
+                    {user.isActive ? "Active" : "Inactive"}
                 </span>
             ),
         },
         {
             key: "actions",
             label: "Actions",
-            render: (employee) => (
+            render: (user) => (
                 <div className="flex space-x-2">
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedEmployee(employee);
+                            setSelectedEmployee(user);
                         }}
                         className="text-indigo-600 hover:text-indigo-900"
                     >
@@ -189,18 +133,18 @@ export default function EmployeesPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="text-sm font-medium text-gray-600">Total Employees</div>
-                    <div className="mt-2 text-3xl font-bold text-gray-900">{employees.length}</div>
+                    <div className="mt-2 text-3xl font-bold text-gray-900">{users?.length || 0}</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="text-sm font-medium text-gray-600">Active</div>
                     <div className="mt-2 text-3xl font-bold text-green-600">
-                        {employees.filter((e) => e.is_active).length}
+                        {users?.filter((e) => e.isActive).length || 0}
                     </div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="text-sm font-medium text-gray-600">Departments</div>
                     <div className="mt-2 text-3xl font-bold text-indigo-600">
-                        {new Set(employees.map((e) => e.department)).size}
+                        {new Set(users?.map((e) => e.department?.name).filter(Boolean)).size || 0}
                     </div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-6">
@@ -226,7 +170,7 @@ export default function EmployeesPage() {
 
             {/* Data Table */}
             <DataTable
-                data={employees}
+                data={users || []}
                 columns={columns}
                 searchPlaceholder="Search by name, email, or employee ID..."
                 onRowClick={(employee) => setSelectedEmployee(employee)}

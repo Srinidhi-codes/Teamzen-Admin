@@ -1,4 +1,4 @@
-export interface GraphQLUser {
+export interface User {
   id: string;
   email: string;
   username: string;
