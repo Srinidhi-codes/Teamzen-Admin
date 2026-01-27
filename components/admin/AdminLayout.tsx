@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { Menu } from "lucide-react";
+import { useTokenRefresh } from "@/lib/api/hooks";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  useTokenRefresh();
 
   return (
     <div className="flex min-h-screen bg-gray-50">
