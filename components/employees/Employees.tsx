@@ -4,13 +4,43 @@ import { Plus, Edit, Trash2, Mail, Phone, Download } from "lucide-react";
 import { Column, DataTable } from "../admin/DataTable";
 import { User } from "@/lib/graphql/users/types";
 import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
-
-
+import EmployeeForm from "./EmployeeForm";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EmployeesPage() {
     const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const { users, isUsersLoading, isUsersError, refetchUsers } = useGraphQLUsers();
+
+    // Derived state for modal title
+    const isEditing = !!selectedEmployee;
+
+    const handleEdit = (user: User) => {
+        setSelectedEmployee(user);
+        setIsModalOpen(true);
+    };
+
+    const handleAdd = () => {
+        setSelectedEmployee(null);
+        setIsModalOpen(true);
+    };
+
+    const handleClose = () => {
+        setIsModalOpen(false);
+        setSelectedEmployee(null);
+    };
+
+    const handleSuccess = () => {
+        handleClose();
+        refetchUsers(); // Refresh list after add/update
+    };
+
     const columns: Column<User>[] = [
         {
             key: "id",
@@ -82,16 +112,16 @@ export default function EmployeesPage() {
             render: (user) => (
                 <div className="flex space-x-2">
                     <button
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
-                            setSelectedEmployee(user);
+                            handleEdit(user);
                         }}
                         className="text-indigo-600 hover:text-indigo-900"
                     >
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             if (confirm("Are you sure you want to delete this employee?")) {
                                 // Handle delete
@@ -120,7 +150,7 @@ export default function EmployeesPage() {
                         Export
                     </button>
                     <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={handleAdd}
                         className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                     >
                         <Plus className="w-4 h-4 mr-2" />
@@ -173,115 +203,27 @@ export default function EmployeesPage() {
                 data={users || []}
                 columns={columns}
                 searchPlaceholder="Search by name, email, or employee ID..."
-                onRowClick={(employee) => setSelectedEmployee(employee)}
+                onRowClick={(employee) => handleEdit(employee)}
             />
 
-            {/* Add Employee Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Employee</h2>
-                        <form className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        First Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Last Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Email *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Phone Number *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Department *
-                                    </label>
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="">Select Department</option>
-                                        <option value="Engineering">Engineering</option>
-                                        <option value="Sales">Sales</option>
-                                        <option value="Marketing">Marketing</option>
-                                        <option value="HR">HR</option>
-                                        <option value="Finance">Finance</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Designation *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Date of Joining *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Employment Type *
-                                    </label>
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="">Select Type</option>
-                                        <option value="Full-time">Full-time</option>
-                                        <option value="Part-time">Part-time</option>
-                                        <option value="Contract">Contract</option>
-                                        <option value="Intern">Intern</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex justify-end space-x-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddModal(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
-                                    Add Employee
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{isEditing ? "Edit Employee" : "Add New Employee"}</DialogTitle>
+                        <DialogDescription>
+                            {isEditing
+                                ? "Make changes to the employee's information here."
+                                : "Fill in the details to add a new employee to the system."}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <EmployeeForm
+                        initialData={selectedEmployee}
+                        onSuccess={handleSuccess}
+                        onCancel={handleClose}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

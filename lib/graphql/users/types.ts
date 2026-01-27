@@ -10,8 +10,10 @@ export interface User {
   role: "admin" | "hr" | "manager" | "employee";
   isActive: boolean;
   isVerified: boolean;
+  isStaff: boolean;
 
   dateOfJoining?: string | null;
+  dateOfExit?: string | null;
   dateOfBirth?: string | null;
   gender?: string | null;
 
