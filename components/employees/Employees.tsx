@@ -2,102 +2,76 @@
 import { useState } from "react";
 import { Plus, Edit, Trash2, Mail, Phone, Download } from "lucide-react";
 import { Column, DataTable } from "../admin/DataTable";
-import { Employee } from "@/types/admin";
-
-// Mock data - replace with actual API calls
-const mockEmployees: Employee[] = [
-    {
-        id: 1,
-        employee_id: "EMP001",
-        first_name: "John",
-        last_name: "Doe",
-        email: "john.doe@company.com",
-        phone_number: "9876543210",
-        date_of_birth: "1990-05-15",
-        gender: "Male",
-        department: "Engineering",
-        designation: "Senior Developer",
-        employment_type: "Full-time",
-        date_of_joining: "2020-01-15",
-        manager: "Jane Smith",
-        role: "employee",
-        is_active: true,
-        office_location: "Bangalore",
-    },
-    {
-        id: 2,
-        employee_id: "EMP002",
-        first_name: "Jane",
-        last_name: "Smith",
-        email: "jane.smith@company.com",
-        phone_number: "9876543211",
-        date_of_birth: "1988-08-22",
-        gender: "Female",
-        department: "Engineering",
-        designation: "Engineering Manager",
-        employment_type: "Full-time",
-        date_of_joining: "2018-03-10",
-        manager: "CEO",
-        role: "manager",
-        is_active: true,
-        office_location: "Bangalore",
-    },
-    {
-        id: 3,
-        employee_id: "EMP003",
-        first_name: "Mike",
-        last_name: "Johnson",
-        email: "mike.johnson@company.com",
-        phone_number: "9876543212",
-        date_of_birth: "1992-11-30",
-        gender: "Male",
-        department: "Sales",
-        designation: "Sales Executive",
-        employment_type: "Full-time",
-        date_of_joining: "2021-06-01",
-        manager: "Sarah Williams",
-        role: "employee",
-        is_active: true,
-        office_location: "Mumbai",
-    },
-];
+import { User } from "@/lib/graphql/users/types";
+import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
+import EmployeeForm from "./EmployeeForm";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function EmployeesPage() {
-    const [employees] = useState<Employee[]>(mockEmployees);
-    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const { users, isUsersLoading, isUsersError, refetchUsers } = useGraphQLUsers();
 
-    const columns: Column<Employee>[] = [
+    // Derived state for modal title
+    const isEditing = !!selectedEmployee;
+
+    const handleEdit = (user: User) => {
+        setSelectedEmployee(user);
+        setIsModalOpen(true);
+    };
+
+    const handleAdd = () => {
+        setSelectedEmployee(null);
+        setIsModalOpen(true);
+    };
+
+    const handleClose = () => {
+        setIsModalOpen(false);
+        setSelectedEmployee(null);
+    };
+
+    const handleSuccess = () => {
+        handleClose();
+        refetchUsers(); // Refresh list after add/update
+    };
+
+    const columns: Column<User>[] = [
         {
-            key: "employee_id",
+            key: "id",
             label: "Employee ID",
             sortable: true,
         },
         {
-            key: "first_name",
+            key: "firstName",
             label: "Name",
             sortable: true,
-            render: (employee) => (
+            render: (user) => (
                 <div>
                     <div className="font-medium text-gray-900">
-                        {employee.first_name} {employee.last_name}
+                        {user.firstName} {user.lastName}
                     </div>
-                    <div className="text-sm text-gray-500">{employee.designation}</div>
+                    <div className="text-sm text-gray-500">{user.designation?.name}</div>
                 </div>
             ),
         },
         {
             key: "email",
             label: "Contact",
-            render: (employee) => (
+            render: (user) => (
                 <div>
                     <div className="flex items-center text-sm text-gray-900">
                         <Mail className="w-4 h-4 mr-1" />
-                        {employee.email}
+                        {user.email}
                     </div>
                     <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Phone className="w-4 h-4 mr-1" />
-                        {employee.phone_number}
+                        {user.phoneNumber}
                     </div>
                 </div>
             ),
@@ -106,48 +80,48 @@ export default function EmployeesPage() {
             key: "department",
             label: "Department",
             sortable: true,
-            render: (employee) => (
+            render: (user) => (
                 <span className="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
-                    {employee.department}
+                    {user.department?.name}
                 </span>
             ),
         },
         {
-            key: "employment_type",
+            key: "employmentType",
             label: "Type",
             sortable: true,
         },
         {
-            key: "is_active",
+            key: "isActive",
             label: "Status",
             sortable: true,
-            render: (employee) => (
+            render: (user) => (
                 <span
-                    className={`px-2 py-1 text-xs font-semibold rounded-full ${employee.is_active
+                    className={`px-2 py-1 text-xs font-semibold rounded-full ${user.isActive
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                         }`}
                 >
-                    {employee.is_active ? "Active" : "Inactive"}
+                    {user.isActive ? "Active" : "Inactive"}
                 </span>
             ),
         },
         {
             key: "actions",
             label: "Actions",
-            render: (employee) => (
+            render: (user) => (
                 <div className="flex space-x-2">
                     <button
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
-                            setSelectedEmployee(employee);
+                            handleEdit(user);
                         }}
                         className="text-indigo-600 hover:text-indigo-900"
                     >
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                             e.stopPropagation();
                             if (confirm("Are you sure you want to delete this employee?")) {
                                 // Handle delete
@@ -176,7 +150,7 @@ export default function EmployeesPage() {
                         Export
                     </button>
                     <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={handleAdd}
                         className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                     >
                         <Plus className="w-4 h-4 mr-2" />
@@ -189,18 +163,18 @@ export default function EmployeesPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="text-sm font-medium text-gray-600">Total Employees</div>
-                    <div className="mt-2 text-3xl font-bold text-gray-900">{employees.length}</div>
+                    <div className="mt-2 text-3xl font-bold text-gray-900">{users?.length || 0}</div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="text-sm font-medium text-gray-600">Active</div>
                     <div className="mt-2 text-3xl font-bold text-green-600">
-                        {employees.filter((e) => e.is_active).length}
+                        {users?.filter((e) => e.isActive).length || 0}
                     </div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-6">
                     <div className="text-sm font-medium text-gray-600">Departments</div>
                     <div className="mt-2 text-3xl font-bold text-indigo-600">
-                        {new Set(employees.map((e) => e.department)).size}
+                        {new Set(users?.map((e) => e.department?.name).filter(Boolean)).size || 0}
                     </div>
                 </div>
                 <div className="bg-white rounded-lg shadow-sm p-6">
@@ -226,118 +200,30 @@ export default function EmployeesPage() {
 
             {/* Data Table */}
             <DataTable
-                data={employees}
+                data={users || []}
                 columns={columns}
                 searchPlaceholder="Search by name, email, or employee ID..."
-                onRowClick={(employee) => setSelectedEmployee(employee)}
+                onRowClick={(employee) => handleEdit(employee)}
             />
 
-            {/* Add Employee Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Add New Employee</h2>
-                        <form className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        First Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Last Name *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Email *
-                                    </label>
-                                    <input
-                                        type="email"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Phone Number *
-                                    </label>
-                                    <input
-                                        type="tel"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Department *
-                                    </label>
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="">Select Department</option>
-                                        <option value="Engineering">Engineering</option>
-                                        <option value="Sales">Sales</option>
-                                        <option value="Marketing">Marketing</option>
-                                        <option value="HR">HR</option>
-                                        <option value="Finance">Finance</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Designation *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Date of Joining *
-                                    </label>
-                                    <input
-                                        type="date"
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Employment Type *
-                                    </label>
-                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <option value="">Select Type</option>
-                                        <option value="Full-time">Full-time</option>
-                                        <option value="Part-time">Part-time</option>
-                                        <option value="Contract">Contract</option>
-                                        <option value="Intern">Intern</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div className="flex justify-end space-x-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddModal(false)}
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                                >
-                                    Add Employee
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>{isEditing ? "Edit Employee" : "Add New Employee"}</DialogTitle>
+                        <DialogDescription>
+                            {isEditing
+                                ? "Make changes to the employee's information here."
+                                : "Fill in the details to add a new employee to the system."}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <EmployeeForm
+                        initialData={selectedEmployee}
+                        onSuccess={handleSuccess}
+                        onCancel={handleClose}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
