@@ -55,3 +55,5 @@ export interface User {
   aadharNumber?: string | null;
   uanNumber?: string | null;
 }
+
+export type UserResponse = User[];

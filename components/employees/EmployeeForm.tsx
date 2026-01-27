@@ -246,7 +246,7 @@ export default function EmployeeForm({
                     error={errors.dateOfBirth}
                 />
 
-                {user.role === "admin" && <FormSelect
+                {user?.role === "admin" && <FormSelect
                     label="Organization"
                     value={formData.organizationId}
                     onValueChange={(value) => handleSelectChange("organizationId", value)}
@@ -267,7 +267,7 @@ export default function EmployeeForm({
                         { label: "Employee", value: "employee" },
                         { label: "Manager", value: "manager" },
                         { label: "HR", value: "hr" },
-                        ...(user.role === "admin"
+                        ...(user?.role === "admin"
                             ? [{ label: "Admin", value: "admin" }]
                             : []),
                     ]}

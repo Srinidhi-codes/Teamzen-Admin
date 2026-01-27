@@ -1,6 +1,6 @@
-import { GraphQLUser } from "./graphql/users/types";
+import { User } from "./graphql/users/types";
 
-export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
+export const mapBackendUserToFrontendUser = (backendUser: any): User => {
   return {
     id: backendUser.id,
     email: backendUser.email,
@@ -31,5 +31,6 @@ export const mapBackendUserToFrontendUser = (backendUser: any): GraphQLUser => {
     panNumber: backendUser.pan_number,
     aadharNumber: backendUser.aadhar_number,
     uanNumber: backendUser.uan_number,
+    isStaff: backendUser.is_staff,
   };
 };
