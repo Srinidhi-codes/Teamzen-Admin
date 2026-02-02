@@ -1,20 +1,16 @@
-// middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// ❌ WRONG: export async function proxy(request: NextRequest)
-// ✅ CORRECT: export async function middleware(request: NextRequest)
-
-export async function middleware(request: NextRequest) {  // ← FIX THIS!
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   const protectedPaths = [
     '/dashboard',
-    '/organizations',
     '/attendance',
     '/employees',
     '/leaves',
     '/payroll',
+    '/organizations',
   ]
 
   const authPaths = ['/login', '/register']
@@ -25,22 +21,19 @@ export async function middleware(request: NextRequest) {  // ← FIX THIS!
   const accessToken = request.cookies.get('access_token')?.value
   const refreshToken = request.cookies.get('refresh_token')?.value
 
-
   // If accessing protected route
   if (isProtected && !accessToken) {
     // Try to refresh if we have a refresh token
     if (refreshToken) {
       try {
         const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/'
-        const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/refresh/'
-
-
+        const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/token/refresh/'
 
         const response = await fetch(`${API_BASE_URL}${refreshEndpoint}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Cookie': `refresh_token=${refreshToken}`
+            'Cookie': `refresh_token=${refreshToken}`,
           },
           credentials: 'include',
         })
@@ -48,15 +41,14 @@ export async function middleware(request: NextRequest) {  // ← FIX THIS!
         if (response.ok) {
           const data = await response.json()
 
-          // Create response and set new cookies
           const nextResponse = NextResponse.next()
 
           const cookieOptions = {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: (process.env.NODE_ENV === 'production' ? 'none' : 'lax') as 'none' | 'lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             path: '/',
-          }
+          } as const
 
           if (data.access) {
             nextResponse.cookies.set('access_token', data.access, {
@@ -73,11 +65,9 @@ export async function middleware(request: NextRequest) {  // ← FIX THIS!
           }
 
           return nextResponse
-        } else {
-          console.error('❌ Token refresh failed:', response.status)
         }
       } catch (error) {
-        console.error('❌ Token refresh error:', error)
+        console.error('Token refresh failed in middleware:', error)
       }
     }
 
@@ -85,7 +75,6 @@ export async function middleware(request: NextRequest) {  // ← FIX THIS!
     const loginUrl = new URL('/login', request.url)
     const response = NextResponse.redirect(loginUrl)
 
-    // Clear invalid cookies with correct path
     response.cookies.delete('access_token')
     response.cookies.delete('refresh_token')
 
