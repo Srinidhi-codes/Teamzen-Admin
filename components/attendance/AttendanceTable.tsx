@@ -37,7 +37,7 @@ export function AttendanceTable({
                 }),
         },
         {
-            key: "attendanceRecord.loginTime",
+            key: "attendanceRecord.actualLoginTime",
             label: "Actual Login Time",
             render: (value: string) => (
                 <span className="font-md">
@@ -46,7 +46,7 @@ export function AttendanceTable({
             ),
         },
         {
-            key: "attendanceRecord.logoutTime",
+            key: "attendanceRecord.actualLogoutTime",
             label: "Actual Logout Time",
             render: (value: string) => (
                 <span className="font-md">
@@ -105,7 +105,8 @@ export function AttendanceTable({
             render: (value: string) => {
                 const s = STATUS_MAP[value];
                 return (
-                    <span className={`badge capitalize ${s?.className ?? "badge-info"}`}> {value || "--:--:--"}</span >
+                    <span className={`badge ${value === 'approved' ? 'text-green-500' : value === 'pending' ? 'text-yellow-500' : value === 'cancelled' ? 'text-blue-500' : 'text-red-500'
+                        } capitalize ${s?.className ?? "badge-info"} `}> {value || "--:--:--"}</span >
                 )
             },
         },
