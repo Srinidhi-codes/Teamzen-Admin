@@ -1,28 +1,28 @@
 "use client";
 
-interface Column {
+export interface Column<T = any> {
   key: string;
   label: string;
-  render?: (value: any, row: any) => React.ReactNode;
+  render?: (value: any, row: T) => React.ReactNode;
 }
 
-interface DataTableProps {
-  columns: Column[];
-  data: any[];
+interface DataTableProps<T = any> {
+  columns: Column<T>[];
+  data: T[];
   isLoading?: boolean;
-  onRowClick?: (row: any) => void;
+  onRowClick?: (row: T) => void;
 }
 
 const getNestedValue = (obj: any, path: string) => {
   return path.split(".").reduce((acc, part) => acc && acc[part], obj);
 };
 
-export function DataTable({
+export function DataTable<T = any>({
   columns,
   data,
   isLoading,
   onRowClick,
-}: DataTableProps) {
+}: DataTableProps<T>) {
   if (isLoading) {
     return (
       <div className="p-12 text-center">
