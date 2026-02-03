@@ -41,6 +41,20 @@ export const GET_ME = gql`
       panNumber
       aadharNumber
       uanNumber
+      organization {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const GET_USERS = gql`
+  query GetUsers {
+    allUsers {
+      id
+      firstName
+      lastName
     }
   }
 `;

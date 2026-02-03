@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FormInput } from "../common/FormInput";
-import { useGraphQLOrganizationMutation, useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizatioHook";
+import { useGraphQLOrganizationMutation, useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizationsHook";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";

@@ -17,7 +17,7 @@ import {
     useGraphQLOfficeLocations,
     useGraphQLOrganizations,
     useGraphQLSuspendOrganizationMutation,
-} from "@/lib/graphql/organization/organizatioHook";
+} from "@/lib/graphql/organization/organizationsHook";
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
     useGraphQLActivateDesignationMutation,
     useGraphQLSuspendDesignationMutation,
-} from "@/lib/graphql/organization/organizatioHook";
+} from "@/lib/graphql/organization/organizationsHook";
 
 interface DesignationListProps {
     designations: Designation[];

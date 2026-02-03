@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store/useStore";
 import {
     useGraphQLActivateOrganizationMutation,
     useGraphQLSuspendOrganizationMutation,
-} from "@/lib/graphql/organization/organizatioHook";
+} from "@/lib/graphql/organization/organizationsHook";
 import { Organization } from "@/lib/graphql/organization/types";
 
 interface Props {

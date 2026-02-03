@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
     useGraphQLActivateDepartmentMutation,
     useGraphQLSuspendDepartmentMutation,
-} from "@/lib/graphql/organization/organizatioHook";
+} from "@/lib/graphql/organization/organizationsHook";
 
 interface DepartmentListProps {
     departments: Department[];
