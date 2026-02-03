@@ -3,14 +3,38 @@ import { User } from "./types"
 import { GET_ALL_USERS } from "./queries"
 import { CREATE_USER, UPDATE_USER } from "./mutations"
 
-export function useGraphQLUsers(){
+export interface UsersVariables {
+    page?: number;
+    pageSize?: number;
+    filters?: {
+        search?: string;
+        isActive?: boolean;
+        organizationId?: string;
+    };
+    sort?: {
+        field: string;
+        direction: string;
+    };
+}
 
-    const {data, loading, error, refetch} = useQuery<{allUsers: User[]}>(GET_ALL_USERS,{
+export function useGraphQLUsers(variables?: UsersVariables) {
+    const { data, loading, error, refetch } = useQuery<{
+        allUsers: {
+            results: User[];
+            total: number;
+            page: number;
+            pageSize: number;
+        }
+    }>(GET_ALL_USERS, {
+        variables,
         fetchPolicy: 'cache-and-network',
     })
 
-    return{
-        users: data?.allUsers,
+    return {
+        users: data?.allUsers.results,
+        total: data?.allUsers.total,
+        page: data?.allUsers.page,
+        pageSize: data?.allUsers.pageSize,
         isUsersLoading: loading,
         isUsersError: error,
         refetchUsers: refetch
@@ -23,8 +47,8 @@ export function useGraphQLUserMutations() {
 
     return {
         createUser: async (input: any) => {
-             const response = await createUser({ variables: { input } });
-             return response.data?.createUser;
+            const response = await createUser({ variables: { input } });
+            return response.data?.createUser;
         },
         updateUser: async (userId: string, input: any) => {
             const response = await updateUser({ variables: { userId, input } });

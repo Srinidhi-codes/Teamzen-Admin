@@ -1,18 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FormInput } from "../common/FormInput";
 import { useGraphQLUserMutations } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
 import { z } from "zod";
 import { useStore } from "@/lib/store/useStore";
-import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations } from "@/lib/graphql/organization/organizatioHook";
+import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations } from "@/lib/graphql/organization/organizationsHook";
 import { DatePickerSimple } from "../ui/datePicker";
 import moment from "moment";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 
 interface EmployeeFormProps {
@@ -22,20 +23,22 @@ interface EmployeeFormProps {
 }
 
 const employeeSchema = z.object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
+    firstName: z.string().min(1, "First name required "),
+    lastName: z.string().min(1, "Last name required "),
     email: z.string().email("Invalid email address"),
     password: z.string().optional(),
     phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
-    role: z.string().min(1, "Role is required"),
-    dateOfJoining: z.string().min(1, "Date of joining is required"),
+    role: z.string().min(1, "Role required "),
+    dateOfJoining: z.string().default(moment().format("YYYY-MM-DD")),
     dateOfExit: z.string().optional(),
-    employmentType: z.string().min(1, "Employment type is required"),
+    employmentType: z.string().min(1, "Employment type required "),
     isActive: z.boolean().default(true),
-    departmentId: z.string().optional(),
-    designationId: z.string().optional(),
+    departmentId: z.string().min(1, "Department is required "),
+    designationId: z.string().min(1, "Designation is required "),
     isStaff: z.boolean().default(false),
     isVerified: z.boolean().default(false),
+    organizationId: z.string().min(1, "Organization is required "),
+    managerId: z.string().optional(),
 });
 
 export default function EmployeeForm({
@@ -48,17 +51,17 @@ export default function EmployeeForm({
         lastName: "",
         email: "",
         dateOfBirth: "",
-        password: "DefaultPassword123!",
+        password: "",
         phoneNumber: "",
         role: "employee",
-        dateOfJoining: "",
+        dateOfJoining: moment().format("YYYY-MM-DD"),
         dateOfExit: "",
         employmentType: "full_time",
         isActive: true,
         departmentId: "",
         designationId: "",
-        isStaff: true,
-        isVerified: true,
+        isStaff: false,
+        isVerified: false,
         managerId: "",
         organizationId: "",
     });
@@ -68,7 +71,15 @@ export default function EmployeeForm({
     const { organizations } = useGraphQLOrganizations();
     const { designations } = useGraphQLDesignations();
     const { departments } = useGraphQLDepartments();
+    const [showPassword, setShowPassword] = useState(false);
     const isLoading = isCreatingUser || isUpdatingUser;
+
+    useEffect(() => {
+        const orgId = user?.organization?.id;
+        if (!initialData && orgId && !formData.organizationId) {
+            setFormData(prev => ({ ...prev, organizationId: String(orgId) }));
+        }
+    }, [user, initialData, formData.organizationId]);
 
     useEffect(() => {
         if (initialData) {
@@ -77,7 +88,7 @@ export default function EmployeeForm({
                 lastName: initialData.lastName || "",
                 email: initialData.email || "",
                 dateOfBirth: initialData.dateOfBirth || "",
-                password: "", // Don't preserve password on edit
+                password: "",
                 phoneNumber: initialData.phoneNumber || "",
                 role: initialData.role || "employee",
                 dateOfJoining: initialData.dateOfJoining || "",
@@ -93,14 +104,26 @@ export default function EmployeeForm({
             });
         }
     }, [initialData, organizations, designations, departments]);
-    console.log("InitialData:", initialData);
-    console.log("FormData:", formData);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+
+        setFormData((prev) => {
+            const newData = { ...prev, [name]: value };
+
+            // Auto-generate password for new users when first name changes
+            if (!initialData && name === "firstName") {
+                const firstWord = value.trim().split(" ")[0];
+                if (firstWord) {
+                    newData.password = `${firstWord}@123`;
+                } else {
+                    newData.password = "";
+                }
+            }
+
+            return newData;
+        });
+
         if (errors[name]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -139,18 +162,17 @@ export default function EmployeeForm({
         setFormData((prev) => ({ ...prev, [name]: checked }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+        e?.preventDefault();
 
         try {
-            // Validate form
             const validationResult = employeeSchema.safeParse(formData);
             if (!validationResult.success) {
                 const fieldErrors: Record<string, string> = {};
-                const resultError = validationResult.error as any;
-                resultError.errors.forEach((error: any) => {
-                    if (error.path[0]) {
-                        fieldErrors[error.path[0].toString()] = error.message;
+                validationResult.error.issues.forEach((issue) => {
+                    const path = issue.path[0]?.toString();
+                    if (path) {
+                        fieldErrors[path] = issue.message;
                     }
                 });
                 setErrors(fieldErrors);
@@ -188,7 +210,7 @@ export default function EmployeeForm({
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-                <FormInput
+                <Input
                     label="First Name"
                     name="firstName"
                     required
@@ -196,7 +218,7 @@ export default function EmployeeForm({
                     onChange={handleChange}
                     error={errors.firstName}
                 />
-                <FormInput
+                <Input
                     label="Last Name"
                     name="lastName"
                     required
@@ -208,7 +230,7 @@ export default function EmployeeForm({
 
 
             <div className="grid grid-cols-2 gap-4">
-                <FormInput
+                <Input
                     label="Email"
                     name="email"
                     type="email"
@@ -219,21 +241,34 @@ export default function EmployeeForm({
                 />
 
                 {!initialData && (
-                    <FormInput
+                    <Input
                         label="Initial Password"
                         name="password"
-                        type="password"
-                        required
+                        type={showPassword ? "text" : "password"}
                         value={formData.password}
                         onChange={handleChange}
                         hint="Default password for new user"
                         error={errors.password}
+                        suffix={
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors"
+                            >
+                                {showPassword ? (
+                                    <EyeOff className="w-4 h-4" />
+                                ) : (
+                                    <Eye className="w-4 h-4" />
+                                )}
+                            </button>
+                        }
                     />
                 )}
 
-                <FormInput
+                <Input
                     label="Phone Number"
                     name="phoneNumber"
+                    required
                     value={formData.phoneNumber}
                     onChange={handleChange}
                     error={errors.phoneNumber}
@@ -252,8 +287,7 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("organizationId", value)}
                     placeholder="Select Organization"
                     error={errors.organizationId}
-                    required
-                    options={organizations?.map(o => ({ label: o.name, value: o.id }))}
+                    options={organizations?.map((o: any) => ({ label: o.name, value: o.id }))}
                 />}
 
                 <FormSelect
@@ -262,7 +296,6 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("role", value)}
                     placeholder="Select Role"
                     error={errors.role}
-                    required
                     options={[
                         { label: "Employee", value: "employee" },
                         { label: "Manager", value: "manager" },
@@ -290,28 +323,30 @@ export default function EmployeeForm({
                 <FormSelect
                     label="Department"
                     value={formData.departmentId}
+                    required
                     onValueChange={(value) => handleSelectChange("departmentId", value)}
                     placeholder="Select Department"
-                    options={departments?.map(d => ({ label: d.name, value: d.id }))}
+                    error={errors.departmentId}
+                    options={departments?.map((d: any) => ({ label: d.name, value: d.id }))}
                 />
 
                 <FormSelect
                     label="Designation"
                     value={formData.designationId}
+                    required
                     onValueChange={(value) => handleSelectChange("designationId", value)}
                     placeholder="Select Designation"
                     error={errors.designationId}
-                    required
-                    options={designations?.map(d => ({ label: d.name, value: d.id }))}
+                    options={designations?.map((d: any) => ({ label: d.name, value: d.id }))}
                 />
 
                 <FormSelect
                     label="Employment Type"
                     value={formData.employmentType}
+                    required
                     onValueChange={(value) => handleSelectChange("employmentType", value)}
                     placeholder="Select Type"
                     error={errors.employmentType}
-                    required
                     options={[
                         { label: "Full Time", value: "full_time" },
                         { label: "Contract", value: "contract" },
@@ -366,7 +401,7 @@ export default function EmployeeForm({
                 </button>
                 <button
                     type="submit"
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center"
+                    className="btn-primary"
                     disabled={isLoading}
                 >
                     {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

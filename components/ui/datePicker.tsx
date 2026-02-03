@@ -42,7 +42,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                         className={cn(
                             "w-full pl-3 text-left font-normal py-2 h-10 border-gray-300 shadow-sm rounded-lg",
                             !displayDate && "text-muted-foreground",
-                            error && "border-red-500"
+                            error && "border-rose-500 bg-rose-50/10"
                         )}
                     >
                         {displayDate ? (
@@ -71,7 +71,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                     />
                 </PopoverContent>
             </Popover>
-            {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+            {error && <p className="mt-1 text-[11px] font-bold text-rose-600 pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
         </div>
     )
 }

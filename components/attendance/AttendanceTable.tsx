@@ -18,12 +18,21 @@ export function AttendanceTable({
     data,
     isLoading,
     onApproveCorrection,
-    onCancelCorrection
+    onCancelCorrection,
+    // Pagination Props
+    total,
+    currentPage,
+    pageSize,
+    onPageChange
 }: {
     data: AttendanceCorrection[];
     isLoading: boolean;
     onApproveCorrection: (row: AttendanceCorrection) => void;
     onCancelCorrection: (correctionId: string) => void;
+    total?: number;
+    currentPage?: number;
+    pageSize?: number;
+    onPageChange?: (page: number) => void;
 }) {
     const columns = [
         {
@@ -37,7 +46,7 @@ export function AttendanceTable({
                 }),
         },
         {
-            key: "attendanceRecord.actualLoginTime",
+            key: "attendanceRecord.loginTime",
             label: "Actual Login Time",
             render: (value: string) => (
                 <span className="font-md">
@@ -46,7 +55,7 @@ export function AttendanceTable({
             ),
         },
         {
-            key: "attendanceRecord.actualLogoutTime",
+            key: "attendanceRecord.logoutTime",
             label: "Actual Logout Time",
             render: (value: string) => (
                 <span className="font-md">
@@ -105,8 +114,7 @@ export function AttendanceTable({
             render: (value: string) => {
                 const s = STATUS_MAP[value];
                 return (
-                    <span className={`badge ${value === 'approved' ? 'text-green-500' : value === 'pending' ? 'text-yellow-500' : value === 'cancelled' ? 'text-blue-500' : 'text-red-500'
-                        } capitalize ${s?.className ?? "badge-info"} `}> {value || "--:--:--"}</span >
+                    <span className={`badge capitalize ${s?.className ?? "badge-info"}`}> {value || "--:--:--"}</span >
                 )
             },
         },
@@ -144,5 +152,16 @@ export function AttendanceTable({
 
     ];
 
-    return <DataTable columns={columns} data={data} isLoading={isLoading} />;
+    return (
+        <DataTable
+            columns={columns}
+            data={data}
+            isLoading={isLoading}
+            total={total}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            onPageChange={onPageChange}
+            paginationLabel="corrections"
+        />
+    );
 }
