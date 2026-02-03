@@ -28,6 +28,8 @@ export const GET_ATTENDANCE_CORRECTIONS = gql`
         attendanceDate
         loginTime
         logoutTime
+        actualLoginTime
+        actualLogoutTime
         loginDistance
         logoutDistance
         isVerified
