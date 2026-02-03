@@ -29,3 +29,53 @@ export const CHANGE_PASSWORD = gql`
     }
   }
 `;
+
+export const CREATE_USER = gql`
+  mutation CreateUser($input: CreateUserInput!) {
+    createUser(input: $input) {
+      success
+      error
+      user {
+        id
+        email
+        firstName
+        lastName
+        role
+        isActive
+        department {
+            id
+            name
+        }
+        designation {
+            id
+            name
+        }
+      }
+    }
+  }
+`;
+
+export const UPDATE_USER = gql`
+  mutation UpdateUser($userId: String!, $input: UpdateUserInput!) {
+    updateUser(userId: $userId, input: $input) {
+      success
+      error
+      user {
+        id
+        email
+        firstName
+        lastName
+        role
+        isActive
+        department {
+            id
+            name
+        }
+        designation {
+            id
+            name
+        }
+      }
+    }
+  }
+`;
