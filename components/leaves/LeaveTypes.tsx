@@ -168,11 +168,11 @@ const LeaveTypes = () => {
     if (error) return <div className="p-8 text-center text-red-500">Error: {error.message}</div>;
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 p-6 rounded-3xl backdrop-blur-sm border shadow-sm">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white/60 p-8 rounded-[2.5rem] backdrop-blur-md border border-white/40 shadow-2xl shadow-gray-200/50">
                 <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Configured Leave Types</h2>
-                    <p className="text-gray-500 mt-1">Manage leave policies and configurations</p>
+                    <h2 className="text-3xl font-black text-gray-900 tracking-tight">Temporal Protocols</h2>
+                    <p className="text-gray-500 mt-1 font-medium">Define and oscillate the parameters of organizational leave policies.</p>
                 </div>
                 <button
                     onClick={() => {
@@ -180,17 +180,19 @@ const LeaveTypes = () => {
                         resetForm();
                         setIsModalOpen(true);
                     }}
-                    className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                    className="flex items-center space-x-2 px-8 py-3 bg-gray-900 text-white rounded-2xl hover:bg-black hover:scale-105 transition-all shadow-xl shadow-black/10 font-bold text-sm tracking-tight"
                 >
-                    <Plus className="w-4 h-4" />
-                    <span>Create New Type</span>
+                    <Plus className="w-5 h-5" />
+                    <span>Initialize Protocol</span>
                 </button>
             </div>
 
-            <DataTable
-                data={leaveTypes.filter((lt) => lt.isActive)}
-                columns={columns}
-            />
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl shadow-gray-200/40 overflow-hidden p-2">
+                <DataTable
+                    data={leaveTypes.filter((lt) => lt.isActive)}
+                    columns={columns}
+                />
+            </div>
 
             <div ref={formRef}>
                 {isModalOpen && (

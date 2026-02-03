@@ -1,12 +1,13 @@
-import React from 'react';
+"use client"
+import React from 'react'
 
-interface LeaveTabsProps {
+interface OrganizationTabsProps {
     tabs: { id: string; label: string; icon: React.ReactNode; color: string }[];
     activeTab: string;
     setActiveTab: (id: string) => void;
 }
 
-export function LeaveTabs({ tabs, activeTab, setActiveTab }: LeaveTabsProps) {
+export function OrganizationTabs({ tabs, activeTab, setActiveTab }: OrganizationTabsProps) {
     return (
         <div className="p-2 rounded-2xl shadow-xl inline-flex space-x-2 overflow-x-auto bg-white/60 backdrop-blur-md border border-white/40">
             {tabs.map((tab) => (

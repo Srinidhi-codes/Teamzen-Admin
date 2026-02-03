@@ -2,7 +2,7 @@
 
 import { Card } from "../common/Card";
 import { Department } from "@/lib/graphql/organization/types";
-import { Edit, Users, FileText } from "lucide-react";
+import { Edit, Users, FileText, Layers, Building2, ArrowRight } from "lucide-react";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
 import {
@@ -27,82 +27,76 @@ export default function DepartmentList({ departments, onEdit }: DepartmentListPr
 
     if (!departments || departments.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-20 h-20 bg-yellow-50 rounded-full flex items-center justify-center mb-4">
-                    <Users className="w-10 h-10 text-yellow-500" />
+            <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
+                <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mb-6 animate-pulse-slow">
+                    <Layers className="w-12 h-12 text-emerald-400" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Departments Yet</h3>
-                <p className="text-gray-500 max-w-sm">
-                    Add a department to organize teams in your organization.
+                <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Departmental Void</h3>
+                <p className="text-gray-500 max-w-xs font-medium leading-relaxed">
+                    The organizational matrix has no defined units. Construct your first department to compartmentalize operations.
                 </p>
             </div>
         );
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {departments.map((dept) => (
-                <Card key={dept.id} hover className="border-t-4 border-t-yellow-500 relative">
-                    {/* Status Badge */}
-                    <div className="absolute top-4 right-4">
-                        <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${dept.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                                }`}
-                        >
-                            <span
-                                className={`w-1.5 h-1.5 rounded-full mr-1.5 ${dept.isActive ? "bg-green-600" : "bg-red-600"
-                                    }`}
-                            />
-                            {dept.isActive ? "Active" : "Inactive"}
-                        </span>
-                    </div>
+                <div key={dept.id} className="group relative">
+                    <Card className="rounded-[2.5rem] p-8 bg-white border border-gray-100 shadow-2xl shadow-gray-200/40 hover:translate-y-[-8px] transition-all duration-500 relative overflow-hidden">
+                        {/* Decorative background */}
+                        <div className="absolute -right-12 -top-12 w-48 h-48 bg-emerald-50/50 rounded-full blur-3xl group-hover:bg-emerald-100/50 transition-colors"></div>
 
-                    {/* Header */}
-                    <div className="flex items-start mb-4 pr-24">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-yellow-600 rounded-xl shadow-md">
-                                <Users className="w-6 h-6 text-white" />
-                            </div>
-                            <div>
-                                <h3 className="text-lg font-bold text-gray-900 line-clamp-1">{dept.name}</h3>
-                                {dept.organization?.name && (
-                                    <p className="text-sm text-gray-500 font-medium mt-1">
-                                        {dept.organization.name}
+                        {/* Department Hub */}
+                        <div className="flex items-center justify-between mb-8 relative z-10">
+                            <div className="flex items-center space-x-4">
+                                <div className="p-4 bg-emerald-600 rounded-[1.5rem] shadow-xl shadow-emerald-200 group-hover:scale-110 transition-transform duration-500">
+                                    <Layers className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-gray-900 tracking-tighter leading-none mb-1 line-clamp-1">{dept.name}</h3>
+                                    <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest flex items-center gap-1">
+                                        <Building2 className="w-3 h-3" /> {dept.organization?.name || "Global Entity"}
                                     </p>
-                                )}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Description */}
-                    {dept.description && (
-                        <div className="mb-4 flex items-start gap-2">
-                            <FileText className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-sm text-gray-600 leading-relaxed line-clamp-2 flex-1">
-                                {dept.description}
-                            </p>
+                        {/* Unit Intel */}
+                        <div className="space-y-4 mb-8 relative z-10">
+                            <div className="bg-gray-50/80 p-5 rounded-2xl border border-gray-100 min-h-[100px] flex flex-col justify-center">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Operational focus</label>
+                                <p className="text-sm font-bold text-gray-700 leading-relaxed italic line-clamp-2">
+                                    {dept.description ? `"${dept.description}"` : "Strategic business unit established for core organizational functions."}
+                                </p>
+                            </div>
                         </div>
-                    )}
 
-                    {/* Footer */}
-                    <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
-                        <span className="text-xs text-gray-400 font-mono">ID: {dept.id}</span>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => onEdit(dept)}
-                                className="p-2 text-gray-400 hover:text-yellow-600 hover:bg-yellow-50 rounded-lg transition-all duration-200"
-                                title="Edit Department"
-                            >
-                                <Edit className="w-4 h-4" />
-                            </button>
-                            <Switch
-                                checked={dept.isActive}
-                                onCheckedChange={() => toggleStatus(dept)}
-                                className="data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500"
-                            />
+                        {/* Footer Controls */}
+                        <div className="flex items-center justify-between pt-6 border-t border-gray-50 relative z-10">
+                            <div className="flex items-center gap-2">
+                                <Users className="w-4 h-4 text-emerald-500" />
+                                <span className="text-[10px] font-black text-gray-900 tracking-widest uppercase">Dept ID: {dept.id}</span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => onEdit(dept)}
+                                    className="p-4 bg-white border border-gray-100 text-gray-400 hover:text-emerald-600 hover:border-emerald-100 rounded-2xl shadow-sm transition-all"
+                                >
+                                    <Edit className="w-5 h-5" />
+                                </button>
+                                <div className="flex items-center px-4 bg-white border border-gray-100 rounded-2xl shadow-sm h-[54px]">
+                                    <Switch
+                                        checked={dept.isActive}
+                                        onCheckedChange={() => toggleStatus(dept)}
+                                        className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-500"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </Card>
+                    </Card>
+                </div>
             ))}
         </div>
     );
