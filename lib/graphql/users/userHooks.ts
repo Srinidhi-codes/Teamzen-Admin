@@ -1,5 +1,5 @@
 import { useQuery } from "@apollo/client/react";
-import { GET_ME, GET_USERS } from "./queries";
+import { GET_ME, GET_ALL_USERS } from "./queries";
 
 export function useMe() {
     const { data, loading, error, refetch } = useQuery<{ me: any }>(GET_ME, {
@@ -15,12 +15,12 @@ export function useMe() {
 }
 
 export function useUsers() {
-    const { data, loading, error, refetch } = useQuery<{ allUsers: any[] }>(GET_USERS, {
+    const { data, loading, error, refetch } = useQuery<{ allUsers: { results: any[] } }>(GET_ALL_USERS, {
         fetchPolicy: 'cache-first',
     });
 
     return {
-        users: data?.allUsers ?? [],
+        users: data?.allUsers?.results ?? [],
         isLoading: loading,
         error,
         refetch

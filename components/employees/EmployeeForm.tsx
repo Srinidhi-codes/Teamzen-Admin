@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
 import { z } from "zod";
 import { useStore } from "@/lib/store/useStore";
-import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations } from "@/lib/graphql/organization/organizatioHook";
+import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations } from "@/lib/graphql/organization/organizationsHook";
 import { DatePickerSimple } from "../ui/datePicker";
 import moment from "moment";
 import { Input } from "../ui/input";
@@ -287,7 +287,7 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("organizationId", value)}
                     placeholder="Select Organization"
                     error={errors.organizationId}
-                    options={organizations?.map(o => ({ label: o.name, value: o.id }))}
+                    options={organizations?.map((o: any) => ({ label: o.name, value: o.id }))}
                 />}
 
                 <FormSelect
@@ -327,7 +327,7 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("departmentId", value)}
                     placeholder="Select Department"
                     error={errors.departmentId}
-                    options={departments?.map(d => ({ label: d.name, value: d.id }))}
+                    options={departments?.map((d: any) => ({ label: d.name, value: d.id }))}
                 />
 
                 <FormSelect
@@ -337,7 +337,7 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("designationId", value)}
                     placeholder="Select Designation"
                     error={errors.designationId}
-                    options={designations?.map(d => ({ label: d.name, value: d.id }))}
+                    options={designations?.map((d: any) => ({ label: d.name, value: d.id }))}
                 />
 
                 <FormSelect
