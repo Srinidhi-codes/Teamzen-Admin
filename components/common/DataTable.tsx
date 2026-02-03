@@ -17,7 +17,7 @@ const getNestedValue = (obj: any, path: string) => {
   return path.split(".").reduce((acc, part) => acc && acc[part], obj);
 };
 
-export function DataTable({
+export function DataTable<T = any>({
   columns,
   data,
   isLoading,
