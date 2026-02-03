@@ -10,7 +10,7 @@ import {
     useGraphQLOrganizations,
     useGraphQLUpdateDesignationMutation,
     useGraphQLUpdateDepartmentMutation
-} from "@/lib/graphql/organization/organizatioHook";
+} from "@/lib/graphql/organization/organizationsHook";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
 import { Input } from "../ui/input";

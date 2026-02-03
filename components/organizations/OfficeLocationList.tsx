@@ -3,7 +3,7 @@
 import { MapPin, Edit, Trash2, Clock, Navigation } from "lucide-react";
 import { Card } from "../common/Card";
 import { OfficeLocation } from "@/lib/graphql/organization/types";
-import { useGraphQLActivateOfficeLocationMutation, useGraphQLSuspendOfficeLocationMutation } from "@/lib/graphql/organization/organizatioHook";
+import { useGraphQLActivateOfficeLocationMutation, useGraphQLSuspendOfficeLocationMutation } from "@/lib/graphql/organization/organizationsHook";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
