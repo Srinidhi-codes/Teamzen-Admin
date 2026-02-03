@@ -13,6 +13,10 @@ interface DataTableProps {
   onRowClick?: (row: any) => void;
 }
 
+const getNestedValue = (obj: any, path: string) => {
+  return path.split(".").reduce((acc, part) => acc && acc[part], obj);
+};
+
 export function DataTable({
   columns,
   data,
@@ -56,7 +60,7 @@ export function DataTable({
             ))}
           </tr>
         </thead>
-        <tbody className="bg-white divide-y divide-gray-100">
+        <tbody className="bg-white divide-y divide-gray-100 ">
           {data?.map((row, idx) => (
             <tr
               key={idx}
@@ -67,14 +71,17 @@ export function DataTable({
                 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}
               `}
             >
-              {columns.map((col) => (
-                <td
-                  key={col.key}
-                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"
-                >
-                  {col.render ? col.render(row[col.key], row) : row[col.key]}
-                </td>
-              ))}
+              {columns.map((col) => {
+                const value = getNestedValue(row, col.key);
+                return (
+                  <td
+                    key={col.key}
+                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium"
+                  >
+                    {col.render ? col.render(value, row) : value}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
