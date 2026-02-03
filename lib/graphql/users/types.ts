@@ -1,4 +1,4 @@
-export interface GraphQLUser {
+export interface User {
   id: string;
   email: string;
   username: string;
@@ -10,8 +10,10 @@ export interface GraphQLUser {
   role: "admin" | "hr" | "manager" | "employee";
   isActive: boolean;
   isVerified: boolean;
+  isStaff: boolean;
 
   dateOfJoining?: string | null;
+  dateOfExit?: string | null;
   dateOfBirth?: string | null;
   gender?: string | null;
 
@@ -53,3 +55,5 @@ export interface GraphQLUser {
   aadharNumber?: string | null;
   uanNumber?: string | null;
 }
+
+export type UserResponse = User[];

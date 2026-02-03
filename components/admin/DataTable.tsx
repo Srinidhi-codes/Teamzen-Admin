@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 
+
 export interface Column<T> {
   key: string;
   label: string;
@@ -17,7 +18,7 @@ interface DataTableProps<T> {
   itemsPerPage?: number;
 }
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T>({
   data,
   columns,
   searchable = true,
@@ -35,7 +36,7 @@ export function DataTable<T extends Record<string, any>>({
   // Filter data based on search
   const filteredData = searchable
     ? data.filter((item) =>
-      Object.values(item).some((value) =>
+      Object.values(item as any).some((value) =>
         String(value).toLowerCase().includes(searchTerm.toLowerCase())
       )
     )
@@ -44,8 +45,8 @@ export function DataTable<T extends Record<string, any>>({
   // Sort data
   const sortedData = sortConfig
     ? [...filteredData].sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+      const aValue = (a as any)[sortConfig.key];
+      const bValue = (b as any)[sortConfig.key];
 
       if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
@@ -137,7 +138,7 @@ export function DataTable<T extends Record<string, any>>({
                         key={column.key}
                         className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
                       >
-                        {column.render ? column.render(item) : item[column.key]}
+                        {column.render ? column.render(item) : (item as any)[column.key]}
                       </td>
                     ))}
                   </tr>
@@ -206,8 +207,8 @@ export function DataTable<T extends Record<string, any>>({
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
                         className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                            ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                            : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                          ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
                           }`}
                       >
                         {pageNum}
