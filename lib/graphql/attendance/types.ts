@@ -1,4 +1,7 @@
+import { User } from "../users/types";
+
 export interface AttendanceRecord {
+
   id: string;
   attendanceDate: string;
 
@@ -30,7 +33,9 @@ export interface AttendanceCorrection {
 
   approvalComments?: string | null;
   createdAt?: string;
+  requestedBy: User;
 }
+
 
 export type AttendanceInput = {
   startDate?: string;

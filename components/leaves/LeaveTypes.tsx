@@ -1,22 +1,23 @@
 "use client"
 import React, { useState, useRef, useEffect } from 'react'
 import { useGraphQLLeaveTypes, useGraphQLLeaveMutations } from '@/lib/graphql/leaves/leavesHook'
-import { useMe } from '@/lib/graphql/users/userHooks'
 import { DataTable, Column } from '../common/DataTable'
 import { LeaveType } from '@/lib/graphql/leaves/types'
-import { Plus, X, Edit, Trash2 } from 'lucide-react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
-import { Input } from '../ui/input'
-import { Switch } from '../ui/switch'
-import { Textarea } from '../ui/textarea'
+import { Plus, X, Edit, Trash2, AlertCircle } from 'lucide-react'
 import LeaveTypeModal from './LeaveTypeModal'
+import ConfirmationModal from '../common/ConfirmationModal'
+import { useStore } from '@/lib/store/useStore'
+
 
 const LeaveTypes = () => {
-    const { me } = useMe();
+    const { user } = useStore();
     const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes();
     const { createLeaveType, updateLeaveType, deleteLeaveType } = useGraphQLLeaveMutations();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<LeaveType | null>(null);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+
 
     const formRef = useRef<HTMLDivElement>(null);
 
@@ -41,28 +42,54 @@ const LeaveTypes = () => {
         prorateOnJoin: true,
         prorateOnExit: true,
         prorationBasis: 'monthly',
-        isActive: true
+        isActive: true,
+        organizationId: user?.organization?.id || ''
     });
 
+    useEffect(() => {
+        if (user?.organization?.id && !formData.organizationId) {
+            setFormData(prev => ({ ...prev, organizationId: user?.organization?.id || '' }));
+        }
+    }, [user, formData.organizationId]);
+
     const columns: Column<LeaveType>[] = [
-        { key: 'name', label: 'Name' },
-        { key: 'code', label: 'Code' },
+        {
+            key: 'name',
+            label: 'Name',
+            render: (name, row) => (
+                <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner uppercase">
+                        {row.code}
+                    </div>
+                    <span className="font-black text-foreground tracking-tight">
+                        {name}
+                    </span>
+                </div>
+            ),
+        },
         { key: 'maxDaysPerYear', label: 'Annual Limit' },
-        { key: 'accrualFrequency', label: 'Accrual' },
+        { key: 'accrualFrequency', label: 'Accrual', className: 'capitalize' },
         {
             key: 'isActive',
             label: 'Status',
             render: (isActive: boolean) => (
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <span
+                    className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${isActive === true
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5"
+                        : "bg-destructive/10 text-destructive border border-destructive/20 shadow-destructive/5"
+
+                        }`}
+                >
                     {isActive ? 'Active' : 'Inactive'}
                 </span>
             )
         },
+
         {
             key: 'actions',
             label: 'Actions',
             render: (_: any, type: LeaveType) => (
-                <div className="flex space-x-2">
+                <div className="flex items-center gap-3">
                     <button
                         onClick={() => {
                             setEditingType(type);
@@ -82,23 +109,27 @@ const LeaveTypes = () => {
                                 prorateOnJoin: type.prorateOnJoin,
                                 prorateOnExit: type.prorateOnExit,
                                 prorationBasis: type.prorationBasis || 'monthly',
-                                isActive: type.isActive
+                                isActive: type.isActive,
+                                organizationId: formData.organizationId
                             });
                             setIsModalOpen(true);
                         }}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                        className="p-3 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/5 active:scale-90"
+                        title="Modify Protocol"
                     >
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => handleDelete(type.id)}
-                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        className="p-3 bg-destructive/10 text-destructive rounded-xl hover:bg-destructive hover:text-white transition-all duration-300 shadow-lg shadow-destructive/5 active:scale-90"
+                        title="Decommission"
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
                 </div>
             )
         }
+
     ];
 
     const resetForm = () => {
@@ -118,11 +149,13 @@ const LeaveTypes = () => {
             prorateOnJoin: true,
             prorateOnExit: true,
             prorationBasis: 'monthly',
-            isActive: true
+            isActive: true,
+            organizationId: user?.organization?.id || ''
         });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
+        console.log(user?.organization?.id)
         e.preventDefault();
         try {
             const submitData = {
@@ -139,10 +172,17 @@ const LeaveTypes = () => {
                     ...submitData
                 });
             } else {
-                await createLeaveType({
+                const finalData = {
                     ...submitData,
-                    organizationId: me?.organization?.id
-                });
+                    organizationId: formData.organizationId || user?.organization?.id
+                };
+
+                if (!finalData.organizationId) {
+                    console.error("Organization ID is missing");
+                    return;
+                }
+
+                await createLeaveType(finalData);
             }
             setIsModalOpen(false);
             setEditingType(null);
@@ -153,44 +193,73 @@ const LeaveTypes = () => {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm("Are you sure you want to deactivate this leave type?")) {
-            try {
-                await deleteLeaveType(id);
-                refetch();
-            } catch (err) {
-                console.error("Error deleting leave type:", err);
-            }
-        }
+    const handleDelete = (id: string) => {
+        setDeleteId(id);
+        setIsConfirmOpen(true);
     };
 
-    if (isLoading) return <div className="p-8 text-center text-gray-500">Loading leave types...</div>;
-    if (error) return <div className="p-8 text-center text-red-500">Error: {error.message}</div>;
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await deleteLeaveType(deleteId);
+            refetch();
+        } catch (err) {
+            console.error("Error deleting leave type:", err);
+        }
+        setDeleteId(null);
+    };
+
+
+    if (isLoading) return (
+        <div className="flex flex-col items-center justify-center py-32 space-y-6">
+            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+            <p className="text-premium-label animate-pulse">Synchronizing Policies Matrix...</p>
+        </div>
+    );
+
+
+    if (error) return (
+        <div className="p-12 text-center bg-destructive/10 rounded-4xl border border-destructive/20 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
+            <div className="w-16 h-16 bg-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-destructive" />
+            </div>
+            <h3 className="text-xl font-black text-foreground tracking-tight mb-2">Policy Violation</h3>
+            <p className="text-muted-foreground font-medium text-sm leading-relaxed">{error.message}</p>
+        </div>
+    );
+
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/50 p-6 rounded-3xl backdrop-blur-sm border shadow-sm">
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Configured Leave Types</h2>
-                    <p className="text-gray-500 mt-1">Manage leave policies and configurations</p>
+            <div className="premium-card flex flex-col lg:flex-row justify-between items-center gap-10">
+                <div className="relative">
+                    <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                    <h2 className="text-premium-h2 leading-none">Configured Leave Types</h2>
+                    <p className="text-premium-label mt-2 opacity-60">Manage leave policies and configurations</p>
                 </div>
+
                 <button
                     onClick={() => {
                         setEditingType(null);
                         resetForm();
                         setIsModalOpen(true);
                     }}
-                    className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                    className="btn-primary"
                 >
-                    <Plus className="w-4 h-4" />
-                    <span>Create New Type</span>
+                    <Plus className="w-5 h-5 mr-3" />
+                    <span>Initialize Protocol</span>
                 </button>
+
+
             </div>
 
-            <DataTable
-                data={leaveTypes.filter((lt) => lt.isActive)}
-                columns={columns}
-            />
+            <div className="bg-card rounded-4xl border border-border shadow-2xl shadow-primary/5 overflow-hidden p-2">
+                <DataTable
+                    data={leaveTypes.filter((lt) => lt.isActive)}
+                    columns={columns}
+                />
+            </div>
+
 
             <div ref={formRef}>
                 {isModalOpen && (
@@ -198,7 +267,8 @@ const LeaveTypes = () => {
                         isOpen={isModalOpen}
                         onClose={() => {
                             setIsModalOpen(false);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            setEditingType(null);
+                            resetForm();
                         }}
                         onSubmit={handleSubmit}
                         formData={formData}
@@ -206,6 +276,16 @@ const LeaveTypes = () => {
                         editingType={!!editingType}
                     />
                 )}
+
+                <ConfirmationModal
+                    isOpen={isConfirmOpen}
+                    onClose={() => setIsConfirmOpen(false)}
+                    onConfirm={confirmDelete}
+                    title="Deactivate Leave Type"
+                    description="Are you sure you want to deactivate this leave type? This action will impact entitlement synchronization across all employees."
+                    confirmText="Deactivate"
+                    variant="destructive"
+                />
             </div>
         </div>
     )

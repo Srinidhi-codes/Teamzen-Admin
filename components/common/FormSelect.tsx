@@ -39,25 +39,28 @@ export function FormSelect({
 }: FormSelectProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+      <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 mb-2 block">
         {label}
-        {required && <span className="text-red-600">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </label>
+
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className={`p-5 w-full shadow-sm border rounded-md ${error ? "border-rose-500 bg-rose-50/10" : "border-slate-200"} ${className}`}>
+        <SelectTrigger className={`h-auto px-5 py-4 w-full bg-background border rounded-2xl text-sm font-medium text-foreground transition-all duration-300 focus:ring-4 focus:ring-primary/10 ${error ? "border-destructive/50" : "border-border focus:border-primary/50"} ${className}`}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent className="top-10 right-2">
+
+        <SelectContent className="rounded-2xl border-border shadow-2xl animate-in zoom-in-95 duration-200">
           {options
             ? options.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
+              <SelectItem key={option.value} value={option.value} className="rounded-xl focus:bg-primary/10 focus:text-primary transition-colors">
                 {option.label}
               </SelectItem>
             ))
             : children}
         </SelectContent>
       </Select>
-      {error && <p className="mt-1 text-[11px] font-bold text-rose-600 pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
+      {error && <p className="mt-2 text-[10px] font-black text-destructive uppercase tracking-widest ml-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
     </div>
+
   );
 }

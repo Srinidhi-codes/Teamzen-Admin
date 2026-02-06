@@ -75,8 +75,8 @@ export function DataTable<T>({
     <div className="space-y-4">
       {/* Search Bar */}
       {searchable && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground group-focus-within:text-primary w-5 h-5 transition-colors" />
           <input
             type="text"
             placeholder={searchPlaceholder}
@@ -85,44 +85,46 @@ export function DataTable<T>({
               setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-2xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm"
           />
         </div>
       )}
 
+
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="bg-card rounded-3xl border border-border shadow-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/50">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
                     onClick={() => column.sortable && handleSort(column.key)}
-                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.sortable ? "cursor-pointer hover:bg-gray-100" : ""
+                    className={`px-6 py-4 text-left text-[11px] font-black text-muted-foreground uppercase tracking-widest ${column.sortable ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""
                       }`}
                   >
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-2">
                       <span>{column.label}</span>
-                      {column.sortable && sortConfig?.key === column.key && (
-                        <span>
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
+                      {column.sortable && (
+                        <div className="flex flex-col opacity-30">
+                          <ChevronLeft className={`w-3 h-3 rotate-90 ${sortConfig?.key === column.key && sortConfig.direction === 'asc' ? 'text-primary opacity-100' : ''}`} />
+                          <ChevronLeft className={`w-3 h-3 -rotate-90 -mt-1 ${sortConfig?.key === column.key && sortConfig.direction === 'desc' ? 'text-primary opacity-100' : ''}`} />
+                        </div>
                       )}
                     </div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-card divide-y divide-border/50">
               {paginatedData.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-6 py-8 text-center text-gray-500"
+                    className="px-6 py-12 text-center text-muted-foreground font-medium italic"
                   >
-                    No data found
+                    No matching records found.
                   </td>
                 </tr>
               ) : (
@@ -130,13 +132,13 @@ export function DataTable<T>({
                   <tr
                     key={index}
                     onClick={() => onRowClick?.(item)}
-                    className={`hover:bg-gray-50 ${onRowClick ? "cursor-pointer" : ""
+                    className={`hover:bg-muted/30 transition-colors group ${onRowClick ? "cursor-pointer" : ""
                       }`}
                   >
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                        className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground/80 group-hover:text-foreground"
                       >
                         {column.render ? column.render(item) : (item as any)[column.key]}
                       </td>
@@ -148,14 +150,15 @@ export function DataTable<T>({
           </table>
         </div>
 
+
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200">
+          <div className="bg-muted/10 px-6 py-4 flex items-center justify-between border-t border-border">
             <div className="flex-1 flex justify-between sm:hidden">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="relative inline-flex items-center px-4 py-2 border border-border text-xs font-black uppercase tracking-widest rounded-xl text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
               >
                 Previous
               </button>
@@ -164,29 +167,29 @@ export function DataTable<T>({
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-xs font-black uppercase tracking-widest rounded-xl text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
               >
                 Next
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{startIndex + 1}</span>{" "}
-                  to{" "}
-                  <span className="font-medium">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Showing <span className="text-foreground">{startIndex + 1}</span>{" "}
+                  –{" "}
+                  <span className="text-foreground">
                     {Math.min(startIndex + itemsPerPage, sortedData.length)}
                   </span>{" "}
-                  of <span className="font-medium">{sortedData.length}</span>{" "}
-                  results
+                  of <span className="text-foreground">{sortedData.length}</span>{" "}
+                  data points
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <nav className="relative z-0 inline-flex rounded-2xl shadow-sm -space-x-px border border-border overflow-hidden">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-3 py-2 bg-card text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -206,9 +209,9 @@ export function DataTable<T>({
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === pageNum
-                          ? "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
-                          : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        className={`relative inline-flex items-center px-4 py-2 text-xs font-black transition-all ${currentPage === pageNum
+                          ? "z-10 bg-primary text-primary-foreground"
+                          : "bg-card text-muted-foreground hover:bg-muted"
                           }`}
                       >
                         {pageNum}
@@ -220,7 +223,7 @@ export function DataTable<T>({
                       setCurrentPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                    className="relative inline-flex items-center px-3 py-2 bg-card text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
@@ -229,6 +232,7 @@ export function DataTable<T>({
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

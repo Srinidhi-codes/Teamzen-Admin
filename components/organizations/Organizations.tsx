@@ -112,87 +112,77 @@ export default function OrganizationsPage() {
         <div className="space-y-8 animate-fadeIn pb-20">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                        Organization Management
-                    </h1>
-                    <p className="text-gray-500 mt-1 text-lg">
-                        Manage your company structure and departments
-                    </p>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+                            <Building2 className="w-5 h-5" />
+                        </div>
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">Organization Ecosystem</h1>
+                    </div>
+                    <p className="text-muted-foreground font-medium tracking-tight pl-13">Architecting the structural integrity of our global workspace.</p>
                 </div>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="flex gap-5 bg-white rounded-lg shadow-sm p-6">
-                    <div className="bg-indigo-100 p-5 rounded-lg">
-                        <LucideBuilding2 className="text-indigo-600" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-medium text-gray-600">Organizations</div>
-                        <div className="mt-2 text-3xl font-bold text-indigo-600">{organizations?.length}</div>
-                    </div>
-                </div>
-                <div className="flex gap-5 bg-white rounded-lg shadow-sm p-6">
-                    <div className="bg-orange-100 p-5 rounded-lg">
-                        <MapPin className="text-orange-600" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-medium text-gray-600">Office Locations</div>
-                        <div className="mt-2 text-3xl font-bold text-orange-600">
-                            {officeLocations?.length}
+                {[
+                    { label: "Organizations", val: organizations?.length, icon: Building2, color: "primary", bg: "bg-primary/10", text: "text-primary" },
+                    { label: "Office Locations", val: officeLocations?.length, icon: MapPin, color: "orange", bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400" },
+                    { label: "Departments", val: departments?.length, icon: UserRoundCog, color: "yellow", bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400" },
+                    { label: "Designations", val: designations?.length, icon: Briefcase, color: "blue", bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
+                ].map((stat, i) => (
+                    <div key={i} className="group relative bg-card rounded-4xl p-6 border border-border hover:shadow-primary/5 shadow-xl shadow-border/5 overflow-hidden hover:scale-102 transition-all duration-500">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity">
+                            <stat.icon className="w-20 h-20 rotate-12" />
+                        </div>
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.text} flex items-center justify-center shadow-inner`}>
+                                <stat.icon className="w-6 h-6" />
+                            </div>
+                        </div>
+                        <div className="space-y-1">
+                            <div className={`text-3xl font-black tabular-nums tracking-tighter ${stat.text}`}>{stat.val || 0}</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</div>
                         </div>
                     </div>
-                </div>
-                <div className="flex gap-5 bg-white rounded-lg shadow-sm p-6">
-                    <div className="bg-yellow-100 p-5 rounded-lg">
-                        <UserRoundCog className="text-yellow-600" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-medium text-gray-600">Departments</div>
-                        <div className="mt-2 text-3xl font-bold text-yellow-600">
-                            {departments?.length}
-                        </div>
-                    </div>
-                </div >
-                <div className="flex gap-5 bg-white rounded-lg shadow-sm p-6">
-                    <div className="bg-blue-100 p-5 rounded-lg">
-                        <Briefcase className="text-blue-600" />
-                    </div>
-                    <div>
-                        <div className="text-sm font-medium text-gray-600">Designations</div>
-                        <div className="mt-2 text-3xl font-bold text-blue-600">{designations?.length}</div>
-                    </div>
-                </div>
-            </div >
+                ))}
+            </div>
+
 
             <div className="space-y-6">
                 <Tabs defaultValue="organizations" className="w-full">
-                    <TabsList className="w-full h-12">
-                        <TabsTrigger value="organizations" className="data-[state=active]:text-indigo-500">
+                    <TabsList className="bg-muted/50 p-1.5 rounded-2xl border border-border inline-flex h-auto w-auto mb-8">
+                        <TabsTrigger value="organizations" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
                             Organizations
                         </TabsTrigger>
-                        <TabsTrigger value="offices" className="data-[state=active]:text-orange-500">
+                        <TabsTrigger value="offices" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
                             Offices
                         </TabsTrigger>
-                        <TabsTrigger value="departments" className="data-[state=active]:text-yellow-500">
+                        <TabsTrigger value="departments" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
                             Departments
                         </TabsTrigger>
-                        <TabsTrigger value="designations" className="data-[state=active]:text-blue-500">
+                        <TabsTrigger value="designations" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
                             Designations
                         </TabsTrigger>
                     </TabsList>
 
+
                     {/* ORGANIZATIONS */}
                     <TabsContent value="organizations">
-                        <div className="bg-gray-50/50 rounded-3xl">
-                            <div className="flex items-center justify-between mb-6" ref={topRefs.organization}>
-                                <h2 className="text-xl font-bold text-gray-800">All Organizations</h2>
-                                <Button
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between" ref={topRefs.organization}>
+                                <div className="space-y-1">
+                                    <h2 className="text-xl font-black text-foreground tracking-tight">Active Entities</h2>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Global Repository</p>
+                                </div>
+                                <button
                                     onClick={() => openForm("organization")}
-                                    className="flex items-center px-6 py-2.5 shadow bg-indigo-600 hover:bg-indigo-700 text-white"
+                                    className="flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:opacity-90 hover:scale-105 transition-all duration-500 shadow-xl shadow-primary/20"
                                 >
-                                    <Plus className="w-5 h-5 mr-2" /> Add Organization
-                                </Button>
+                                    <Plus className="w-5 h-5" />
+                                    <span>Add Entity</span>
+                                </button>
                             </div>
+
 
                             <OrganizationList
                                 organizations={organizations || []}
