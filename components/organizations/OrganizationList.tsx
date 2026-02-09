@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Edit, Building2, FileText, CreditCard, Hash } from "lucide-react";
+import { Users, Edit, Building2, FileText, CreditCard, Hash, ArrowRight, ExternalLink } from "lucide-react";
 import { Card } from "../common/Card";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
@@ -137,9 +137,10 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                             </button>
                         </div>
                     </div>
-                </div>
-            ))}
-        </div>
+                </div >
+            ))
+            }
+        </div >
 
     );
 }
