@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from 'react'
-import { Calendar } from 'lucide-react'
+import { Calendar, Settings, BarChart3, Clock, Gift } from 'lucide-react'
 
 import { LeaveTabs } from './LeaveTabs'
 import LeaveRequests from './LeaveRequests'
@@ -13,11 +13,11 @@ const LeavesPage = () => {
     const [activeTab, setActiveTab] = useState("balance");
 
     const tabs = [
-        user?.role !== "manager" && { id: "types", label: "Types", icon: "⚙️" },
-        { id: "balance", label: "Balance", icon: "📊" },
-        { id: "requests", label: "Requests", icon: "📅" },
-        user?.role !== "manager" && { id: "holidays", label: "Holidays", icon: "🎉" },
-    ].filter(Boolean) as { id: string; label: string; icon: string }[];
+        user?.role !== "manager" && { id: "types", label: "Types", icon: <Settings className="w-5 h-5" /> },
+        { id: "balance", label: "Balance", icon: <BarChart3 className="w-5 h-5" /> },
+        { id: "requests", label: "Requests", icon: <Clock className="w-5 h-5" /> },
+        user?.role !== "manager" && { id: "holidays", label: "Holidays", icon: <Gift className="w-5 h-5" /> },
+    ].filter(Boolean) as { id: string; label: string; icon: React.ReactNode }[];
 
     React.useEffect(() => {
         if (user?.role !== "manager") {

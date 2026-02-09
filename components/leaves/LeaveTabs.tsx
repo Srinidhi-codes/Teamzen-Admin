@@ -1,6 +1,6 @@
 
 interface LeaveTabsProps {
-    tabs: { id: string; label: string; icon: React.ReactNode; color: string }[];
+    tabs: { id: string; label: string; icon: React.ReactNode; color?: string }[];
     activeTab: string;
     setActiveTab: (id: string) => void;
 }
