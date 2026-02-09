@@ -105,7 +105,12 @@ export default function OrganizationsPage() {
 
     const isLoading = orgsLoading || officesLoading || deptsLoading || desigsLoading;
 
-    const topRefs = useRef<HTMLDivElement>(null);
+    const topRefs = {
+        organization: useRef<HTMLDivElement>(null),
+        office: useRef<HTMLDivElement>(null),
+        department: useRef<HTMLDivElement>(null),
+        designation: useRef<HTMLDivElement>(null),
+    } as const;
 
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
