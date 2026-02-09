@@ -16,23 +16,31 @@ export default function OrganizationStats({ organizations }: OrganizationStatsPr
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Stat
-                icon={<Building2 className="w-8 h-8 text-white" />}
+                icon={Building2}
                 label="Total Departments"
                 value={totalOrgs}
-                gradient="from-blue-500 to-blue-600"
+                color="text-white"
+                gradient="bg-linear-to-br from-blue-600 to-blue-400"
+                index="01"
             />
             <Stat
-                icon={<Users className="w-8 h-8 text-white" />}
+                icon={Users}
                 label="Total Employees"
                 value={totalEmployees}
-                gradient="from-indigo-500 to-purple-600"
+                color="text-white"
+                gradient="bg-linear-to-br from-primary to-primary/60"
+                index="02"
             />
             <Stat
-                icon={<PieChart className="w-8 h-8 text-white" />}
+                icon={PieChart}
                 label="Avg per Department"
                 value={avgEmployees}
-                gradient="from-pink-500 to-rose-600"
+                color="text-white"
+                gradient="bg-linear-to-br from-pink-600 to-rose-400"
+                index="03"
             />
+
         </div>
     );
+
 }

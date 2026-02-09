@@ -18,16 +18,17 @@ interface Props {
 }
 
 const DetailRow = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
-    <div className="flex items-start gap-4 p-3 rounded-2xl bg-gray-50/50 border border-transparent hover:border-gray-100 transition-all group/row">
-        <div className="bg-white p-2 rounded-xl shadow-xs group-hover/row:scale-110 transition-transform">
-            <Icon className="w-4 h-4 text-indigo-500" />
+    <div className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors">
+        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+            <Icon className="w-4 h-4 text-muted-foreground" />
         </div>
         <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
-            <p className="text-sm font-bold text-gray-900 truncate tracking-tight">{value}</p>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-0.5">{label}</p>
+            <p className="text-sm font-bold text-foreground truncate">{value}</p>
         </div>
     </div>
 );
+
 
 export default function OrganizationList({ organizations, onEdit, onViewEmployees }: Props) {
     const { activateOrganization } = useGraphQLActivateOrganizationMutation();
@@ -42,90 +43,104 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
 
     if (!organizations?.length)
         return (
-            <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-[3rem] border-2 border-dashed border-gray-100">
-                <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mb-6 animate-pulse-slow">
-                    <Building2 className="w-12 h-12 text-indigo-400" />
+            <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-700">
+                <div className="w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center mb-6 shadow-inner ring-4 ring-primary/5">
+                    <Building2 className="w-10 h-10 text-primary animate-pulse" />
                 </div>
-                <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Ecosystem Void</h3>
-                <p className="text-gray-500 max-w-xs font-medium leading-relaxed">
-                    The organizational structure is currently empty. Initialize your first entity to begin mapping.
+                <h3 className="text-xl font-black text-foreground mb-3 tracking-tight">No Entities Found</h3>
+                <p className="text-muted-foreground max-w-sm font-medium leading-relaxed">
+                    The ecosystem is currently vacant. Begin by establishing your first organizational presence.
                 </p>
             </div>
         );
 
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {organizations.map((org) => (
-                <div key={org.id} className="group relative">
-                    <Card className="rounded-[2.5rem] p-8 bg-white border border-gray-100 shadow-2xl shadow-gray-200/40 hover:translate-y-[-8px] transition-all duration-500 relative overflow-hidden backdrop-blur-3xl">
-                        {/* Decorative background element */}
-                        <div className="absolute -right-12 -top-12 w-48 h-48 bg-indigo-50/50 rounded-full blur-3xl group-hover:bg-indigo-100/50 transition-colors"></div>
+                <div key={org.id} className="group bg-card rounded-[2.5rem] border border-border hover:border-primary/20 shadow-xl shadow-border/5 overflow-hidden transition-all duration-500 hover:scale-[1.02] flex flex-col">
+                    {/* Header Image/Background */}
+                    <div className="h-24 bg-linear-to-br from-primary/20 to-primary/5 relative">
+                        <div className="absolute top-4 right-4">
+                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border backdrop-blur-md shadow-sm ${org.isActive
+                                ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                                : "bg-destructive/10 border-destructive/20 text-destructive"
+                                }`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${org.isActive ? "bg-emerald-500" : "bg-destructive"} animate-pulse`} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">{org.isActive ? "Operational" : "Suspended"}</span>
+                            </div>
+                        </div>
+                    </div>
 
-                        {/* Status Hub */}
-                        <div className="flex items-center justify-between mb-8 relative z-10">
-                            <div className="flex items-center space-x-4">
-                                <div className="p-4 bg-gray-900 rounded-[1.5rem] shadow-xl shadow-black/10 group-hover:scale-110 transition-transform duration-500">
-                                    <Building2 className="w-6 h-6 text-white" />
+                    <div className="px-8 pb-8 flex-1 flex flex-col">
+                        {/* Icon & Title */}
+                        <div className="-mt-10 mb-6 flex items-end justify-between relative z-10">
+                            <div className="flex items-end gap-3 px-2">
+                                <div className="w-16 h-16 bg-card border-[3px] border-background rounded-[1.5rem] flex items-center justify-center shadow-2xl group-hover:rotate-6 transition-transform">
+                                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+                                        <Building2 className="w-6 h-6" />
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-gray-900 tracking-tighter leading-none mb-1 line-clamp-1">{org.name}</h3>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${org.isActive ? "bg-emerald-500 animate-pulse" : "bg-rose-500"}`} />
-                                        <span className={`text-[10px] font-black uppercase tracking-widest ${org.isActive ? "text-emerald-600" : "text-rose-600"}`}>
-                                            {org.isActive ? "Station active" : "Offline"}
-                                        </span>
+                                <div className="mb-1">
+                                    <h3 className="text-lg font-black text-foreground tracking-tight leading-none group-hover:text-primary transition-colors">{org.name}</h3>
+                                    <div className="flex items-center gap-1.5 mt-1">
+                                        <Users className="w-3 h-3 text-muted-foreground" />
+                                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{org.employeeCount || 0} Core Users</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Data Grid */}
-                        <div className="space-y-3 mb-8 relative z-10">
-                            <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50 mb-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <Users className="w-5 h-5 text-indigo-600" />
-                                    <span className="text-sm font-black text-indigo-900 uppercase tracking-tight">Workforce</span>
-                                </div>
-                                <span className="text-2xl font-black text-indigo-600">{org.employeeCount || 0}</span>
-                            </div>
-
-                            {org.registrationNumber && (
-                                <DetailRow icon={Hash} label="Inventory ID" value={org.registrationNumber} />
+                        {/* Body */}
+                        <div className="space-y-4 flex-1">
+                            {org.headquartersAddress && (
+                                <p className="text-sm text-foreground/60 line-clamp-2 leading-relaxed font-medium italic mb-2">"{org.headquartersAddress}"</p>
                             )}
-                            {org.gstNumber && <DetailRow icon={FileText} label="Identity Signature" value={org.gstNumber} />}
+
+                            <div className="grid grid-cols-1 gap-2">
+                                {org.registrationNumber && (
+                                    <DetailRow icon={Hash} label="Licence ID" value={org.registrationNumber} />
+                                )}
+                                {org.gstNumber && <DetailRow icon={FileText} label="Fiscal ID" value={org.gstNumber} />}
+                                {org.panNumber && <DetailRow icon={CreditCard} label="Payment ID" value={org.panNumber} />}
+                            </div>
                         </div>
 
-                        {/* Intelligence Hub Transition */}
-                        <div className="flex items-center gap-3 relative z-10 pt-4 border-t border-gray-50">
-                            <button
-                                onClick={() => onViewEmployees(org)}
-                                className="flex-1 flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-indigo-600 text-gray-900 hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 group/btn"
-                            >
-                                <span>Access workforce</span>
-                                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                            </button>
-
-                            {user?.role === "admin" && (
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => onEdit(org)}
-                                        className="p-4 bg-white border border-gray-100 text-gray-400 hover:text-indigo-600 hover:border-indigo-100 rounded-2xl shadow-sm transition-all"
-                                    >
-                                        <Edit className="w-5 h-5" />
-                                    </button>
-                                    <div className="flex items-center px-4 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                        {/* Footer / Controls */}
+                        <div className="mt-8 pt-6 border-t border-border/50">
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">Ref: {org.id.substring(0, 8)}</span>
+                                {user?.role === "admin" && (
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => onEdit(org)}
+                                            className="p-3 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-2xl transition-all active:scale-90"
+                                        >
+                                            <Edit className="w-4 h-4" />
+                                        </button>
                                         <Switch
                                             checked={org.isActive}
                                             onCheckedChange={() => toggleStatus(org)}
-                                            className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-rose-500"
+                                            className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-destructive"
                                         />
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => onViewEmployees(org)}
+                                className="w-full py-4 px-6 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/10 hover:opacity-90 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-2 group/btn"
+                            >
+                                <Users className="w-4 h-4" />
+                                <span>Navigate to Workforce</span>
+                                <span className="group-hover/btn:translate-x-1 transition-transform animate-pulse">→</span>
+                            </button>
                         </div>
-                    </Card>
-                </div>
-            ))}
-        </div>
+                    </div>
+                </div >
+            ))
+            }
+        </div >
+
     );
 }

@@ -17,6 +17,8 @@ import {
     useGraphQLOrganizations,
 } from "@/lib/graphql/organization/organizationsHook";
 import { OrganizationTabs } from "./OrganizationTabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Button } from "../ui/button";
 
 export default function OrganizationsPage() {
     type FormKey = "organization" | "office" | "department" | "designation" | null;
@@ -103,6 +105,8 @@ export default function OrganizationsPage() {
 
     const isLoading = orgsLoading || officesLoading || deptsLoading || desigsLoading;
 
+    const topRefs = useRef<HTMLDivElement>(null);
+
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
             <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -111,31 +115,174 @@ export default function OrganizationsPage() {
     );
 
     return (
-        <div className="space-y-10 animate-fade-in pb-32">
-            {/* Executive Header */}
-            <div>
-                <h1 className="text-4xl font-black text-gray-900 tracking-tight">Organization Control</h1>
-                <p className="text-gray-500 mt-2 text-lg font-medium">Coordinate your global infrastructure and intelligence hierarchy.</p>
+        <div className="space-y-8 animate-fadeIn pb-20">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+                            <Building2 className="w-5 h-5" />
+                        </div>
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">Organization Ecosystem</h1>
+                    </div>
+                    <p className="text-muted-foreground font-medium tracking-tight pl-13">Architecting the structural integrity of our global workspace.</p>
+                </div>
+
             </div>
 
             {/* Premium Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {stats.map((stat, i) => (
-                    <div key={i} className="group bg-white rounded-[2rem] p-6 border border-gray-100 shadow-xl shadow-gray-200/50 hover:scale-105 transition-all duration-500 overflow-hidden relative">
-                        <div className={`absolute -right-4 -top-4 w-24 h-24 bg-${stat.color}-50 rounded-full group-hover:scale-110 transition-transform`}></div>
-                        <div className="relative z-10">
-                            <div className="flex items-center justify-between mb-2">
-                                <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{stat.label}</p>
-                                <stat.icon className={`w-5 h-5 text-${stat.color}-500 opacity-60`} />
+                {[
+                    { label: "Organizations", val: organizations?.length, icon: Building2, color: "primary", bg: "bg-primary/10", text: "text-primary" },
+                    { label: "Office Locations", val: officeLocations?.length, icon: MapPin, color: "orange", bg: "bg-orange-500/10", text: "text-orange-600 dark:text-orange-400" },
+                    { label: "Departments", val: departments?.length, icon: UserRoundCog, color: "yellow", bg: "bg-yellow-500/10", text: "text-yellow-600 dark:text-yellow-400" },
+                    { label: "Designations", val: designations?.length, icon: Briefcase, color: "blue", bg: "bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
+                ].map((stat, i) => (
+                    <div key={i} className="group relative bg-card rounded-4xl p-6 border border-border hover:shadow-primary/5 shadow-xl shadow-border/5 overflow-hidden hover:scale-102 transition-all duration-500">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 transition-opacity">
+                            <stat.icon className="w-20 h-20 rotate-12" />
+                        </div>
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.text} flex items-center justify-center shadow-inner`}>
+                                <stat.icon className="w-6 h-6" />
                             </div>
-                            <h3 className={`text-4xl font-black text-${stat.color}-600 tracking-tighter`}>{stat.count}</h3>
+                        </div>
+                        <div className="space-y-1">
+                            <div className={`text-3xl font-black tabular-nums tracking-tighter ${stat.text}`}>{stat.val || 0}</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</div>
                         </div>
                     </div>
                 ))}
             </div>
 
+
+            <div className="space-y-6">
+                <Tabs defaultValue="organizations" className="w-full">
+                    <TabsList className="bg-muted/50 p-1.5 rounded-2xl border border-border inline-flex h-auto w-auto mb-8">
+                        <TabsTrigger value="organizations" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
+                            Organizations
+                        </TabsTrigger>
+                        <TabsTrigger value="offices" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
+                            Offices
+                        </TabsTrigger>
+                        <TabsTrigger value="departments" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
+                            Departments
+                        </TabsTrigger>
+                        <TabsTrigger value="designations" className="px-8 py-3 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-[10px] font-black uppercase tracking-widest transition-all">
+                            Designations
+                        </TabsTrigger>
+                    </TabsList>
+
+
+                    {/* ORGANIZATIONS */}
+                    <TabsContent value="organizations">
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between" ref={topRefs.organization}>
+                                <div className="space-y-1">
+                                    <h2 className="text-xl font-black text-foreground tracking-tight">Active Entities</h2>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Global Repository</p>
+                                </div>
+                                <button
+                                    onClick={() => openForm("organization")}
+                                    className="flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground rounded-2xl font-bold text-sm hover:opacity-90 hover:scale-105 transition-all duration-500 shadow-xl shadow-primary/20"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                    <span>Add Entity</span>
+                                </button>
+                            </div>
+
+
+                            <OrganizationList
+                                organizations={organizations || []}
+                                onEdit={handleEditOrg}
+                                onViewEmployees={handleViewEmployees}
+                            />
+
+                            <div ref={formRefs.organization} className="mt-6 scroll-mt-24">
+                                {activeForm === "organization" && (
+                                    <CreateOrganizationForm
+                                        orgEditData={editingOrg}
+                                        onCancel={closeForm}
+                                        onSubmit={async () => {
+                                            closeForm();
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* OFFICES */}
+                    <TabsContent value="offices">
+                        <div className="bg-gray-50/50 rounded-3xl">
+                            <div ref={topRefs.office} className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold">All Offices</h2>
+                                <Button onClick={() => openForm("office")} className="bg-indigo-600 text-white">
+                                    <Plus className="w-5 h-5 mr-2" /> Add Office
+                                </Button>
+                            </div>
+
+                            <OfficeLocationList
+                                officeLocations={officeLocations ?? []}
+                                onEdit={handleEditOffLoc}
+                            />
+
+
+                            <div ref={formRefs.office} className="mt-6 scroll-mt-24">
+                                {activeForm === "office" && <AddOfficeForm officeLocationEditData={editingOffLoc} onCancel={closeForm} onSubmit={async () => closeForm()} />}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* DEPARTMENTS */}
+                    <TabsContent value="departments">
+                        <div className="bg-gray-50/50 rounded-3xl">
+                            <div ref={topRefs.department} className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold">All Departments</h2>
+                                <Button onClick={() => openForm("department")} className="bg-indigo-600 text-white">
+                                    <Plus className="w-5 h-5 mr-2" /> Add Department
+                                </Button>
+                            </div>
+
+                            <DepartmentList
+                                departments={departments ?? []}
+                                onEdit={handleEditDept}
+                            />
+
+                            <div ref={formRefs.department} className="mt-6 scroll-mt-24">
+                                {activeForm === "department" && (
+                                    <AddDepartmentForm departmentEditData={editingDept} onCancel={closeForm} onSubmit={async () => closeForm()} />
+                                )}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    {/* DESIGNATIONS */}
+                    <TabsContent value="designations">
+                        <div className="bg-gray-50/50 rounded-3xl">
+                            <div ref={topRefs.designation} className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold">All Designations</h2>
+                                <Button onClick={() => openForm("designation")} className="bg-indigo-600 text-white">
+                                    <Plus className="w-5 h-5 mr-2" /> Add Designation
+                                </Button>
+                            </div>
+
+                            <DesignationList
+                                designations={designations ?? []}
+                                onEdit={handleEditDesignation}
+                            />
+
+                            <div ref={formRefs.designation} className="mt-6 scroll-mt-24">
+                                {activeForm === "designation" && (
+                                    <AddDesignationForm designationEditData={editingDesig} onCancel={closeForm} onSubmit={async () => closeForm()} />
+                                )}
+                            </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
+            </div >
+
             {/* Smart Navigation */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            < div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6" >
                 <OrganizationTabs
                     tabs={tabs}
                     activeTab={activeTab}
@@ -154,10 +301,10 @@ export default function OrganizationsPage() {
                     <Plus className="w-5 h-5" />
                     <span>Add {activeTab.slice(0, -1)}</span>
                 </button>
-            </div>
+            </div >
 
             {/* Dynamic Content Repository */}
-            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+            < div className="animate-in fade-in slide-in-from-bottom-6 duration-700" >
                 {activeTab === "organizations" && (
                     <div className="space-y-8">
                         <OrganizationList
@@ -175,62 +322,69 @@ export default function OrganizationsPage() {
                             )}
                         </div>
                     </div>
-                )}
+                )
+                }
 
-                {activeTab === "offices" && (
-                    <div className="space-y-8">
-                        <OfficeLocationList
-                            officeLocations={officeLocations ?? []}
-                            onEdit={handleEditOffLoc}
-                        />
-                        <div ref={formRefs.office} className="scroll-mt-24">
-                            {activeForm === "office" && (
-                                <AddOfficeForm
-                                    officeLocationEditData={editingOffLoc}
-                                    onCancel={closeForm}
-                                    onSubmit={async () => closeForm()}
-                                />
-                            )}
+                {
+                    activeTab === "offices" && (
+                        <div className="space-y-8">
+                            <OfficeLocationList
+                                officeLocations={officeLocations ?? []}
+                                onEdit={handleEditOffLoc}
+                            />
+                            <div ref={formRefs.office} className="scroll-mt-24">
+                                {activeForm === "office" && (
+                                    <AddOfficeForm
+                                        officeLocationEditData={editingOffLoc}
+                                        onCancel={closeForm}
+                                        onSubmit={async () => closeForm()}
+                                    />
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
-                {activeTab === "departments" && (
-                    <div className="space-y-8">
-                        <DepartmentList
-                            departments={departments ?? []}
-                            onEdit={handleEditDept}
-                        />
-                        <div ref={formRefs.department} className="scroll-mt-24">
-                            {activeForm === "department" && (
-                                <AddDepartmentForm
-                                    departmentEditData={editingDept}
-                                    onCancel={closeForm}
-                                    onSubmit={async () => closeForm()}
-                                />
-                            )}
+                {
+                    activeTab === "departments" && (
+                        <div className="space-y-8">
+                            <DepartmentList
+                                departments={departments ?? []}
+                                onEdit={handleEditDept}
+                            />
+                            <div ref={formRefs.department} className="scroll-mt-24">
+                                {activeForm === "department" && (
+                                    <AddDepartmentForm
+                                        departmentEditData={editingDept}
+                                        onCancel={closeForm}
+                                        onSubmit={async () => closeForm()}
+                                    />
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )
+                }
 
-                {activeTab === "designations" && (
-                    <div className="space-y-8">
-                        <DesignationList
-                            designations={designations ?? []}
-                            onEdit={handleEditDesignation}
-                        />
-                        <div ref={formRefs.designation} className="scroll-mt-24">
-                            {activeForm === "designation" && (
-                                <AddDesignationForm
-                                    designationEditData={editingDesig}
-                                    onCancel={closeForm}
-                                    onSubmit={async () => closeForm()}
-                                />
-                            )}
+                {
+                    activeTab === "designations" && (
+                        <div className="space-y-8">
+                            <DesignationList
+                                designations={designations ?? []}
+                                onEdit={handleEditDesignation}
+                            />
+                            <div ref={formRefs.designation} className="scroll-mt-24">
+                                {activeForm === "designation" && (
+                                    <AddDesignationForm
+                                        designationEditData={editingDesig}
+                                        onCancel={closeForm}
+                                        onSubmit={async () => closeForm()}
+                                    />
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
-            </div>
-        </div>
+                    )
+                }
+            </div >
+        </div >
     );
 }
