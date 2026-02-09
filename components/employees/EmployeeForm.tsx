@@ -208,7 +208,7 @@ export default function EmployeeForm({
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 ">
             <div className="grid grid-cols-2 gap-4">
                 <Input
                     label="First Name"
@@ -253,17 +253,18 @@ export default function EmployeeForm({
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="p-1.5 hover:bg-slate-100 rounded-xl transition-colors"
+                                className="p-1.5 hover:bg-muted rounded-xl transition-colors"
                             >
                                 {showPassword ? (
-                                    <EyeOff className="w-4 h-4" />
+                                    <EyeOff className="w-4 h-4 text-muted-foreground" />
                                 ) : (
-                                    <Eye className="w-4 h-4" />
+                                    <Eye className="w-4 h-4 text-muted-foreground" />
                                 )}
                             </button>
                         }
                     />
                 )}
+
 
                 <Input
                     label="Phone Number"
@@ -276,6 +277,7 @@ export default function EmployeeForm({
 
                 <DatePickerSimple
                     label="Date of Birth"
+
                     value={formData.dateOfBirth}
                     onChange={(date) => handleDateChange("dateOfBirth", date)}
                     error={errors.dateOfBirth}
@@ -356,10 +358,10 @@ export default function EmployeeForm({
             </div>
 
             <div className="grid grid-cols-3 gap-6 pt-2">
-                <div className="flex flex-col space-y-3 p-4 border rounded-lg bg-gray-50/50">
-                    <div className="space-y-0.5">
-                        <label className="text-sm font-medium text-gray-900">Active Status</label>
-                        <p className="text-xs text-muted-foreground">Is this employee active?</p>
+                <div className="flex flex-col space-y-4 p-5 border border-border rounded-3xl bg-muted/20">
+                    <div className="space-y-1">
+                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Active Status</label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Is this employee active?</p>
                     </div>
                     <Switch
                         checked={formData.isActive}
@@ -367,10 +369,10 @@ export default function EmployeeForm({
                     />
                 </div>
 
-                <div className="flex flex-col space-y-3 p-4 border rounded-lg bg-gray-50/50">
-                    <div className="space-y-0.5">
-                        <label className="text-sm font-medium text-gray-900">Staff Status</label>
-                        <p className="text-xs text-muted-foreground">Is this user a staff member?</p>
+                <div className="flex flex-col space-y-4 p-5 border border-border rounded-3xl bg-muted/20">
+                    <div className="space-y-1">
+                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Staff Status</label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Is this user a staff member?</p>
                     </div>
                     <Switch
                         checked={formData.isStaff}
@@ -378,10 +380,10 @@ export default function EmployeeForm({
                     />
                 </div>
 
-                <div className="flex flex-col space-y-3 p-4 border rounded-lg bg-gray-50/50">
-                    <div className="space-y-0.5">
-                        <label className="text-sm font-medium text-gray-900">Verified</label>
-                        <p className="text-xs text-muted-foreground">Has their email been verified?</p>
+                <div className="flex flex-col space-y-4 p-5 border border-border rounded-3xl bg-muted/20">
+                    <div className="space-y-1">
+                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Verified</label>
+                        <p className="text-[10px] text-muted-foreground font-medium">Has their email been verified?</p>
                     </div>
                     <Switch
                         checked={formData.isVerified}
@@ -390,24 +392,29 @@ export default function EmployeeForm({
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6">
+
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    className="px-8 py-4 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
                     disabled={isLoading}
                 >
-                    Cancel
+                    Dismiss
                 </button>
                 <button
                     type="submit"
-                    className="btn-primary"
+                    className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-50"
                     disabled={isLoading}
                 >
-                    {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {initialData ? "Update Employee" : "Create Employee"}
+                    {isLoading ? (
+                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    ) : (
+                        initialData ? "Apply Changes" : "Establish Profile"
+                    )}
                 </button>
             </div>
+
         </form>
     );
 }

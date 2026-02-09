@@ -8,13 +8,17 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 export interface Column<T = any> {
   key: string;
   label: string;
   render?: (value: any, row: T) => React.ReactNode;
   sortable?: boolean;
+  className?: string;
 }
+
 
 export interface SortConfig {
   key: string;
@@ -56,26 +60,28 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="p-12 text-center">
-        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500 font-medium animate-pulse">Synchronizing Data...</p>
+      <div className="flex flex-col items-center justify-center py-32 space-y-6">
+        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-premium-label animate-pulse">Synchronizing Data Matrix...</p>
       </div>
     );
   }
 
+
   if (!data || data.length === 0) {
     return (
-      <div className="p-16 text-center bg-white rounded-3xl border border-slate-100 shadow-sm">
-        <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner">
-          <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+      <div className="premium-card text-center max-w-2xl mx-auto py-16 animate-in zoom-in-95 duration-500">
+        <div className="w-24 h-24 bg-muted rounded-[3rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-border/50">
+          <svg className="w-12 h-12 text-muted-foreground/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
           </svg>
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-1">No identifiers found</h3>
-        <p className="text-slate-400 text-sm max-w-xs mx-auto font-medium">We couldn't locate any records matching your current criteria.</p>
+        <h3 className="text-premium-h2 mb-2">Zero Identifiers Detected</h3>
+        <p className="text-muted-foreground font-medium leading-relaxed max-w-sm mx-auto">The requested data set is currently empty or doesn't match the current filters.</p>
       </div>
     );
   }
+
 
   const handleSort = (key: string) => {
     if (!onSortChange) return;
@@ -95,20 +101,23 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-[2rem] border border-slate-100 bg-white shadow-sm overflow-hidden">
-        <table className="min-w-full divide-y divide-slate-100">
-          <thead className="bg-slate-50/50">
+      <div className="overflow-x-auto rounded-4xl border border-border bg-card shadow-sm overflow-hidden">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
             <tr>
+
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-6 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ${col.sortable && onSortChange ? "cursor-pointer hover:text-indigo-600 transition-colors" : ""}`}
+                  className={`px-6 py-5 text-left text-premium-label ${col.sortable && onSortChange ? "cursor-pointer hover:text-primary transition-colors" : ""}`}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
+
                   <div className="flex items-center gap-1.5">
                     {col.label}
                     {col.sortable && onSortChange && (
-                      <div className="text-slate-300 group-hover:text-indigo-400">
+                      <div className="text-muted-foreground/50 group-hover:text-primary/70">
+
                         {sortConfig?.key === col.key ? (
                           sortConfig.direction === "asc" ? (
                             <ChevronUp className="w-3.5 h-3.5" />
@@ -125,23 +134,27 @@ export function DataTable<T>({
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-slate-50">
+          <tbody className="bg-card divide-y divide-border">
+
             {data?.map((row, idx) => (
               <tr
                 key={idx}
                 onClick={() => onRowClick?.(row)}
                 className={`
                   group transition-all duration-300
-                  ${onRowClick ? "hover:bg-slate-50/80 cursor-pointer" : ""}
+                  ${onRowClick ? "hover:bg-muted/50 cursor-pointer" : ""}
                 `}
+
               >
                 {columns.map((col) => {
                   const value = getNestedValue(row, col.key);
                   return (
                     <td
                       key={col.key}
-                      className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 font-semibold group-hover:text-indigo-600 transition-colors"
+                      className={cn("px-6 py-5 whitespace-nowrap text-premium-data", col.className)}
                     >
+
+
                       {col.render ? col.render(value, row) : value}
                     </td>
                   );
@@ -154,15 +167,16 @@ export function DataTable<T>({
 
       {/* Pagination Footer */}
       {totalPages > 0 && currentPage && onPageChange && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-6 bg-white/50 rounded-[2rem] border border-white backdrop-blur-sm shadow-sm ring-1 ring-slate-100">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-widest pl-2">
-            Showing <span className="text-indigo-600 font-black">{(currentPage - 1) * (pageSize || 0) + 1}</span>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-6 bg-card/50 rounded-4xl border border-border backdrop-blur-sm shadow-sm ring-1 ring-border/50">
+          <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-2">
+            Showing <span className="text-primary font-black">{(currentPage - 1) * (pageSize || 0) + 1}</span>
             <span className="mx-1.5">—</span>
-            <span className="text-indigo-600 font-black">{Math.min(currentPage * (pageSize || 0), total || 0)}</span>
-            <span className="mx-2 text-slate-300">Of</span>
-            <span className="text-slate-900 font-black">{total}</span>
+            <span className="text-primary font-black">{Math.min(currentPage * (pageSize || 0), total || 0)}</span>
+            <span className="mx-2 text-muted-foreground/50">Of</span>
+            <span className="text-foreground font-black">{total}</span>
             <span className="ml-2">{paginationLabel}</span>
           </div>
+
 
           <Pagination className="mx-0 w-auto">
             <PaginationContent className="gap-1.5">
@@ -173,8 +187,9 @@ export function DataTable<T>({
                     e.preventDefault();
                     if (currentPage > 1) onPageChange(currentPage - 1);
                   }}
-                  className={`rounded-xl border-slate-100 text-slate-500 font-bold hover:bg-white hover:text-indigo-600 hover:border-indigo-100 transition-all ${currentPage <= 1 ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"}`}
+                  className={`rounded-xl border-border text-muted-foreground font-bold hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage <= 1 ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"}`}
                 />
+
               </PaginationItem>
 
               {Array.from({ length: totalPages }).map((_, i) => {
@@ -193,8 +208,9 @@ export function DataTable<T>({
                           e.preventDefault();
                           onPageChange(pageNumber);
                         }}
-                        className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${currentPage === pageNumber ? "bg-indigo-600 text-white border-transparent shadow-lg shadow-indigo-200 scale-110" : "bg-white text-slate-500 border-slate-100 hover:border-indigo-200 hover:text-indigo-600 shadow-sm"}`}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${currentPage === pageNumber ? "bg-primary text-primary-foreground border-transparent shadow-lg shadow-primary/20 scale-110" : "bg-card text-muted-foreground border-border hover:border-primary/20 hover:text-primary shadow-sm"}`}
                       >
+
                         {pageNumber}
                       </PaginationLink>
                     </PaginationItem>
@@ -203,7 +219,8 @@ export function DataTable<T>({
                   pageNumber === currentPage - 2 ||
                   pageNumber === currentPage + 2
                 ) {
-                  return <PaginationEllipsis key={pageNumber} className="text-slate-300 scale-75" />;
+                  return <PaginationEllipsis key={pageNumber} className="text-muted-foreground/30 scale-75" />;
+
                 }
                 return null;
               })}
@@ -215,8 +232,9 @@ export function DataTable<T>({
                     e.preventDefault();
                     if (currentPage < totalPages) onPageChange(currentPage + 1);
                   }}
-                  className={`rounded-xl border-slate-100 text-slate-500 font-bold hover:bg-white hover:text-indigo-600 hover:border-indigo-100 transition-all ${currentPage >= totalPages ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"}`}
+                  className={`rounded-xl border-border text-muted-foreground font-bold hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage >= totalPages ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"}`}
                 />
+
               </PaginationItem>
             </PaginationContent>
           </Pagination>

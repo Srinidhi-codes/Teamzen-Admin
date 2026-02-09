@@ -30,30 +30,32 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
     const displayDate = isValidDate ? dateValue : undefined;
 
     return (
-        <div className={cn("flex flex-col space-y-1", className)}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className={cn("flex flex-col space-y-2", className)}>
+            <label className="text-premium-label px-1">
                 {label}
-                {required && <span className="text-red-600">*</span>}
+                {required && <span className="text-destructive ml-1">*</span>}
             </label>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
                         className={cn(
-                            "w-full pl-3 text-left font-normal py-2 h-10 border-gray-300 shadow-sm rounded-lg",
-                            !displayDate && "text-muted-foreground",
-                            error && "border-rose-500 bg-rose-50/10"
+                            "w-full h-[35px] rounded-2xl bg-muted/5 border-border/50 text-left font-medium px-5 shadow-[inset_0_2px_4px_0_rgba(0,0,0,0.08)] hover:bg-muted/20 transition-all duration-300 focus:ring-4 focus:ring-primary/10",
+                            !displayDate && "text-muted-foreground/50",
+                            error && "border-destructive/50 focus:ring-destructive/10"
                         )}
+
+
                     >
                         {displayDate ? (
                             moment(displayDate).format("MMM DD, YYYY")
                         ) : (
-                            <span>Pick a date</span>
+                            <span>Select Date</span>
                         )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        <CalendarIcon className={cn("ml-auto h-5 w-5 opacity-40 transition-colors", open && "text-primary opacity-100")} />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300" align="start">
                     <Calendar
                         mode="single"
                         selected={displayDate}
@@ -71,7 +73,8 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                     />
                 </PopoverContent>
             </Popover>
-            {error && <p className="mt-1 text-[11px] font-bold text-rose-600 pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
+            {error && <p className="text-[10px] font-black text-destructive uppercase tracking-widest pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
         </div>
     )
 }
+

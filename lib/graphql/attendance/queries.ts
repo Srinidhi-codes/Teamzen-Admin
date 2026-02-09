@@ -45,7 +45,18 @@ export const GET_ATTENDANCE_CORRECTIONS = gql`
       status
       reason
       approvalComments
+      requestedBy {
+        id
+        firstName
+        lastName
+        designation {
+          id
+          name
+        }
+      }
+
     }
   }
+
 `;
 

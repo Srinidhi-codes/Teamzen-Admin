@@ -34,13 +34,15 @@ export function Sidebar() {
   return (
     <aside
       className={`${isCollapsed ? "w-20" : "w-64"
-        } bg-indigo-900 text-white h-screen overflow-y-auto sticky top-16 transition-all duration-300 flex flex-col`}
+        } bg-sidebar text-sidebar-foreground h-[calc(100vh-64px)] overflow-y-auto sticky top-16 transition-all duration-300 flex flex-col border-r border-border`}
     >
+
       {/* Collapse Button */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="p-4 hover:bg-indigo-800 transition text-xl"
+        className="p-4 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition text-xl"
       >
+
         {isCollapsed ? "→" : "←"}
       </button>
 
@@ -53,9 +55,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${isActive
-                ? "bg-indigo-600 text-white"
-                : "text-indigo-100 hover:bg-indigo-800"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 }`}
+
               title={isCollapsed ? item.name : ""}
             >
               <span className="text-xl">{item.icon}</span>
@@ -67,11 +70,12 @@ export function Sidebar() {
 
       {/* Footer */}
       {!isCollapsed && (
-        <div className="p-4 border-t border-indigo-700 text-xs text-indigo-100">
+        <div className="p-4 border-t border-sidebar-border text-[10px] text-sidebar-foreground/50">
           <p>© 2025 Payroll System</p>
           <p>v1.0.0</p>
         </div>
       )}
+
     </aside>
   );
 }
