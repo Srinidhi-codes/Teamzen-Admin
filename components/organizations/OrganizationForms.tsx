@@ -29,8 +29,8 @@ interface BaseFormProps {
 
 export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: BaseFormProps) {
     const [loading, setLoading] = useState(false);
-    const { updateOfficeLocation, isUpdatingOfficeLocationLoading, isUpdatingOfficeLocationError } = useGraphQLUpdateOfficeLocationMutation();
-    const { createOfficeLocation, isCreatingOfficeLocationLoading, isCreatingOfficeLocationError } = useGraphQLCreateOfficeLocationMutation();
+    const { updateOfficeLocation, isUpdatingOfficeLocationLoading } = useGraphQLUpdateOfficeLocationMutation();
+    const { createOfficeLocation, isCreatingOfficeLocationLoading } = useGraphQLCreateOfficeLocationMutation();
     const [formData, setFormData] = useState({
         name: "",
         loginTime: "",
@@ -41,10 +41,14 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
         state: "",
         city: "",
         zipCode: "",
-        geoRadiusMeters: 0,
+        geoRadiusMeters: 100,
         country: "",
         isActive: true,
+        organizationId: officeLocationEditData.organizationId || officeLocationEditData.organization?.id || "",
     });
+
+    const { organizations } = useGraphQLOrganizations();
+    const { user } = useStore();
 
     useEffect(() => {
         if (officeLocationEditData) {
@@ -52,18 +56,23 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
                 name: officeLocationEditData.name || "",
                 loginTime: officeLocationEditData.loginTime || "",
                 logoutTime: officeLocationEditData.logoutTime || "",
-                latitude: officeLocationEditData.latitude || "",
-                longitude: officeLocationEditData.longitude || "",
+                latitude: String(officeLocationEditData.latitude || ""),
+                longitude: String(officeLocationEditData.longitude || ""),
                 address: officeLocationEditData.address || "",
                 state: officeLocationEditData.state || "",
                 city: officeLocationEditData.city || "",
                 zipCode: officeLocationEditData.zipCode || "",
-                geoRadiusMeters: officeLocationEditData.geoRadiusMeters || 0,
+                geoRadiusMeters: officeLocationEditData.geoRadiusMeters || 100,
                 country: officeLocationEditData.country || "",
                 isActive: officeLocationEditData.isActive ?? true,
+                organizationId: officeLocationEditData.organizationId || officeLocationEditData.organization?.id || "",
             })
         }
     }, [officeLocationEditData])
+
+    const handleOrgChange = (value: string) => {
+        setFormData(prev => ({ ...prev, organizationId: value }));
+    };
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -76,21 +85,36 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
         try {
+            const organizationId =
+                user?.role === "admin"
+                    ? formData.organizationId
+                    : (user?.organization?.id || "");
+
+            // Ensure data types are correct for the GraphQL input
+            const payload = {
+                ...formData,
+                latitude: String(formData.latitude),
+                longitude: String(formData.longitude),
+                geoRadiusMeters: Math.round(Number(formData.geoRadiusMeters)),
+                organizationId: organizationId || formData.organizationId
+            };
+
             if (officeLocationEditData) {
                 await updateOfficeLocation({
-                    ...formData,
+                    ...payload,
                     id: officeLocationEditData.id,
-                    organizationId: officeLocationEditData.organizationId,
                 });
                 toast.success("Office location updated successfully");
             } else {
-                await createOfficeLocation({
-                    ...formData,
-                });
+                await createOfficeLocation(payload);
                 toast.success("Office location created successfully");
             }
 
+            await onSubmit(formData);
+
+            // Cleanup state after successful submission
             setFormData({
                 name: "",
                 loginTime: "",
@@ -101,59 +125,80 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
                 state: "",
                 city: "",
                 zipCode: "",
-                geoRadiusMeters: 0,
+                geoRadiusMeters: 100,
                 country: "",
                 isActive: true,
+                organizationId: "",
             });
-
-            onSubmit(formData);
-        } catch (error) {
+        } catch (error: any) {
+            console.error(error);
+            toast.error(error.message || "Failed to process office location request");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 animate-fadeIn mt-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Add Office Location</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <Input name="name" label="Name" value={formData?.name} onChange={handleChange} required placeholder="e.g. Headquarters" />
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Input name="name" label="Name" value={formData?.name} onChange={handleChange} required placeholder="e.g. Headquarters" />
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
-                    <Textarea
-                        name="address"
-                        rows={3}
-                        required
-                        value={formData?.address} onChange={handleChange}
-                        className="w-full textarea resize-none"
-                        placeholder="Full office address"
-                    />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <Input name="city" label="City" value={formData?.city} onChange={handleChange} />
-                    <Input name="state" label="State" value={formData?.state} onChange={handleChange} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <Input name="country" label="Country" value={formData?.country} onChange={handleChange} />
-                    <Input name="zipCode" label="Zip Code" value={formData?.zipCode} onChange={handleChange} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <Input name="loginTime" label="Login Time" type="time" value={formData?.loginTime} onChange={handleChange} />
-                    <Input name="logoutTime" label="Logout Time" type="time" value={formData?.logoutTime} onChange={handleChange} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    <Input name="latitude" label="Latitude" type="number" value={formData?.latitude} onChange={handleChange} placeholder="0.000000" />
-                    <Input name="longitude" label="Longitude" type="number" value={formData?.longitude} onChange={handleChange} placeholder="0.000000" />
-                    <Input name="geoRadiusMeters" label="Geo Radius Meters" type="number" value={formData?.geoRadiusMeters} onChange={handleChange} />
-                </div>
+            <div className="space-y-4">
+                {user?.role === "admin" && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Organization</label>
 
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                    <Button variant={"ghost"} type="button" className="btn-secondary" onClick={onCancel}>Cancel</Button>
-                    <Button variant={"ghost"} type="submit" className="btn-primary min-w-[120px]" disabled={loading}>
-                        {loading ? "Saving..." : "Save Location"}
-                    </Button>
-                </div>
-            </form>
-        </div>
+                        <Select value={String(formData.organizationId)} onValueChange={handleOrgChange}>
+                            <SelectTrigger className="h-11 rounded-xl">
+                                <SelectValue placeholder="Select Organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {organizations?.map((org) => (
+                                    <SelectItem key={org.id} value={String(org.id)}>
+                                        {org.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
+                <Textarea
+                    name="address"
+                    rows={3}
+                    required
+                    value={formData?.address} onChange={handleChange}
+                    className="w-full textarea resize-none"
+                    placeholder="Full office address"
+                />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <Input name="city" label="City" value={formData?.city} onChange={handleChange} />
+                <Input name="state" label="State" value={formData?.state} onChange={handleChange} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <Input name="country" label="Country" value={formData?.country} onChange={handleChange} />
+                <Input name="zipCode" label="Zip Code" value={formData?.zipCode} onChange={handleChange} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <Input name="loginTime" label="Login Time" type="time" value={formData?.loginTime} onChange={handleChange} />
+                <Input name="logoutTime" label="Logout Time" type="time" value={formData?.logoutTime} onChange={handleChange} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <Input name="latitude" label="Latitude" type="number" step="any" value={formData?.latitude} onChange={handleChange} placeholder="0.000000" />
+                <Input name="longitude" label="Longitude" type="number" step="any" value={formData?.longitude} onChange={handleChange} placeholder="0.000000" />
+                <Input name="geoRadiusMeters" label="Geo Radius Meters" type="number" value={formData?.geoRadiusMeters} onChange={handleChange} />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button variant={"outline"} type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
+                <Button variant={"default"} type="submit" className="px-8 h-11 rounded-xl min-w-[140px]" disabled={loading || isCreatingOfficeLocationLoading || isUpdatingOfficeLocationLoading}>
+                    {loading ? "Processing..." : officeLocationEditData ? "Refine Location" : "Deploy Location"}
+                </Button>
+            </div>
+        </form>
     );
 }
 
@@ -173,10 +218,10 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
     useEffect(() => {
         if (departmentEditData) {
             setFormData({
-                name: departmentEditData.name,
-                description: departmentEditData.description,
-                organizationId: departmentEditData.organization.id,
-                isActive: departmentEditData.isActive
+                name: departmentEditData.name || "",
+                description: departmentEditData.description || "",
+                organizationId: String(departmentEditData.organizationId || departmentEditData.organization?.id || ""),
+                isActive: departmentEditData.isActive ?? true
             });
         }
     }, [departmentEditData]);
@@ -200,94 +245,81 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
+            const payload = {
+                ...formData,
+                organizationId: organizationId || formData.organizationId
+            };
+
             if (departmentEditData) {
                 await updateDepartment({
-                    ...formData,
+                    ...payload,
                     id: departmentEditData.id,
-                    organizationId,
                 });
-
-                toast.success("Department updated successfully");
-
+                toast.success("Department optimized successfully");
             } else {
-                await createDepartment({
-                    name: formData.name,
-                    description: formData.description,
-                    isActive: formData.isActive,
-                    organizationId,
-                });
-
-                toast.success("Department created successfully");
-                await onSubmit(formData);
+                await createDepartment(payload);
+                toast.success("Business unit established successfully");
             }
-        } catch (error) {
+            await onSubmit(formData);
+        } catch (error: any) {
             console.error(error);
+            toast.error(error.message || "Failed to architect business unit");
         } finally {
             setLoading(false);
-            setFormData({
-                name: "",
-                description: "",
-                organizationId: "",
-                isActive: true
-            });
-            onSubmit(formData);
         }
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 animate-fadeIn mt-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Add Department</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <Input
-                    name="name"
-                    label="Department Name"
-                    required
-                    placeholder="e.g. Engineering"
-                    value={formData.name}
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+                name="name"
+                label="Department Name"
+                required
+                placeholder="e.g. Engineering"
+                value={formData.name}
+                onChange={handleChange}
+            />
+
+            <div className="space-y-4">
+                {user?.role === "admin" && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Organization</label>
+
+                        <Select value={String(formData.organizationId)} onValueChange={handleDepartmentChange}>
+                            <SelectTrigger className="h-11 rounded-xl">
+                                <SelectValue placeholder="Select Organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {organizations?.map((org) => (
+                                    <SelectItem key={org.id} value={String(org.id)}>
+                                        {org.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <Textarea
+                    name="description"
+                    rows={3}
+                    className="w-full resize-none"
+                    placeholder="Brief description of the department"
+                    value={formData.description}
                     onChange={handleChange}
                 />
+            </div>
 
-                <div className="space-y-2">
-                    {user?.role === "admin" && (
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Organization</label>
-
-                            <Select value={String(formData.organizationId)} onValueChange={handleDepartmentChange}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Organization" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {organizations?.map((org) => (
-                                        <SelectItem key={org.id} value={String(org.id)}>
-                                            {org.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <Textarea
-                        name="description"
-                        rows={3}
-                        className="w-full resize-none"
-                        placeholder="Brief description of the department"
-                        value={formData.description}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                    <Button variant="ghost" type="button" onClick={onCancel}>Cancel</Button>
-                    <Button variant={"ghost"} className="bg-indigo-600 text-white" type="submit" disabled={loading}>
-                        {loading ? "Saving..." : "Save Department"}
-                    </Button>
-                </div>
-            </form>
-        </div>
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button variant="outline" type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
+                <Button variant="default" className="px-8 h-11 rounded-xl min-w-[140px]" type="submit" disabled={loading}>
+                    {loading ? "Processing..." : departmentEditData ? "Update Unit" : "Save Unit"}
+                </Button>
+            </div>
+        </form>
     );
 }
 
@@ -307,10 +339,10 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
     useEffect(() => {
         if (designationEditData) {
             setFormData({
-                name: designationEditData.name,
-                description: designationEditData.description,
-                organizationId: designationEditData.organization.id,
-                isActive: designationEditData.isActive
+                name: designationEditData.name || "",
+                description: designationEditData.description || "",
+                organizationId: String(designationEditData.organizationId || designationEditData.organization?.id || ""),
+                isActive: designationEditData.isActive ?? true
             });
         }
     }, [designationEditData]);
@@ -333,82 +365,79 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
+            const payload = {
+                ...formData,
+                organizationId: organizationId || formData.organizationId
+            };
+
             if (designationEditData) {
                 await updateDesignation({
-                    ...formData,
+                    ...payload,
                     id: designationEditData.id,
-                    organizationId,
                 });
-                toast.success("Designation updated successfully");
+                toast.success("Designation refined successfully");
             } else {
-                await createDesignation({
-                    name: formData.name,
-                    description: formData.description,
-                    isActive: formData.isActive,
-                    organizationId,
-                });
-                toast.success("Designation created successfully");
+                await createDesignation(payload);
+                toast.success("Professional role classified successfully");
             }
             await onSubmit(formData);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            toast.error(error.message || "Failed to classify professional role");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 animate-fadeIn mt-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Add Designation</h2>
-            <form onSubmit={handleSubmit} className="space-y-5">
-                <Input
-                    name="name"
-                    label="Designation Title"
-                    required
-                    placeholder="e.g. Senior Developer"
-                    value={formData.name}
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
+                name="name"
+                label="Designation Title"
+                required
+                placeholder="e.g. Senior Developer"
+                value={formData.name}
+                onChange={handleChange}
+            />
+
+            <div className="space-y-4">
+                {user?.role === "admin" && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Organization</label>
+                        <Select value={String(formData.organizationId)} onValueChange={handleOrgChange}>
+                            <SelectTrigger className="h-11 rounded-xl">
+                                <SelectValue placeholder="Select Organization" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {organizations?.map((org) => (
+                                    <SelectItem key={org.id} value={String(org.id)}>
+                                        {org.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <Textarea
+                    name="description"
+                    rows={3}
+                    className="w-full resize-none"
+                    placeholder="Role responsibilities and requirements"
+                    value={formData.description}
                     onChange={handleChange}
                 />
+            </div>
 
-                <div className="space-y-2">
-                    {user?.role === "admin" && (
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">Organization</label>
-                            <Select value={String(formData.organizationId)} onValueChange={handleOrgChange}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Organization" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {organizations?.map((org) => (
-                                        <SelectItem key={org.id} value={String(org.id)}>
-                                            {org.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                    <Textarea
-                        name="description"
-                        rows={3}
-                        className="w-full resize-none"
-                        placeholder="Role responsibilities and requirements"
-                        value={formData.description}
-                        onChange={handleChange}
-                    />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-                    <Button variant="ghost" type="button" onClick={onCancel}>Cancel</Button>
-                    <Button type="submit" disabled={loading}>
-                        {loading ? "Saving..." : "Save Designation"}
-                    </Button>
-                </div>
-            </form>
-        </div>
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button variant="outline" type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
+                <Button variant="default" className="px-8 h-11 rounded-xl min-w-[140px]" type="submit" disabled={loading}>
+                    {loading ? "Processing..." : designationEditData ? "Update Designation" : "Save Designation"}
+                </Button>
+            </div>
+        </form>
     );
 }

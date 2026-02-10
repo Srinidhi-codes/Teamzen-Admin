@@ -1,16 +1,20 @@
+import { LeaveType, LeaveBalance, LeaveRequest } from '@/lib/graphql/leaves/types';
 import { StateCreator } from 'zustand';
 
-// Placeholder types - extend as needed
 export interface LeaveSlice {
-  leaves: any[];
-  leaveBalances: any[];
-  setLeaves: (leaves: any[]) => void;
-  setLeaveBalances: (balances: any[]) => void;
+  leaveTypes: LeaveType[];
+  leaveBalances: LeaveBalance[];
+  leaveRequests: LeaveRequest[];
+  setLeaveTypes: (types: LeaveType[]) => void;
+  setLeaveBalances: (balances: LeaveBalance[]) => void;
+  setLeaveRequests: (requests: LeaveRequest[]) => void;
 }
 
 export const createLeaveSlice: StateCreator<LeaveSlice> = (set) => ({
-  leaves: [],
+  leaveTypes: [],
   leaveBalances: [],
-  setLeaves: (leaves) => set({ leaves }),
-  setLeaveBalances: (balances) => set({ leaveBalances: balances }),
+  leaveRequests: [],
+  setLeaveTypes: (leaveTypes) => set({ leaveTypes }),
+  setLeaveBalances: (leaveBalances) => set({ leaveBalances }),
+  setLeaveRequests: (leaveRequests) => set({ leaveRequests }),
 });

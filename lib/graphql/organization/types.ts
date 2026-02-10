@@ -83,6 +83,7 @@ export interface CreateOfficeLocationInput {
     longitude: string;
     geoRadiusMeters: number;
     isActive: boolean;
+    organizationId: string;
 }
 
 export interface UpdateOfficeLocationInput {

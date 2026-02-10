@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Building } from "lucide-react";
+
 import { FormInput } from "../common/FormInput";
 import { useGraphQLOrganizationMutation, useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizationsHook";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
 
 interface CreateOrganizationFormProps {
     orgEditData?: any;
@@ -90,123 +93,88 @@ export default function CreateOrganizationForm({
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 animate-fadeIn">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-900">Create New Organization</h2>
-                <button
-                    onClick={onCancel}
-                    className="text-gray-400 hover:text-gray-500"
-                >
-                    ✕
-                </button>
+        <form id="create-org-form" className="space-y-8" onSubmit={handleSubmit}>
+            <div className="w-28 h-28 bg-linear-to-br from-primary to-primary/60 rounded-4xl flex items-center justify-center text-primary-foreground text-4xl font-black shadow-2xl shadow-primary/20 overflow-hidden ring-8 ring-background mb-10 group-hover:scale-105 transition-transform mx-auto">
+                {formData.logo ? (
+                    <Image
+                        width={112}
+                        height={112}
+                        src={formData.logo}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <span>
+                        {formData.name ? formData.name.charAt(0).toUpperCase() : "E"}
+                    </span>
+                )}
             </div>
 
-            <form id="create-org-form" className="space-y-6" onSubmit={handleSubmit}>
-                <div className="w-22 h-22 bg-linear-to-br from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-white text-5xl font-bold shadow-2xl overflow-hidden">
-                    {formData.logo ? (
-                        <Image
-                            width={100}
-                            height={100}
-                            src={formData.logo}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <>
-                            {formData.name ? formData.name.charAt(0).toUpperCase() : "N/A"}
-                        </>
-                    )}
-                </div>
-                <div className="space-y-5">
+            <div className="space-y-6">
+                <FormInput
+                    label="Organization Name"
+                    name="name"
+                    required
+                    placeholder="e.g. Acme Corp"
+                    value={formData.name}
+                    onChange={handleChange}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormInput
-                        label="Organization Name"
-                        name="name"
-                        required
-                        placeholder="e.g. Acme Corp"
-                        value={formData.name}
+                        label="Fiscal identifier (GST)"
+                        name="gstNumber"
+                        placeholder="GST Number"
+                        value={formData.gstNumber}
                         onChange={handleChange}
                     />
-
-                    {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        <FormInput
-                            label="City"
-                            name="city"
-                            placeholder="City"
-                            value={formData.city}
-                            onChange={handleChange}
-                        />
-                        <FormInput
-                            label="State"
-                            name="state"
-                            placeholder="State"
-                            value={formData.state}
-                            onChange={handleChange}
-                        />
-                        <FormInput
-                            label="Country"
-                            name="country"
-                            placeholder="Country"
-                            onChange={handleChange}
-                            value={formData.country}
-                        />
-                    </div> */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                        {/* <FormInput
-                            label="Zip Code"
-                            name="zipCode"
-                            placeholder="zip code"
-                            value={formData.zipCode}
-                            onChange={handleChange}
-                        /> */}
-                        <FormInput
-                            label="GST Number"
-                            name="gstNumber"
-                            placeholder="GST Number"
-                            value={formData.gstNumber}
-                            onChange={handleChange}
-                        />
-                        <FormInput
-                            label="PAN Number"
-                            name="panNumber"
-                            placeholder="PAN Number"
-                            value={formData.panNumber}
-                            onChange={handleChange}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Headquarters Address
-                        </label>
-                        <Textarea
-                            name="headquartersAddress"
-                            rows={3}
-                            required
-                            placeholder="Enter full address"
-                            value={formData.headquartersAddress}
-                            onChange={handleChange}
-                        />
-                    </div>
+                    <FormInput
+                        label="Financial Identifier (PAN)"
+                        name="panNumber"
+                        placeholder="PAN Number"
+                        value={formData.panNumber}
+                        onChange={handleChange}
+                    />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="btn-secondary"
-                        disabled={isCreatingOrganizationLoading}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn-primary min-w-[140px]"
-                        disabled={isCreatingOrganizationLoading}
-                    >
-                        {isCreatingOrganizationLoading ? "Saving..." : "Save Organization"}
-                    </button>
+                <div className="space-y-3">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                        Operational Headquarters
+                    </label>
+                    <Textarea
+                        name="headquartersAddress"
+                        rows={3}
+                        required
+                        className="bg-background border border-border rounded-3xl p-6 text-sm font-medium text-foreground focus:ring-2 focus:ring-primary/20 transition-all outline-none placeholder:text-muted-foreground resize-none w-full shadow-inner"
+                        placeholder="Specify full physical location..."
+                        value={formData.headquartersAddress}
+                        onChange={handleChange}
+                    />
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button
+                    variant="outline"
+                    type="button"
+                    onClick={onCancel}
+                    className="px-8 h-12"
+                    disabled={isCreatingOrganizationLoading}
+                >
+                    Dismiss
+                </Button>
+                <Button
+                    type="submit"
+                    className="px-10 h-12 min-w-[160px]"
+                    disabled={isCreatingOrganizationLoading || isUpdatingOrganizationLoading}
+                >
+                    {isCreatingOrganizationLoading || isUpdatingOrganizationLoading ? (
+                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    ) : (
+                        orgEditData ? "Update Entity" : "Scale Entity"
+                    )}
+                </Button>
+            </div>
+        </form>
     );
 }

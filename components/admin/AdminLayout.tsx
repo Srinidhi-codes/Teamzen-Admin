@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { Menu } from "lucide-react";
 import { useTokenRefresh } from "@/lib/api/hooks";
+import { Navbar } from "../common/Navbar";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -14,7 +15,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   useTokenRefresh();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-background text-foreground" style={{ scrollbarGutter: 'stable' }}>
+
       <AdminSidebar
         isCollapsed={isCollapsed}
         toggleCollapse={() => setIsCollapsed(!isCollapsed)}
@@ -22,19 +24,19 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         closeMobile={() => setIsMobileOpen(false)}
       />
 
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ${isCollapsed ? "md:ml-20" : "md:ml-64"}`}>
+      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full ${isCollapsed ? "md:ml-24" : "md:ml-72"}`}>
         {/* Mobile Header */}
-        <div className="md:hidden bg-indigo-900 text-white p-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="md:hidden bg-sidebar text-sidebar-foreground p-4 flex items-center justify-between sticky top-0 z-30 border-b border-sidebar-border">
           <h1 className="text-xl font-bold">HRMS Admin</h1>
           <button
             onClick={() => setIsMobileOpen(true)}
-            className="p-2 hover:bg-indigo-800 rounded-lg transition"
+            className="p-2 hover:bg-sidebar-accent rounded-lg transition"
           >
             <Menu className="w-6 h-6" />
           </button>
         </div>
-
-        <main className="flex-1 p-6 overflow-x-hidden">
+        <Navbar />
+        <main className="flex-1 p-8 overflow-x-hidden bg-background">
           {children}
         </main>
       </div>

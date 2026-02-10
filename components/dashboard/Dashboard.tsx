@@ -50,29 +50,33 @@ const recentActivities = [
 
 export default function AdminDashboard() {
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                    <p className="text-gray-600 mt-1">Welcome back! Here's what's happening today.</p>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight">Admin Dashboard</h1>
+                    <p className="text-muted-foreground font-medium mt-1">Welcome back! Here's what's happening today.</p>
                 </div>
-                <div className="text-sm text-gray-600">
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest bg-muted px-3 py-1 rounded-lg">
                     Last updated: {new Date().toLocaleString()}
                 </div>
             </div>
 
-            {/* Hero Image */}
-            <div className="relative h-48 rounded-lg overflow-hidden">
+
+            {/* Hero Section */}
+            <div className="relative h-56 rounded-4xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 group">
                 <img
-                    src="https://mgx-backend-cdn.metadl.com/generate/images/429316/2026-01-16/374f44ac-712d-4b97-b5c1-c91e69449ed7.png"
+                    src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200"
                     alt="Admin Dashboard"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-linear-to-r from-indigo-900/80 to-transparent flex items-center">
-                    <div className="px-8 text-white">
-                        <h2 className="text-2xl font-bold">HRMS Control Center</h2>
-                        <p className="mt-2">Manage your entire workforce from one place</p>
+                <div className="absolute inset-0 bg-linear-to-r from-background via-background/60 to-transparent flex items-center">
+                    <div className="px-12 max-w-lg">
+                        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground mb-4 shadow-lg shadow-primary/30">
+                            <TrendingUp className="w-6 h-6" />
+                        </div>
+                        <h2 className="text-3xl font-black text-foreground tracking-tight leading-tight">HRMS Control Center</h2>
+                        <p className="mt-3 text-muted-foreground font-medium text-lg italic">"Operational excellence is the precursor to organizational success."</p>
                     </div>
                 </div>
             </div>
@@ -119,79 +123,104 @@ export default function AdminDashboard() {
                 />
             </div>
 
+
             {/* Charts Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Employee Growth Chart */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Employee Growth</h3>
+                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                        <div className="w-1.5 h-6 bg-primary rounded-full" />
+                        Employee Growth
+                    </h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={employeeGrowthData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                            <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
+                            <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', color: 'var(--foreground)' }}
+                                itemStyle={{ color: 'var(--primary)' }}
+                            />
                             <Legend />
-                            <Line type="monotone" dataKey="employees" stroke="#4F46E5" strokeWidth={2} />
+                            <Line type="monotone" dataKey="employees" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)' }} activeDot={{ r: 8, strokeWidth: 0 }} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
 
                 {/* Department Distribution */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Department Distribution</h3>
+                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                        <div className="w-1.5 h-6 bg-primary rounded-full" />
+                        Departmental Hub
+                    </h3>
+
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie
                                 data={departmentData}
                                 cx="50%"
                                 cy="50%"
-                                labelLine={false}
-                                label={({ name, percent }) => `${name} ${(percent ? percent * 100 : 0).toFixed(0)}%`}
+                                innerRadius={60}
                                 outerRadius={100}
-                                fill="#8884d8"
+                                paddingAngle={5}
                                 dataKey="value"
                             >
                                 {departmentData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                 ))}
                             </Pie>
-                            <Tooltip />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }}
+                            />
                         </PieChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
+
             {/* Charts Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Leave Trends */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Leave Request Trends</h3>
+                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                        <div className="w-1.5 h-6 bg-primary rounded-full" />
+                        Leave Request Flux
+                    </h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={leaveData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                            <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
+                            <YAxis stroke="var(--muted-foreground)" fontSize={12} />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }}
+                            />
                             <Legend />
-                            <Bar dataKey="approved" fill="#10B981" />
-                            <Bar dataKey="rejected" fill="#EF4444" />
-                            <Bar dataKey="pending" fill="#F59E0B" />
+                            <Bar dataKey="approved" fill="#10B981" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="rejected" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="pending" fill="#F59E0B" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
 
+
                 {/* Recent Activities */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activities</h3>
+                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                        <div className="w-1.5 h-6 bg-primary rounded-full" />
+                        Activity Stream
+                    </h3>
                     <div className="space-y-4">
                         {recentActivities.map((activity) => (
-                            <div key={activity.id} className="flex items-start space-x-3 pb-3 border-b border-gray-100 last:border-0">
-                                <div className="flex-shrink-0 w-2 h-2 mt-2 bg-indigo-500 rounded-full"></div>
+                            <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-2xl hover:bg-muted/50 transition-colors group">
+                                <div className="shrink-0 w-2.5 h-2.5 mt-2 bg-primary rounded-full shadow-lg shadow-primary/50 group-hover:animate-pulse"></div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-gray-900">
-                                        <span className="font-medium">{activity.user}</span> {activity.action}
+                                    <p className="text-sm text-foreground">
+                                        <span className="font-black text-primary">{activity.user}</span> <span className="text-muted-foreground font-medium">{activity.action}</span>
                                     </p>
-                                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-1.5 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {activity.time}
+                                    </p>
                                 </div>
                             </div>
                         ))}
@@ -199,28 +228,44 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+
             {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <button className="p-4 border-2 border-indigo-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition text-center">
-                        <Users className="w-8 h-8 mx-auto text-indigo-600 mb-2" />
-                        <span className="text-sm font-medium text-gray-900">Add Employee</span>
+            <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5">
+                <h3 className="text-xl font-black text-foreground mb-8 uppercase tracking-tight flex items-center gap-2">
+                    <div className="w-1.5 h-6 bg-primary rounded-full" />
+                    Strategic Actions
+                </h3>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-1 translate-y-[-1] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+                            <Users className="w-12 h-12" />
+                        </div>
+                        <div className="w-12 h-12 mx-auto bg-blue-500/10 text-blue-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
+                            <Users className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-black text-foreground uppercase tracking-widest">Add Employee</span>
                     </button>
-                    <button className="p-4 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition text-center">
-                        <Calendar className="w-8 h-8 mx-auto text-green-600 mb-2" />
-                        <span className="text-sm font-medium text-gray-900">Approve Leaves</span>
+                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="w-12 h-12 mx-auto bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
+                            <Calendar className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-black text-foreground uppercase tracking-widest">Approve Leaves</span>
                     </button>
-                    <button className="p-4 border-2 border-purple-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition text-center">
-                        <DollarSign className="w-8 h-8 mx-auto text-purple-600 mb-2" />
-                        <span className="text-sm font-medium text-gray-900">Run Payroll</span>
+                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="w-12 h-12 mx-auto bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
+                            <DollarSign className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-black text-foreground uppercase tracking-widest">Run Payroll</span>
                     </button>
-                    <button className="p-4 border-2 border-orange-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition text-center">
-                        <TrendingUp className="w-8 h-8 mx-auto text-orange-600 mb-2" />
-                        <span className="text-sm font-medium text-gray-900">View Reports</span>
+                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="w-12 h-12 mx-auto bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
+                            <TrendingUp className="w-6 h-6" />
+                        </div>
+                        <span className="text-xs font-black text-foreground uppercase tracking-widest">View Reports</span>
                     </button>
                 </div>
             </div>
+
         </div>
     );
 }

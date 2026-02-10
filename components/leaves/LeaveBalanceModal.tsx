@@ -1,4 +1,5 @@
-import { X } from 'lucide-react'
+import { X, TrendingUp } from 'lucide-react'
+
 import React from 'react'
 import { Input } from '../ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
@@ -25,32 +26,51 @@ function LeaveBalanceModal({
     leaveTypes
 }: LeaveBalanceModalProps) {
     return (
-        <div className="flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl p-8 w-full shadow-2xl">
-                <div className="flex justify-between items-center mb-6 sticky top-0 bg-white z-10 pb-4 border-b">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        {editingBalance ? 'Edit Leave Balance' : 'Add New Balance'}
-                    </h2>
-                    <button onClick={() => onClose()} className="text-gray-400 hover:text-gray-600 transition">
-                        <X className="w-6 h-6" />
-                    </button>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+
+            <div className="bg-card rounded-[2.5rem] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
+                {/* Header */}
+                <div className="relative p-10 pb-8 bg-linear-to-br from-primary/20 via-background to-background border-b border-border/50">
+                    <div className="absolute top-0 right-0 p-10 opacity-5">
+                        <TrendingUp className="w-24 h-24 rotate-12" />
+                    </div>
+                    <div className="relative z-10 flex justify-between items-start">
+                        <div>
+                            <h2 className="text-3xl font-black text-foreground tracking-tight leading-none mb-3">
+                                {editingBalance ? 'Refine Quota' : 'Initialize Quota'}
+                            </h2>
+                            <div className="flex items-center gap-3">
+                                <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-[10px] font-black uppercase tracking-widest">
+                                    Entitlement Matrix
+                                </span>
+                                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Asset Synchronization</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => onClose()}
+                            className="w-12 h-12 rounded-2xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all duration-300 flex items-center justify-center active:scale-90"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
                 </div>
 
-                <form onSubmit={onSubmit} className="space-y-6">
+
+                <form onSubmit={onSubmit} className="p-10 space-y-8">
                     {!editingBalance && (
-                        <>
-                            <div className="flex flex-col gap-y-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="flex flex-col gap-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Human Asset</label>
                                 <Select
                                     value={formData.userId}
                                     onValueChange={(value) => setFormData({ ...formData, userId: value })}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Employee" />
+                                    <SelectTrigger className="bg-muted/30 rounded-2xl border-border/50 h-[52px]">
+                                        <SelectValue placeholder="Identify Asset" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="rounded-2xl border-border shadow-2xl">
                                         {users.map(u => (
-                                            <SelectItem key={u.id} value={u.id}>
+                                            <SelectItem key={u.id} value={u.id} className="focus:bg-primary/10 focus:text-primary rounded-xl">
                                                 {u.firstName} {u.lastName}
                                             </SelectItem>
                                         ))}
@@ -58,18 +78,18 @@ function LeaveBalanceModal({
                                 </Select>
                             </div>
 
-                            <div className="flex flex-col gap-y-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                            <div className="flex flex-col gap-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Entitlement Type</label>
                                 <Select
                                     value={formData.leaveTypeId}
                                     onValueChange={(value) => setFormData({ ...formData, leaveTypeId: value })}
                                 >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select Type" />
+                                    <SelectTrigger className="bg-muted/30 rounded-2xl border-border/50 h-[52px]">
+                                        <SelectValue placeholder="Select Logic" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="rounded-2xl border-border shadow-2xl">
                                         {leaveTypes.map(lt => (
-                                            <SelectItem key={lt.id} value={lt.id}>
+                                            <SelectItem key={lt.id} value={lt.id} className="focus:bg-primary/10 focus:text-primary rounded-xl">
                                                 {lt.name}
                                             </SelectItem>
                                         ))}
@@ -77,43 +97,48 @@ function LeaveBalanceModal({
                                 </Select>
                             </div>
 
-                            <Input
-                                label="Year"
-                                type="number"
-                                required
-                                value={formData.year}
-                                onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                            />
-                        </>
+                            <div className="md:col-span-2">
+                                <Input
+                                    label="Temporal Period (Year)"
+                                    type="number"
+                                    required
+                                    value={formData.year}
+                                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+                                />
+                            </div>
+                        </div>
                     )}
 
-                    <Input
-                        label="Total Entitled Days"
-                        type="number"
-                        step="0.5"
-                        required
-                        value={formData.totalEntitled}
-                        onChange={(e) => setFormData({ ...formData, totalEntitled: parseFloat(e.target.value) })}
-                    />
+                    <div className="bg-muted/30 p-8 rounded-4xl border border-border/50">
+                        <Input
+                            label="Total Entitled Cycles (Days)"
+                            type="number"
+                            step="0.5"
+                            required
+                            value={formData.totalEntitled}
+                            onChange={(e) => setFormData({ ...formData, totalEntitled: parseFloat(e.target.value) })}
+                        />
+                    </div>
 
-                    <div className="flex justify-end space-x-3 pt-6 sticky bottom-0 bg-white">
+                    <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 pt-4">
                         <button
                             type="button"
                             onClick={() => onClose()}
-                            className="px-6 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition"
+                            className="px-10 py-5 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-muted rounded-2xl active:scale-95"
                         >
-                            Cancel
+                            Abort
                         </button>
                         <button
                             type="submit"
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                            className="px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-primary/20"
                         >
-                            {editingBalance ? 'Update' : 'Create'}
+                            {editingBalance ? 'Finalize Logic' : 'Execute Allocation'}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+
     )
 }
 

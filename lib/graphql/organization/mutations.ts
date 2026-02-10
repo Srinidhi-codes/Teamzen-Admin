@@ -64,7 +64,7 @@ export const CREATE_OFFICE_LOCATION = gql`
             loginTime
             logoutTime
             isActive
-            organization_id
+            organizationId
         }
     }
 `;

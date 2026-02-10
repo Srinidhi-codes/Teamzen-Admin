@@ -11,11 +11,11 @@ interface CustomInputProps extends React.ComponentProps<"input"> {
 
 function Input({ className, type, label, error, hint, suffix, ...props }: CustomInputProps) {
   return (
-    <div className="space-y-1.5 w-full">
+    <div className="space-y-2 w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="text-premium-label px-1">
           {label}
-          {props.required && <span className="text-rose-500 ml-1">*</span>}
+          {props.required && <span className="text-destructive ml-1">*</span>}
         </label>
       )}
       <div className="relative group">
@@ -23,25 +23,26 @@ function Input({ className, type, label, error, hint, suffix, ...props }: Custom
           type={type}
           data-slot="input"
           className={cn(
-            "flex w-full px-4 py-2.5 bg-white border rounded-md shadow-sm text-sm font-medium transition-all duration-200 outline-none",
-            suffix ? "pr-11" : "",
+            "flex h-[35px] w-full rounded-2xl border bg-background px-5 py-2 text-sm font-medium shadow-inner transition-all placeholder:text-muted-foreground/50 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50",
+            suffix ? "pr-14" : "",
             error
-              ? "border-rose-200 focus:ring-4 focus:ring-rose-500/10 focus:border-rose-500"
-              : "border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 hover:border-slate-300",
+              ? "border-destructive/50 focus:ring-destructive/10"
+              : "border-border/50 focus:ring-primary/10 hover:border-border",
             className
           )}
           {...props}
         />
         {suffix && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+          <div className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
             {suffix}
           </div>
         )}
       </div>
-      {error && <p className="mt-1 text-[11px] font-bold text-rose-600 pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
-      {hint && <p className="mt-1 text-[11px] font-medium text-slate-400 pl-1">{hint}</p>}
+      {error && <p className="text-[10px] font-black text-destructive uppercase tracking-widest pl-1 animate-in fade-in slide-in-from-top-1">{error}</p>}
+      {hint && <p className="text-[10px] font-medium text-muted-foreground pl-1 opacity-60">{hint}</p>}
     </div>
   )
 }
+
 
 export { Input }
