@@ -9,7 +9,8 @@ import {
     Moon,
     Sun,
     Monitor,
-    Layout
+    Layout,
+    Clock
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -89,7 +90,7 @@ export function ThemeSelector() {
                                             theme === "system" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
                                         )}
                                     >
-                                        <Monitor className="w-5 h-5" />
+                                        <Clock className="w-5 h-5" />
                                         <span className="text-[10px] font-medium">Auto</span>
                                     </button>
                                 </div>

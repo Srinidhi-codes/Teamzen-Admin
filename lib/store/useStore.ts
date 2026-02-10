@@ -5,10 +5,11 @@ import { LeaveSlice, createLeaveSlice } from './slices/leaveSlice';
 import { AttendanceSlice, createAttendanceSlice } from './slices/attendanceSlice';
 import { OrganizationSlice, createOrganizationSlice } from './slices/organizationSlice';
 import { ThemeSlice, createThemeSlice } from './slices/themeSlice';
+import { UISlice, createUISlice } from './slices/uiSlice';
 
 
 // Combine all slice types
-type StoreState = UserSlice & LeaveSlice & AttendanceSlice & OrganizationSlice & ThemeSlice;
+type StoreState = UserSlice & LeaveSlice & AttendanceSlice & OrganizationSlice & ThemeSlice & UISlice;
 
 
 export const useStore = create<StoreState>()(
@@ -19,6 +20,7 @@ export const useStore = create<StoreState>()(
       ...createAttendanceSlice(...a),
       ...createOrganizationSlice(...a),
       ...createThemeSlice(...a),
+      ...createUISlice(...a),
     }),
 
     {
@@ -30,6 +32,7 @@ export const useStore = create<StoreState>()(
         isAuthenticated: state.isAuthenticated,
         accent: state.accent,
         // Add others if persistence is desired
+        // NOTE: navbarTabs is NOT persisted because it contains ReactNodes
       }),
 
     }

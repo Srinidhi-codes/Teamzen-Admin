@@ -1,35 +1,34 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Calendar, Settings, BarChart3, Clock, Gift } from 'lucide-react'
-
-import { LeaveTabs } from './LeaveTabs'
 import LeaveRequests from './LeaveRequests'
 import LeaveBalance from './LeaveBalance'
 import LeaveTypes from './LeaveTypes'
 import { useStore } from '@/lib/store/useStore'
 
 const LeavesPage = () => {
-    const { user } = useStore();
-    const [activeTab, setActiveTab] = useState("balance");
+    const { user, setNavbarTabs, setActiveNavbarTab, activeNavbarTab, clearNavbarTabs } = useStore();
 
-    const tabs = [
-        user?.role !== "manager" && { id: "types", label: "Types", icon: <Settings className="w-5 h-5" /> },
-        { id: "balance", label: "Balance", icon: <BarChart3 className="w-5 h-5" /> },
-        { id: "requests", label: "Requests", icon: <Clock className="w-5 h-5" /> },
-        user?.role !== "manager" && { id: "holidays", label: "Holidays", icon: <Gift className="w-5 h-5" /> },
-    ].filter(Boolean) as { id: string; label: string; icon: React.ReactNode }[];
+    const tabs = useMemo(() => [
+        user?.role !== "manager" && { id: "types", label: "Types", iconElement: <Settings className="w-5 h-5" />, color: "from-indigo-500 to-blue-600" },
+        { id: "balance", label: "Balance", iconElement: <BarChart3 className="w-5 h-5" />, color: "from-emerald-500 to-teal-600" },
+        { id: "requests", label: "Requests", iconElement: <Clock className="w-5 h-5" />, color: "from-orange-500 to-red-600" },
+        user?.role !== "manager" && { id: "holidays", label: "Holidays", iconElement: <Gift className="w-5 h-5" />, color: "from-purple-500 to-fuchsia-600" },
+    ].filter(Boolean) as any[], [user?.role]);
 
-    React.useEffect(() => {
-        if (user?.role !== "manager") {
-            setActiveTab("types");
-        } else {
-            setActiveTab("balance");
+    useEffect(() => {
+        setNavbarTabs(tabs);
+        if (!activeNavbarTab) {
+            setActiveNavbarTab(user?.role !== "manager" ? "types" : "balance");
         }
-    }, [user?.role]);
+        return () => clearNavbarTabs();
+    }, [user?.role, tabs, setNavbarTabs, setActiveNavbarTab, clearNavbarTabs]);
+
+    const activeTab = activeNavbarTab || (user?.role !== "manager" ? "types" : "balance");
 
 
     return (
-        <div className="space-y-10 animate-fade-in pb-32">
+        <div className="space-y-10">
             {/* Executive Header */}
             <div>
                 <div className="flex items-center gap-3 mb-2">
@@ -42,12 +41,8 @@ const LeavesPage = () => {
             </div>
 
 
-            < div className="flex justify-between items-center" >
-                <LeaveTabs
-                    tabs={tabs}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                />
+            < div className="flex justify-end items-center" >
+                {/* Tabs are now in Navbar */}
             </div >
 
             {/* Dynamic Content Repository */}

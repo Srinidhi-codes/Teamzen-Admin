@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState } from "react";
+import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 
 
 export function Navbar() {
   const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
+  const { navbarTabs, activeNavbarTab, setActiveNavbarTab } = useStore();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -19,15 +21,15 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+    <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-20 gap-4">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center space-x-3 group">
+          <Link href="/dashboard" className="flex items-center space-x-3 group shrink-0">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
               <span className="text-primary-foreground font-black text-xl">P</span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex-col hidden sm:flex">
               <span className="font-black text-lg text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
                 Payroll
               </span>
@@ -37,9 +39,30 @@ export function Navbar() {
             </div>
           </Link>
 
+          {/* Dynamic Tabs */}
+          {navbarTabs.length > 0 && (
+            <div className="flex-1 flex justify-center px-4 overflow-hidden">
+              <div className="flex items-center bg-muted/20 p-1.5 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto no-scrollbar">
+                {navbarTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveNavbarTab(tab.id)}
+                    className={`flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap ${activeNavbarTab === tab.id
+                      ? `bg-linear-to-r ${tab.color} text-white shadow-lg shadow-primary/20 -translate-y-0.5`
+                      : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
+                      }`}
+                  >
+                    <span className="text-lg">{tab.iconElement}</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 shrink-0">
             <div className="flex items-center bg-muted/30 p-1.5 rounded-2xl border border-border/50">
               <ThemeSelector />
             </div>

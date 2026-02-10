@@ -9,18 +9,18 @@ interface OrganizationTabsProps {
 
 export function OrganizationTabs({ tabs, activeTab, setActiveTab }: OrganizationTabsProps) {
     return (
-        <div className="p-2 rounded-2xl shadow-xl inline-flex space-x-2 overflow-x-auto bg-white/60 backdrop-blur-md border border-white/40">
+        <div className="p-2 rounded-[1.5rem] border border-border inline-flex space-x-1 overflow-x-auto bg-muted/40 backdrop-blur-md">
             {tabs.map((tab) => (
                 <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center space-x-3 whitespace-nowrap ${activeTab === tab.id
-                        ? `bg-linear-to-r ${tab.color} text-white shadow-lg shadow-black/10 scale-105`
-                        : "text-gray-500 hover:bg-white/50 hover:text-gray-900"
+                    className={`px-8 py-3.5 rounded-2xl text-premium-label transition-all duration-500 flex items-center space-x-3 whitespace-nowrap active:scale-95 ${activeTab === tab.id
+                        ? `bg-linear-to-r ${tab.color} text-white shadow-2xl shadow-black/10 -translate-y-1`
+                        : "text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-lg hover:shadow-primary/5"
                         }`}
                 >
-                    <span className="text-xl">{tab.icon}</span>
-                    <span className="hidden sm:inline tracking-tight">{tab.label}</span>
+                    <span className="text-xl group-hover:scale-110 transition-transform">{tab.icon}</span>
+                    <span className="hidden sm:inline tracking-widest uppercase">{tab.label}</span>
                 </button>
             ))}
         </div>
