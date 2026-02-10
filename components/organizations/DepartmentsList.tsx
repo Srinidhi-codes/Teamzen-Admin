@@ -1,7 +1,7 @@
 "use client";
 
 import { Department } from "@/lib/graphql/organization/types";
-import { edit, Users, Layers, Building2, ArrowRight, Loader2, Edit } from "lucide-react";
+import { Users, Layers, Building2, ArrowRight, Loader2, Edit } from "lucide-react";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
 import {
