@@ -1,7 +1,7 @@
 import { useQuery, useMutation } from "@apollo/client/react"
 import { User } from "./types"
 import { GET_ALL_USERS } from "./queries"
-import { CREATE_USER, UPDATE_USER } from "./mutations"
+import { CREATE_USER, UPDATE_USER, USER_STATUS } from "./mutations"
 
 export interface UsersVariables {
     page?: number;
@@ -58,5 +58,18 @@ export function useGraphQLUserMutations() {
         createUserError,
         isUpdatingUser,
         updateUserError
+    }
+}
+
+export function useGraphQLUserStatusMutations() {
+    const [updateUserStatus, { loading: isUpdatingUserStatus, error: updateUserStatusError }] = useMutation<any>(USER_STATUS);
+
+    return {
+        updateUserStatus: async (input: any) => {
+            const response = await updateUserStatus({ variables: { input } });
+            return response.data?.userStatus;
+        },
+        isUpdatingUserStatus,
+        updateUserStatusError
     }
 }

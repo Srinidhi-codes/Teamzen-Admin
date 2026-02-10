@@ -1,20 +1,18 @@
 "use client";
 
+import { useCSVExport } from "@/lib/hooks/useCSVExport";
+import { CSVColumn } from "@/lib/utils/csvExport";
+
 import { useState, useEffect } from "react";
 import {
-    Plus,
     Edit,
-    Trash2,
     Mail,
     Phone,
     Download,
     UserPlus,
-    Search,
-    MoreVertical,
     ShieldCheck,
     Globe,
     UserX,
-    Calendar,
     Users,
     Building2,
     UserCheck as UserCheckIcon
@@ -24,7 +22,7 @@ import { Stat } from "@/components/common/Stats";
 
 import { DataTable, Column } from "../common/DataTable";
 import { User } from "@/lib/graphql/users/types";
-import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
+import { useGraphQLUsers, useGraphQLUserStatusMutations } from "@/lib/graphql/users/userHook";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import EmployeeForm from "./EmployeeForm";
 import {
@@ -35,11 +33,13 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { SearchInput } from "@/components/ui/search";
+import { Switch } from "../ui/switch";
 
 export default function EmployeesPage() {
     const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
+
     const pageSize = 10;
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -51,9 +51,20 @@ export default function EmployeesPage() {
             search: debouncedSearchTerm
         }
     });
+    const { updateUserStatus, isUpdatingUserStatus, updateUserStatusError } = useGraphQLUserStatusMutations();
+    const { exportData } = useCSVExport<User>();
+
+    const handleStatusToggle = async (userId: string, newStatus: boolean) => {
+        try {
+            await updateUserStatus({ userId, isActive: newStatus });
+            refetchUsers();
+        } catch (err) {
+            console.error("Error updating user status:", err);
+        }
+    };
 
     const isEditing = !!selectedEmployee;
-    const totalPages = Math.ceil((total || 0) / pageSize);
+    // const totalPages = Math.ceil((total || 0) / pageSize);
 
     // Reset to first page when searching
     useEffect(() => {
@@ -78,6 +89,52 @@ export default function EmployeesPage() {
     const handleSuccess = () => {
         handleClose();
         refetchUsers();
+    };
+
+    // Define CSV columns for employee export
+    const employeeCSVColumns: CSVColumn<User>[] = [
+        { header: "Employee ID", accessor: "employeeId" },
+        { header: "First Name", accessor: "firstName" },
+        { header: "Last Name", accessor: "lastName" },
+        { header: "Email", accessor: "email" },
+        { header: "Phone Number", accessor: "phoneNumber" },
+        { header: "Department", accessor: "department.name" },
+        { header: "Designation", accessor: "designation.name" },
+        { header: "Organization", accessor: "organization.name" },
+        {
+            header: "Employment Type",
+            accessor: "employmentType",
+            formatter: (value) => value?.replace('_', ' ').toUpperCase() || ""
+        },
+        {
+            header: "Role",
+            accessor: "role",
+            formatter: (value) => value?.toUpperCase() || ""
+        },
+        {
+            header: "Status",
+            accessor: (user) => user.isActive ? "Active" : "Inactive"
+        },
+        { header: "Date of Joining", accessor: "dateOfJoining" },
+        { header: "Date of Birth", accessor: "dateOfBirth" },
+        {
+            header: "Manager",
+            accessor: (user) => user.manager
+                ? `${user.manager.firstName} ${user.manager.lastName}`
+                : ""
+        },
+        { header: "Bank Account Number", accessor: "bankAccountNumber" },
+        { header: "Bank IFSC Code", accessor: "bankIfscCode" },
+        { header: "PAN Number", accessor: "panNumber" },
+        { header: "Aadhar Number", accessor: "aadharNumber" },
+        { header: "UAN Number", accessor: "uanNumber" }
+    ];
+
+    const handleExportCSV = () => {
+        exportData(users || [], employeeCSVColumns, {
+            filename: "employees",
+            includeTimestamp: true
+        });
     };
 
     const statsList = [
@@ -153,18 +210,18 @@ export default function EmployeesPage() {
             label: "CONNECTIVITY",
             render: (val: any, user: User) => (
                 <div className="space-y-1.5 py-1">
-                    <div className="flex items-center gap-2 group/link">
+                    {user.email && <div className="flex items-center gap-2 group/link">
                         <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover/link:bg-primary group-hover/link:text-primary-foreground transition-all">
                             <Mail className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-semibold text-foreground/70 truncate max-w-[160px] tracking-tight">{user.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    </div>}
+                    {user.phoneNumber && <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                             <Phone className="w-3.5 h-3.5" />
                         </div>
                         <span className="text-xs font-bold text-muted-foreground/60 tracking-tighter">{user.phoneNumber}</span>
-                    </div>
+                    </div>}
 
                 </div>
             ),
@@ -220,12 +277,13 @@ export default function EmployeesPage() {
                     >
                         <Edit className="w-4 h-4" />
                     </button>
-                    <button
-                        className="p-2.5 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-destructive hover:border-destructive/20 hover:bg-destructive/5 transition-all duration-300"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
-
+                    <Switch
+                        checked={user.isActive}
+                        onCheckedChange={(checked) => {
+                            handleStatusToggle(user.id, checked);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    />
                 </div>
             ),
         },
@@ -248,7 +306,10 @@ export default function EmployeesPage() {
 
 
                 <div className="flex items-center gap-4">
-                    <button className="btn-secondary flex items-center gap-3">
+                    <button
+                        onClick={handleExportCSV}
+                        className="btn-secondary flex items-center gap-3"
+                    >
                         <Download className="w-4 h-4" />
                         Export Data
                     </button>
@@ -338,6 +399,7 @@ export default function EmployeesPage() {
                     <div className="p-8 bg-background max-h-[75vh] overflow-y-auto">
 
                         <EmployeeForm
+                            key={selectedEmployee?.id || "new-employee"}
                             initialData={selectedEmployee}
                             onSuccess={handleSuccess}
                             onCancel={handleClose}

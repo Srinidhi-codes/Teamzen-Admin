@@ -13,7 +13,7 @@ import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations 
 import { DatePickerSimple } from "../ui/datePicker";
 import moment from "moment";
 import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+import ConfirmationModal from "../common/ConfirmationModal";
 
 
 interface EmployeeFormProps {
@@ -68,11 +68,69 @@ export default function EmployeeForm({
     const [errors, setErrors] = useState<Record<string, string>>({});
     const { user } = useStore();
     const { createUser, updateUser, isCreatingUser, isUpdatingUser } = useGraphQLUserMutations();
-    const { organizations } = useGraphQLOrganizations();
-    const { designations } = useGraphQLDesignations();
-    const { departments } = useGraphQLDepartments();
+    const { organizations, isOrganizationsLoading } = useGraphQLOrganizations();
+    const { designations, isDesignationsLoading } = useGraphQLDesignations();
+    const { departments, isDepartmentsLoading } = useGraphQLDepartments();
     const [showPassword, setShowPassword] = useState(false);
     const isLoading = isCreatingUser || isUpdatingUser;
+
+    // Get department and designation options - either filtered by org or all for admin
+    const getDepartmentOptions = () => {
+        if (!departments) return [];
+
+        // For editing, always show the user's current department
+        if (initialData && formData.departmentId) {
+            return departments.map((d: any) => ({
+                label: d.name,
+                value: String(d.id),
+            }));
+        }
+
+        // For creating, filter by organization
+        if (user?.role !== "admin" && user?.organization?.id) {
+            return departments
+                .filter((d: any) => String(d.organizationId) === String(user?.organization?.id))
+                .map((d: any) => ({
+                    label: d.name,
+                    value: String(d.id),
+                }));
+        }
+
+        return departments.map((d: any) => ({
+            label: d.name,
+            value: String(d.id),
+        }));
+    };
+
+    const getDesignationOptions = () => {
+        if (!designations) return [];
+
+        // For editing, always show the user's current designation
+        if (initialData && formData.designationId) {
+            return designations.map((d: any) => ({
+                label: d.name,
+                value: String(d.id),
+            }));
+        }
+
+        // For creating, filter by organization
+        if (user?.role !== "admin" && user?.organization?.id) {
+            return designations
+                .filter((d: any) => String(d.organizationId) === String(user?.organization?.id))
+                .map((d: any) => ({
+                    label: d.name,
+                    value: String(d.id),
+                }));
+        }
+
+        return designations.map((d: any) => ({
+            label: d.name,
+            value: String(d.id),
+        }));
+    };
+
+    const departmentOptions = getDepartmentOptions();
+    const designationOptions = getDesignationOptions();
 
     useEffect(() => {
         const orgId = user?.organization?.id;
@@ -82,28 +140,37 @@ export default function EmployeeForm({
     }, [user, initialData, formData.organizationId]);
 
     useEffect(() => {
-        if (initialData) {
-            setFormData({
-                firstName: initialData.firstName || "",
-                lastName: initialData.lastName || "",
-                email: initialData.email || "",
-                dateOfBirth: initialData.dateOfBirth || "",
-                password: "",
-                phoneNumber: initialData.phoneNumber || "",
-                role: initialData.role || "employee",
-                dateOfJoining: initialData.dateOfJoining || "",
-                dateOfExit: initialData.dateOfExit || "",
-                employmentType: initialData.employmentType || "full_time",
-                isActive: initialData.isActive !== false,
-                departmentId: initialData.department?.id ? String(initialData.department.id) : "",
-                designationId: initialData.designation?.id ? String(initialData.designation.id) : "",
-                isStaff: initialData.isStaff !== false,
-                isVerified: initialData.isVerified !== false,
-                managerId: initialData.manager?.id ? String(initialData.manager.id) : "",
-                organizationId: initialData.organization?.id ? String(initialData.organization.id) : "",
-            });
-        }
-    }, [initialData, organizations, designations, departments]);
+        if (!initialData) return;
+
+        setFormData({
+            firstName: initialData.firstName || "",
+            lastName: initialData.lastName || "",
+            email: initialData.email || "",
+            dateOfBirth: initialData.dateOfBirth || "",
+            password: "",
+            phoneNumber: initialData.phoneNumber || "",
+            role: initialData.role || "employee",
+            dateOfJoining: initialData.dateOfJoining || "",
+            dateOfExit: initialData.dateOfExit || "",
+            employmentType: initialData.employmentType || "full_time",
+            isActive: initialData.isActive !== false,
+            departmentId: initialData.department?.id
+                ? String(initialData.department.id)
+                : "",
+            designationId: initialData.designation?.id
+                ? String(initialData.designation.id)
+                : "",
+            isStaff: initialData.isStaff !== false,
+            isVerified: initialData.isVerified !== false,
+            managerId: initialData.manager?.id
+                ? String(initialData.manager.id)
+                : "",
+            organizationId: initialData.organization?.id
+                ? String(initialData.organization.id)
+                : "",
+        });
+    }, [initialData]);
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -207,6 +274,18 @@ export default function EmployeeForm({
         }
     };
 
+    // Show loading state while options are being fetched
+    if (isDepartmentsLoading || isDesignationsLoading || (user?.role === "admin" && isOrganizationsLoading)) {
+        return (
+            <div className="flex items-center justify-center py-12">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    <p className="text-sm text-muted-foreground font-medium">Loading form data...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4 ">
             <div className="grid grid-cols-2 gap-4">
@@ -277,7 +356,6 @@ export default function EmployeeForm({
 
                 <DatePickerSimple
                     label="Date of Birth"
-
                     value={formData.dateOfBirth}
                     onChange={(date) => handleDateChange("dateOfBirth", date)}
                     error={errors.dateOfBirth}
@@ -289,7 +367,10 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("organizationId", value)}
                     placeholder="Select Organization"
                     error={errors.organizationId}
-                    options={organizations?.map((o: any) => ({ label: o.name, value: o.id }))}
+                    options={organizations?.map((o: any) => ({
+                        label: o.name,
+                        value: String(o.id),
+                    })) || []}
                 />}
 
                 <FormSelect
@@ -329,7 +410,7 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("departmentId", value)}
                     placeholder="Select Department"
                     error={errors.departmentId}
-                    options={departments?.map((d: any) => ({ label: d.name, value: d.id }))}
+                    options={departmentOptions}
                 />
 
                 <FormSelect
@@ -339,7 +420,7 @@ export default function EmployeeForm({
                     onValueChange={(value) => handleSelectChange("designationId", value)}
                     placeholder="Select Designation"
                     error={errors.designationId}
-                    options={designations?.map((d: any) => ({ label: d.name, value: d.id }))}
+                    options={designationOptions}
                 />
 
                 <FormSelect
@@ -391,6 +472,7 @@ export default function EmployeeForm({
                     />
                 </div>
             </div>
+
 
 
             <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border">
