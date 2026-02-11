@@ -2,6 +2,22 @@ import { useQuery, useMutation } from "@apollo/client/react"
 import { GET_ATTENDANCE, GET_ATTENDANCE_CORRECTIONS, } from "./queries"
 import { APPROVE_OR_REJECT_ATTENDANCE_CORRECTION, CANCEL_ATTENDANCE_CORRECTION, CHECK_IN, CHECK_OUT, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
 import { AttendanceInput, AttendanceRecord, GetAttendanceCorrectionsResponse, GetAttendanceResponse, GetAttendanceVars } from "./types"
+import { number } from "zod";
+
+export interface AttendanceCorrectionVariables {
+    page?: number;
+    pageSize?: number;
+    filters?: {
+        search?: string;
+        isActive?: boolean;
+        organizationId?: string;
+    };
+    sort?: {
+        field: string;
+        direction: string;
+    };
+    input?: AttendanceInput;
+}
 
 export function useGraphQlAttendance() {
     const { data, loading, error, refetch } = useQuery<
@@ -21,21 +37,22 @@ export function useGraphQlAttendance() {
     };
 }
 
-export function useGraphQLAttendanceCorrection() {
+export function useGraphQLAttendanceCorrection(variables?: AttendanceCorrectionVariables) {
     const { data, loading, error, refetch } = useQuery<
-        GetAttendanceCorrectionsResponse,
-        GetAttendanceVars
+        GetAttendanceCorrectionsResponse
     >(GET_ATTENDANCE_CORRECTIONS, {
+        variables,
         fetchPolicy: "network-only",
     });
 
     return {
-        attendanceCorrections: data?.attendanceCorrections ?? [],
+        attendanceCorrections: data?.attendanceCorrections?.results ?? [],
+        total: data?.attendanceCorrections.total,
+        page: data?.attendanceCorrections.page,
+        pageSize: data?.attendanceCorrections.pageSize,
         isLoading: loading,
         error,
-        refetchAttendanceCorrections: (input?: AttendanceInput) =>
-            refetch(input ? { input } : {}),
-        refetch
+        refetchAttendanceCorrections: (input?: AttendanceInput) => refetch({ input })
     };
 }
 
