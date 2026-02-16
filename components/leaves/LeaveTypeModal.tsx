@@ -1,9 +1,12 @@
 import { X, Info, Calendar, TrendingUp, Shield, Settings } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { Switch } from '../ui/switch'
+import { FormSelect } from '../common/FormSelect'
+import { useStore } from '@/lib/store/useStore'
+import { useGraphQLOrganizations } from '@/lib/graphql/organization/organizationsHook'
 
 interface LeaveTypeModalProps {
     isOpen: boolean;
@@ -15,6 +18,23 @@ interface LeaveTypeModalProps {
 }
 
 function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, editingType }: LeaveTypeModalProps) {
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const { user } = useStore();
+    const { organizations, isOrganizationsLoading } = useGraphQLOrganizations();
+
+
+
+    const handleSelectChange = (name: string, value: string) => {
+        setFormData((prev) => ({ ...prev, [name]: value }));
+        if (errors[name]) {
+            setErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
+    };
+
     return (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
 
@@ -72,6 +92,17 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                         placeholder="e.g. SAB"
                                     />
+                                    {user?.role === "admin" && <FormSelect
+                                        label="Organization"
+                                        value={formData.organizationId}
+                                        onValueChange={(value) => handleSelectChange("organizationId", value)}
+                                        placeholder="Select Organization"
+                                        error={errors.organizationId}
+                                        options={organizations?.map((o: any) => ({
+                                            label: o.name,
+                                            value: String(o.id),
+                                        })) || []}
+                                    />}
                                 </div>
                                 <div className="flex flex-col gap-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Leave Type Description</label>
@@ -251,11 +282,12 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         </Select>
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                        <label htmlFor="isActive" className="text-[10px] font-black text-foreground uppercase tracking-widest">Status</label>
+                                        <label htmlFor="isActive" className={`text-[10px] font-black uppercase tracking-widest ${formData.isActive ? "text-emerald-500" : "text-destructive"}`}>{formData.isActive ? "Active" : "Inactive"}</label>
                                         <Switch
                                             id="isActive"
                                             checked={formData.isActive}
                                             onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                                            className="data-[state=checked]:bg-emerald-500 data-[state=unchecked]:bg-destructive"
                                         />
                                     </div>
                                 </div>

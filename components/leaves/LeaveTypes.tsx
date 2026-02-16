@@ -253,12 +253,10 @@ const LeaveTypes = () => {
 
             </div>
 
-            <div className="bg-card rounded-4xl border border-border shadow-2xl shadow-primary/5 overflow-hidden p-2">
-                <DataTable
-                    data={leaveTypes.filter((lt) => lt.isActive)}
-                    columns={columns}
-                />
-            </div>
+            <DataTable
+                data={leaveTypes}
+                columns={columns}
+            />
 
 
             <div ref={formRef}>
