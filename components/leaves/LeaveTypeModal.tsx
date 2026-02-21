@@ -25,9 +25,9 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
 
 
     const handleSelectChange = (name: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData((prev: any) => ({ ...prev, [name]: value }));
         if (errors[name]) {
-            setErrors((prev) => {
+            setErrors((prev: any) => {
                 const newErrors = { ...prev };
                 delete newErrors[name];
                 return newErrors;

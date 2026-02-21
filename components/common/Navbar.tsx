@@ -6,18 +6,28 @@ import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
+import client, { cleanupTokenRefresh } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 
 export function Navbar() {
   const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
-  const { navbarTabs, activeNavbarTab, setActiveNavbarTab } = useStore();
+  const { navbarTabs, activeNavbarTab, setActiveNavbarTab, logoutUser } = useStore();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await client.post(API_ENDPOINTS.LOGOUT);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      cleanupTokenRefresh();
+      logoutUser();
+      router.push("/login");
+    }
   };
 
   return (

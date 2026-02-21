@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -32,6 +33,7 @@ const navItems: NavItem[] = [
   { name: "Payroll", href: "/payroll", icon: DollarSign },
   { name: "Performance", href: "/performance", icon: TrendingUp },
   { name: "Reports", href: "/reports", icon: BarChart3 },
+  { name: "Policies", href: "/policies", icon: FileText },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

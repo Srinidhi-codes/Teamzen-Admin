@@ -61,9 +61,9 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
             error: observer.error.bind(observer),
             complete: observer.complete.bind(observer),
           });
-          
+
           return () => {
-             if (subscriber.unsubscribe) subscriber.unsubscribe();
+            if (subscriber.unsubscribe) subscriber.unsubscribe();
           };
         })
         .catch((error) => {
