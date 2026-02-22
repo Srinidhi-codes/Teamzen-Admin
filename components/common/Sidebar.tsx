@@ -18,6 +18,7 @@ const navItems: NavItem[] = [
   { name: "Attendance", href: "/attendance", icon: "📍" },
   { name: "Payroll", href: "/payroll", icon: "💰" },
   { name: "Employees", href: "/employees", icon: "👥" },
+  { name: "Notifications", href: "/notifications", icon: "🔔" },
   { name: "Analytics", href: "/analytics", icon: "📈" },
   { name: "Admin", href: "/admin", icon: "⚙️", roles: ["admin", "hr"] },
 ];
