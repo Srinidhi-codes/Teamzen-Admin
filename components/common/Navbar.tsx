@@ -8,6 +8,8 @@ import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 
 import { NotificationBell } from "./NotificationBell";
+import client from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,13 +22,20 @@ import {
 
 export function Navbar() {
   const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
-  const { navbarTabs, activeNavbarTab, setActiveNavbarTab } = useStore();
+  const { navbarTabs, activeNavbarTab, setActiveNavbarTab, logoutUser } = useStore();
   const router = useRouter();
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await client.post(API_ENDPOINTS.LOGOUT);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      logoutUser();
+      router.push("/login");
+    }
   };
 
   return (
@@ -90,7 +99,7 @@ export function Navbar() {
                         {user.firstName} {user.lastName}
                       </span>
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
-                        Administrator
+                        {user.role}
                       </span>
                     </div>
                   </button>
@@ -109,6 +118,18 @@ export function Navbar() {
                       <span className="text-lg group-hover:scale-110 transition-transform">👤</span>
                       <span className="text-sm font-bold">My Profile</span>
                     </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a
+                      href="http://localhost:3000/dashboard"
+                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/10 text-primary cursor-pointer group"
+                    >
+                      <span className="text-lg group-hover:scale-110 transition-transform">🏠</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold">User Portal</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Personal View</span>
+                      </div>
+                    </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link

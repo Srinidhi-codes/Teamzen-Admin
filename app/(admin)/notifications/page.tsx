@@ -15,7 +15,9 @@ export default function NotificationsPage() {
     const [notificationType, setNotificationType] = useState("PUSH");
     const [isSending, setIsSending] = useState(false);
 
-    const { data: activityData, refetch: refetchActivity } = useQuery(GET_MY_NOTIFICATIONS) as any;
+    const { data: activityData, refetch: refetchActivity } = useQuery(GET_MY_NOTIFICATIONS, {
+        variables: { level: "admin" }
+    }) as any;
     const [sendBroadcast] = useMutation(SEND_BROADCAST_NOTIFICATION);
 
     const handleBroadcast = async () => {

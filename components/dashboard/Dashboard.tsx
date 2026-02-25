@@ -4,6 +4,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { StatsCard } from "../admin/StatsCard";
 import { useQuery } from "@apollo/client/react";
 import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
+import moment from "moment";
 
 export default function AdminDashboard() {
     const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
@@ -199,7 +200,7 @@ export default function AdminDashboard() {
                                     </p>
                                     <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-1.5 flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
-                                        {activity.time}
+                                        {moment(activity.time).format("YYYY-MM-DD HH:mm:ss")}
                                     </p>
                                 </div>
                             </div>

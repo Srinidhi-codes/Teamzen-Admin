@@ -36,12 +36,15 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
         },
         onMessage: (event) => {
             const data = JSON.parse(event.data);
-            toast.success(data.message, {
-                description: `Alert: ${data.verb}`,
-                duration: 5000,
-            });
-            if (onMessageReceived) {
-                onMessageReceived(data);
+            // Only process notifications for the correct level (or all if no level provided)
+            if (data.level === 'admin') {
+                toast.success(data.message, {
+                    description: `Alert: ${data.verb}`,
+                    duration: 5000,
+                });
+                if (onMessageReceived) {
+                    onMessageReceived(data);
+                }
             }
         }
     });

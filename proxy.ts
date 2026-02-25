@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
     if (refreshToken) {
       try {
         const API_BASE_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/'
-        const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/token/refresh/'
+        const refreshEndpoint = process.env.NEXT_PUBLIC_REFRESH_ENDPOINT || 'auth/refresh/'
 
         // Ensure base URL ends with a slash for consistent concatenation
         const normalizedBaseUrl = API_BASE_URL.endsWith('/') ? API_BASE_URL : `${API_BASE_URL}/`

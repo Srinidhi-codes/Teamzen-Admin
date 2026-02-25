@@ -5,9 +5,12 @@ import LeaveRequests from './LeaveRequests'
 import LeaveBalance from './LeaveBalance'
 import LeaveTypes from './LeaveTypes'
 import { useStore } from '@/lib/store/useStore'
+import { useSearchParams } from 'next/navigation'
 
 const LeavesPage = () => {
     const { user, setNavbarTabs, setActiveNavbarTab, activeNavbarTab, clearNavbarTabs } = useStore();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
 
     const tabs = useMemo(() => [
         user?.role !== "manager" && { id: "types", label: "Types", iconElement: <Settings className="w-5 h-5" />, color: "from-indigo-500 to-blue-600" },
@@ -18,11 +21,14 @@ const LeavesPage = () => {
 
     useEffect(() => {
         setNavbarTabs(tabs);
-        if (!activeNavbarTab) {
+
+        if (tabParam && tabs.find(t => t.id === tabParam)) {
+            setActiveNavbarTab(tabParam);
+        } else if (!activeNavbarTab) {
             setActiveNavbarTab(user?.role !== "manager" ? "types" : "balance");
         }
         return () => clearNavbarTabs();
-    }, [user?.role, tabs, setNavbarTabs, setActiveNavbarTab, clearNavbarTabs]);
+    }, [user?.role, tabs, setNavbarTabs, setActiveNavbarTab, clearNavbarTabs, tabParam]);
 
     const activeTab = activeNavbarTab || (user?.role !== "manager" ? "types" : "balance");
 

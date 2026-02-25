@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Building } from "lucide-react";
 
-import { FormInput } from "../common/FormInput";
+import { FormInput } from "../common/Input";
 import { useGraphQLOrganizationMutation, useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizationsHook";
 import Image from "next/image";
 import { toast } from "sonner";
