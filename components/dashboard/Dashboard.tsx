@@ -2,53 +2,36 @@
 import { Users, UserCheck, Calendar, Clock, DollarSign, TrendingUp } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { StatsCard } from "../admin/StatsCard";
-
-// Mock data - replace with actual API calls
-const stats = {
-    total_employees: 248,
-    active_employees: 235,
-    pending_leave_approvals: 12,
-    today_attendance_rate: 94.5,
-    pending_payroll_runs: 1,
-    pending_reviews: 8,
-};
-
-const employeeGrowthData = [
-    { month: "Jan", employees: 200 },
-    { month: "Feb", employees: 215 },
-    { month: "Mar", employees: 225 },
-    { month: "Apr", employees: 235 },
-    { month: "May", employees: 240 },
-    { month: "Jun", employees: 248 },
-];
-
-const departmentData = [
-    { name: "Engineering", value: 85, color: "#4F46E5" },
-    { name: "Sales", value: 52, color: "#10B981" },
-    { name: "Marketing", value: 38, color: "#F59E0B" },
-    { name: "HR", value: 25, color: "#EF4444" },
-    { name: "Finance", value: 28, color: "#8B5CF6" },
-    { name: "Operations", value: 20, color: "#06B6D4" },
-];
-
-const leaveData = [
-    { month: "Jan", approved: 45, rejected: 5, pending: 8 },
-    { month: "Feb", approved: 52, rejected: 3, pending: 6 },
-    { month: "Mar", approved: 48, rejected: 4, pending: 10 },
-    { month: "Apr", approved: 55, rejected: 2, pending: 7 },
-    { month: "May", approved: 60, rejected: 6, pending: 9 },
-    { month: "Jun", approved: 58, rejected: 4, pending: 12 },
-];
-
-const recentActivities = [
-    { id: 1, user: "John Doe", action: "submitted leave request", time: "2 hours ago" },
-    { id: 2, user: "Jane Smith", action: "updated profile", time: "3 hours ago" },
-    { id: 3, user: "Mike Johnson", action: "checked in", time: "4 hours ago" },
-    { id: 4, user: "Sarah Williams", action: "completed performance review", time: "5 hours ago" },
-    { id: 5, user: "Admin", action: "processed payroll for June", time: "1 day ago" },
-];
+import { useQuery } from "@apollo/client/react";
+import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
+import moment from "moment";
 
 export default function AdminDashboard() {
+    const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <p className="text-muted-foreground font-medium animate-pulse">Loading Analytics...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 bg-red-500/10 border border-red-500/20 rounded-4xl text-center">
+                <p className="text-red-500 font-bold">Failed to load dashboard data. Please try again.</p>
+            </div>
+        );
+    }
+
+    const stats = (data as any)?.adminDashboardStats || {};
+    const employeeGrowthData = stats.employeeGrowth || [];
+    const departmentData = stats.departmentDistribution || [];
+    const leaveData = stats.leaveFlux || [];
+    const recentActivities = stats.recentActivities || [];
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Header */}
@@ -88,14 +71,12 @@ export default function AdminDashboard() {
                     value={stats.total_employees}
                     icon={Users}
                     color="blue"
-                    trend={{ value: "+3.2% from last month", isPositive: true }}
                 />
                 <StatsCard
-                    title="Active Today"
+                    title="Active Employees"
                     value={stats.active_employees}
                     icon={UserCheck}
                     color="green"
-                    trend={{ value: `${stats.today_attendance_rate}% attendance`, isPositive: true }}
                 />
                 <StatsCard
                     title="Pending Leave Approvals"
@@ -111,13 +92,13 @@ export default function AdminDashboard() {
                 />
                 <StatsCard
                     title="Pending Payroll"
-                    value={stats.pending_payroll_runs}
+                    value={0}
                     icon={DollarSign}
                     color="purple"
                 />
                 <StatsCard
                     title="Pending Reviews"
-                    value={stats.pending_reviews}
+                    value={0}
                     icon={TrendingUp}
                     color="red"
                 />
@@ -142,7 +123,7 @@ export default function AdminDashboard() {
                                 itemStyle={{ color: 'var(--primary)' }}
                             />
                             <Legend />
-                            <Line type="monotone" dataKey="employees" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)' }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                            <Line type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)' }} activeDot={{ r: 8, strokeWidth: 0 }} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
@@ -165,7 +146,7 @@ export default function AdminDashboard() {
                                 paddingAngle={5}
                                 dataKey="value"
                             >
-                                {departmentData.map((entry, index) => (
+                                {departmentData.map((entry: any, index: number) => (
                                     <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                                 ))}
                             </Pie>
@@ -210,7 +191,7 @@ export default function AdminDashboard() {
                         Activity Stream
                     </h3>
                     <div className="space-y-4">
-                        {recentActivities.map((activity) => (
+                        {recentActivities.map((activity: any) => (
                             <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-2xl hover:bg-muted/50 transition-colors group">
                                 <div className="shrink-0 w-2.5 h-2.5 mt-2 bg-primary rounded-full shadow-lg shadow-primary/50 group-hover:animate-pulse"></div>
                                 <div className="flex-1 min-w-0">
@@ -219,7 +200,7 @@ export default function AdminDashboard() {
                                     </p>
                                     <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-1.5 flex items-center gap-1">
                                         <Clock className="w-3 h-3" />
-                                        {activity.time}
+                                        {moment(activity.time).format("YYYY-MM-DD HH:mm:ss")}
                                     </p>
                                 </div>
                             </div>
