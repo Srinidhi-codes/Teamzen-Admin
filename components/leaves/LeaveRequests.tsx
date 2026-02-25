@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { Check, X, Calendar, Clock, AlertCircle, FileText, User, ArrowRight, MessageSquare } from "lucide-react";
+import { Check, X, Calendar, Clock, AlertCircle, FileText, User, ArrowRight, MessageSquare, XCircle, CheckCircle, CheckCircle2 } from "lucide-react";
 import { LeaveRequest } from "@/lib/graphql/leaves/types";
 import { DataTable, Column } from "../common/DataTable";
 import { useGraphQLLeaveRequests, useGraphQLLeaveRequestProcess } from "@/lib/graphql/leaves/leavesHook";
@@ -234,20 +234,20 @@ export default function LeaveRequests() {
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
                     <div className="bg-card rounded-[3rem] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
                         {/* Header */}
-                        <div className="relative p-10 pb-8 bg-linear-to-br from-primary to-primary/80 text-primary-foreground">
+                        <div className="relative p-10 pb-8 bg-linear-to-br from-primary/20 via-primary/5 to-background text-black">
                             <div className="absolute top-0 right-0 p-10 opacity-10">
                                 <FileText className="w-32 h-32 rotate-12" />
                             </div>
                             <div className="relative z-10 flex justify-between items-start">
                                 <div>
-                                    <h2 className="text-4xl font-black tracking-tight leading-none mb-3">
-                                        Logic Review
+                                    <h2 className="text-4xl text-black font-black tracking-tight leading-none mb-3">
+                                        Leave Request Review
                                     </h2>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 text-black/60 ">
                                         <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm border border-white/10">
                                             #{selectedRequest.id.slice(-8)}
                                         </span>
-                                        <p className="text-primary-foreground/60 text-[10px] font-black uppercase tracking-widest">Temporal Protocol</p>
+                                        <p className="text-black/60 text-[10px] font-black uppercase tracking-widest">Review Leave Request</p>
                                     </div>
                                 </div>
                                 <button
@@ -255,7 +255,7 @@ export default function LeaveRequests() {
                                         setSelectedRequest(null);
                                         setComments("");
                                     }}
-                                    className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition-all duration-300 flex items-center justify-center active:scale-90"
+                                    className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-black hover:text-red-500 transition-all duration-300 flex items-center justify-center active:scale-90"
                                 >
                                     <X className="w-6 h-6" />
                                 </button>
@@ -269,7 +269,7 @@ export default function LeaveRequests() {
                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <User className="w-3 h-3 text-primary" /> Human Asset
+                                        <User className="w-3 h-3 text-primary" /> Employee
                                     </label>
                                     <p className="text-lg font-black text-foreground tracking-tight leading-tight">
                                         {selectedRequest.user.firstName} {selectedRequest.user.lastName}
@@ -277,23 +277,23 @@ export default function LeaveRequests() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <FileText className="w-3 h-3 text-primary" /> Entitlement
+                                        <FileText className="w-3 h-3 text-primary" /> Leave Type
                                     </label>
-                                    <p className="text-lg font-black text-primary tracking-tight leading-tight">
+                                    <p className="text-lg font-black text-black/60 tracking-tight leading-tight">
                                         {selectedRequest.leaveType.name}
                                     </p>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-primary" /> Quota Impact
+                                        <Clock className="w-3 h-3 text-primary" /> Duration
                                     </label>
                                     <p className="text-lg font-black text-foreground tracking-tight leading-tight tabular-nums">
-                                        {selectedRequest.durationDays} Cycle(s)
+                                        {selectedRequest.durationDays} Day(s)
                                     </p>
                                 </div>
                                 <div className="space-y-2 col-span-full bg-muted/30 p-4 rounded-2xl border border-border/50">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 mb-3">
-                                        <Calendar className="w-3 h-3 text-primary" /> Temporal Boundary
+                                        <Calendar className="w-3 h-3 text-primary" /> Date Range
                                     </label>
                                     <p className="text-sm font-black text-foreground tracking-widest uppercase flex items-center gap-3">
                                         {moment(selectedRequest.fromDate).format("MMMM DD")}
@@ -306,10 +306,10 @@ export default function LeaveRequests() {
                             {/* Reason Card */}
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <FileText className="w-3 h-3 text-primary" /> Asset Justification
+                                    <FileText className="w-3 h-3 text-primary" /> Reason
                                 </label>
-                                <div className="bg-card p-6 rounded-3xl border border-border shadow-inner relative overflow-hidden group">
-                                    <p className="text-foreground/80 font-medium leading-relaxed italic border-l-4 border-primary pl-6 py-2">
+                                <div className="bg-card p-3 relative overflow-hidden group">
+                                    <p className="text-foreground/80 leading-relaxed text-sm font-medium italic border-l-3 border-primary pl-4 py-2">
                                         "{selectedRequest.reason}"
                                     </p>
                                 </div>
@@ -318,14 +318,14 @@ export default function LeaveRequests() {
                             {/* Admin Action Section */}
                             <div className="space-y-4">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Check className="w-3 h-3 text-primary" /> Administrative Log
+                                    <Check className="w-3 h-3 text-primary" /> Feedback
                                 </label>
                                 <Textarea
                                     value={comments}
                                     onChange={(e) => setComments(e.target.value)}
                                     rows={4}
                                     className="bg-muted/30 rounded-3xl border-border/50 focus:ring-4 focus:ring-primary/10 focus:bg-background transition-all resize-none p-6 font-medium text-sm"
-                                    placeholder="Enter decision rationale or feedback for the asset synchronization..."
+                                    placeholder="Enter feedback for the leave request..."
                                 />
                             </div>
                         </div>
@@ -339,21 +339,21 @@ export default function LeaveRequests() {
                                 }}
                                 className="px-10 py-5 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-muted rounded-2xl active:scale-95"
                             >
-                                Defer
+                                Close
                             </button>
                             <div className="flex gap-4 flex-1 sm:flex-initial">
                                 <button
                                     onClick={() => handleReject(selectedRequest.id)}
                                     className="flex-1 sm:flex-none px-10 py-5 bg-destructive/10 text-destructive border border-destructive/20 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-destructive hover:text-white transition-all active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-destructive/5"
                                 >
-                                    <X className="w-5 h-5" />
+                                    <XCircle className="w-5 h-5" />
                                     Reject
                                 </button>
                                 <button
                                     onClick={() => handleApprove(selectedRequest.id)}
                                     className="flex-1 sm:flex-none px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-primary/20"
                                 >
-                                    <Check className="w-5 h-5" />
+                                    <CheckCircle2 className="w-5 h-5" />
                                     Authorize
                                 </button>
                             </div>

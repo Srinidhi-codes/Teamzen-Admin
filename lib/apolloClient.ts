@@ -45,6 +45,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: 
       graphQLErrors.some(
         (e: any) =>
           e.message === "Unauthenticated" ||
+          e.message === "Unauthorized" ||
           e.extensions?.code === "UNAUTHENTICATED" ||
           e.message.toLowerCase().includes("signature has expired")
       )) ||

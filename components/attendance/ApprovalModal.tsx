@@ -17,6 +17,7 @@ import {
     Calendar,
     User
 } from "lucide-react";
+import { FormTextarea } from "../common/FormTextArea";
 
 
 type Props = {
@@ -43,30 +44,29 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
     const formatTime = (timeStr?: string | null) => timeStr ? moment(timeStr, "HH:mm:ss").format("hh:mm A") : "--:--";
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 bg-background/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
             <div className="bg-card rounded-[2.5rem] w-full max-w-2xl shadow-3xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
                 {/* Header */}
-                <div className="bg-linear-to-br from-primary to-primary/80 p-8 text-primary-foreground relative">
+                <div className="bg-linear-to-br from-primary/20 via-primary/5 to-background p-8 text-primary-foreground relative">
                     <div className="absolute top-0 right-0 p-8 opacity-10">
                         <Calendar className="w-32 h-32 rotate-12" />
                     </div>
                     <div className="flex items-center gap-5 relative z-10">
-                        <div className="w-16 h-16 rounded-2xl bg-primary-foreground/10 flex items-center justify-center text-primary-foreground shadow-inner border border-primary-foreground/10 backdrop-blur-sm">
+                        <div className="w-16 h-16 rounded-2xl bg-primary-foreground/10 flex items-center justify-center text-primary shadow-inner border border-primary backdrop-blur-sm">
                             <span className="text-2xl font-black">
                                 {correction.requestedBy?.firstName?.charAt(0) || <User className="w-8 h-8" />}
                             </span>
                         </div>
                         <div>
                             <div className="flex items-center gap-2 mb-1">
-                                <h2 className="text-3xl font-black text-primary-foreground tracking-tight leading-none">
+                                <h2 className="text-3xl font-black text-primary tracking-tight leading-none">
                                     {correction.requestedBy?.firstName} {correction.requestedBy?.lastName}
                                 </h2>
-                                <span className="px-2.5 py-1 bg-primary-foreground/20 text-primary-foreground text-[8px] font-black uppercase tracking-widest rounded-full border border-primary-foreground/10 backdrop-blur-md">
+                                <span className="px-2.5 py-1 bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest rounded-full border border-primary/10 backdrop-blur-md">
                                     {correction.requestedBy?.designation?.name || "Member"}
                                 </span>
                             </div>
-                            <p className="text-primary-foreground/70 text-xs font-bold flex items-center gap-2 tracking-wide">
-                                <Clock className="w-4 h-4" />
+                            <p className="text-gray-500/70 text-xs font-bold flex items-center gap-2 tracking-wide">
                                 Reviewing correction for {formatDate(correction.attendanceRecord.attendanceDate)}
                             </p>
                         </div>
@@ -74,7 +74,7 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
 
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-3 rounded-2xl text-primary-foreground/40 hover:text-primary-foreground transition-all active:scale-90"
+                        className="absolute top-4 right-4 text-black hover:text-red-500 transition-all active:scale-90"
                     >
                         <X className="w-6 h-6" />
                     </button>
@@ -86,36 +86,36 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                     {/* Comparison Engine */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
                         {/* Connecting Arrow */}
-                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border shadow-sm items-center justify-center z-10 text-muted-foreground/30">
+                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border shadow-sm items-center justify-center z-10 text-muted-foreground/60">
                             <ArrowRight className="w-5 h-5" />
                         </div>
 
-                        <div className="bg-muted/30 p-6 rounded-4xl border border-border group">
+                        <div className="bg-red-300/5 p-6 rounded-4xl border border-red-500/30 shadow-sm group hover:scale-105 transition-all duration-300">
 
-                            <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-4 ml-1">Original Records</h3>
+                            <h3 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 ml-1">Original Records</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Check In</span>
-                                    <span className="text-sm font-black text-foreground">{formatTime(correction.attendanceRecord.loginTime)}</span>
+                                    <span className="text-[10px] font-bold text-red-500 uppercase">Check In</span>
+                                    <span className="text-sm font-black text-red-500">{formatTime(correction.attendanceRecord.loginTime)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Check Out</span>
-                                    <span className="text-sm font-black text-foreground">{formatTime(correction.attendanceRecord.logoutTime)}</span>
+                                    <span className="text-[10px] font-bold text-red-500 uppercase">Check Out</span>
+                                    <span className="text-sm font-black text-red-500">{formatTime(correction.attendanceRecord.logoutTime)}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-primary/5 p-6 rounded-4xl border border-primary/20 group shadow-sm">
+                        <div className="bg-green-300/5 p-6 rounded-4xl border border-green-500/30 group shadow-sm hover:scale-105 transition-all duration-300">
 
-                            <h3 className="text-[10px] font-black text-primary uppercase tracking-widest mb-4 ml-1">Proposed Correction</h3>
+                            <h3 className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-4 ml-1">Proposed Correction</h3>
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-primary/60 uppercase">Check In</span>
-                                    <span className="text-sm font-black text-primary">{formatTime(correction.correctedLoginTime)}</span>
+                                    <span className="text-[10px] font-bold text-green-500/60 uppercase">Check In</span>
+                                    <span className="text-sm font-black text-green-500">{formatTime(correction.correctedLoginTime)}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-primary/60 uppercase">Check Out</span>
-                                    <span className="text-sm font-black text-primary">{formatTime(correction.correctedLogoutTime)}</span>
+                                    <span className="text-[10px] font-bold text-green-500/60 uppercase">Check Out</span>
+                                    <span className="text-sm font-black text-green-500">{formatTime(correction.correctedLogoutTime)}</span>
                                 </div>
                             </div>
                         </div>
@@ -138,15 +138,11 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
 
                     {/* Decision Comments */}
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                            Verdict Feedback
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        </label>
-                        <textarea
+                        <FormTextarea
+                            label="Feedback"
                             rows={3}
                             value={comments}
                             onChange={(e) => setComments(e.target.value)}
-                            className="textarea"
                             placeholder="Provide constructive feedback for your decision..."
                         />
 
