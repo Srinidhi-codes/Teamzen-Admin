@@ -31,6 +31,10 @@ export const useStore = create<StoreState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
         accent: state.accent,
+        organizations: state.organizations,
+        officeLocations: state.officeLocations,
+        departments: state.departments,
+        designations: state.designations,
         // Add others if persistence is desired
         // NOTE: navbarTabs is NOT persisted because it contains ReactNodes
       }),

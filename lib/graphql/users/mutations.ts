@@ -79,3 +79,15 @@ export const UPDATE_USER = gql`
     }
   }
 `;
+
+export const USER_STATUS = gql`
+  mutation UserStatus($input: UserStatusInput!) {
+    userStatus(input: $input) {
+        id
+        email
+        firstName
+        lastName
+        isActive
+    }
+  }
+`;

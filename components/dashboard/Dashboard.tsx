@@ -1,54 +1,41 @@
 'use client'
-import { Users, UserCheck, Calendar, Clock, DollarSign, TrendingUp } from "lucide-react";
+import { Users, UserCheck, Calendar, Clock, DollarSign, TrendingUp, Cake, Gift, PartyPopper, Star, Award, UserPlus, ArrowRight } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { StatsCard } from "../admin/StatsCard";
-
-// Mock data - replace with actual API calls
-const stats = {
-    total_employees: 248,
-    active_employees: 235,
-    pending_leave_approvals: 12,
-    today_attendance_rate: 94.5,
-    pending_payroll_runs: 1,
-    pending_reviews: 8,
-};
-
-const employeeGrowthData = [
-    { month: "Jan", employees: 200 },
-    { month: "Feb", employees: 215 },
-    { month: "Mar", employees: 225 },
-    { month: "Apr", employees: 235 },
-    { month: "May", employees: 240 },
-    { month: "Jun", employees: 248 },
-];
-
-const departmentData = [
-    { name: "Engineering", value: 85, color: "#4F46E5" },
-    { name: "Sales", value: 52, color: "#10B981" },
-    { name: "Marketing", value: 38, color: "#F59E0B" },
-    { name: "HR", value: 25, color: "#EF4444" },
-    { name: "Finance", value: 28, color: "#8B5CF6" },
-    { name: "Operations", value: 20, color: "#06B6D4" },
-];
-
-const leaveData = [
-    { month: "Jan", approved: 45, rejected: 5, pending: 8 },
-    { month: "Feb", approved: 52, rejected: 3, pending: 6 },
-    { month: "Mar", approved: 48, rejected: 4, pending: 10 },
-    { month: "Apr", approved: 55, rejected: 2, pending: 7 },
-    { month: "May", approved: 60, rejected: 6, pending: 9 },
-    { month: "Jun", approved: 58, rejected: 4, pending: 12 },
-];
-
-const recentActivities = [
-    { id: 1, user: "John Doe", action: "submitted leave request", time: "2 hours ago" },
-    { id: 2, user: "Jane Smith", action: "updated profile", time: "3 hours ago" },
-    { id: 3, user: "Mike Johnson", action: "checked in", time: "4 hours ago" },
-    { id: 4, user: "Sarah Williams", action: "completed performance review", time: "5 hours ago" },
-    { id: 5, user: "Admin", action: "processed payroll for June", time: "1 day ago" },
-];
+import { useQuery } from "@apollo/client/react";
+import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
+import moment from "moment";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function AdminDashboard() {
+    const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                <p className="text-muted-foreground font-medium animate-pulse">Loading Analytics...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 bg-red-500/10 border border-red-500/20 rounded-4xl text-center">
+                <p className="text-red-500 font-bold">Failed to load dashboard data. Please try again.</p>
+            </div>
+        );
+    }
+
+    const stats = (data as any)?.adminDashboardStats || {};
+    const employeeGrowthData = stats.employeeGrowth || [];
+    const departmentData = stats.departmentDistribution || [];
+    const leaveData = stats.leaveFlux || [];
+    const recentActivities = stats.recentActivities || [];
+    const upcomingEvents = stats.upcomingEvents || [];
+    const wishMessage = stats.wishMessage;
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Header */}
@@ -61,6 +48,22 @@ export default function AdminDashboard() {
                     Last updated: {new Date().toLocaleString()}
                 </div>
             </div>
+
+            {/* Wish Message Banner */}
+            {wishMessage && (
+                <div className="relative overflow-hidden bg-linear-to-r from-primary/20 via-primary/10 to-transparent border border-primary/30 rounded-4xl p-8 flex items-center gap-6 animate-in slide-in-from-top-4 duration-1000">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                        <PartyPopper className="w-32 h-32 rotate-12" />
+                    </div>
+                    <div className="shrink-0 w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
+                        <Cake className="w-8 h-8" />
+                    </div>
+                    <div className="relative z-10">
+                        <h2 className="text-2xl font-black text-foreground tracking-tight mb-1">Congratulations!</h2>
+                        <p className="text-lg font-medium text-muted-foreground">{wishMessage}</p>
+                    </div>
+                </div>
+            )}
 
 
             {/* Hero Section */}
@@ -85,39 +88,37 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <StatsCard
                     title="Total Employees"
-                    value={stats.total_employees}
+                    value={stats.totalEmployees}
                     icon={Users}
                     color="blue"
-                    trend={{ value: "+3.2% from last month", isPositive: true }}
                 />
                 <StatsCard
-                    title="Active Today"
-                    value={stats.active_employees}
+                    title="Active Employees"
+                    value={stats.activeEmployees}
                     icon={UserCheck}
                     color="green"
-                    trend={{ value: `${stats.today_attendance_rate}% attendance`, isPositive: true }}
                 />
                 <StatsCard
                     title="Pending Leave Approvals"
-                    value={stats.pending_leave_approvals}
+                    value={stats.pendingLeaveApprovals}
                     icon={Calendar}
                     color="yellow"
                 />
                 <StatsCard
                     title="Attendance Rate"
-                    value={`${stats.today_attendance_rate}%`}
+                    value={`${stats.todayAttendanceRate}%`}
                     icon={Clock}
                     color="green"
                 />
                 <StatsCard
                     title="Pending Payroll"
-                    value={stats.pending_payroll_runs}
+                    value={0}
                     icon={DollarSign}
                     color="purple"
                 />
                 <StatsCard
                     title="Pending Reviews"
-                    value={stats.pending_reviews}
+                    value={0}
                     icon={TrendingUp}
                     color="red"
                 />
@@ -142,7 +143,7 @@ export default function AdminDashboard() {
                                 itemStyle={{ color: 'var(--primary)' }}
                             />
                             <Legend />
-                            <Line type="monotone" dataKey="employees" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)' }} activeDot={{ r: 8, strokeWidth: 0 }} />
+                            <Line type="monotone" dataKey="value" stroke="var(--primary)" strokeWidth={4} dot={{ r: 6, fill: 'var(--primary)' }} activeDot={{ r: 8, strokeWidth: 0 }} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
@@ -154,26 +155,38 @@ export default function AdminDashboard() {
                         Departmental Hub
                     </h3>
 
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={departmentData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                            >
-                                {departmentData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                ))}
-                            </Pie>
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }}
-                            />
-                        </PieChart>
-                    </ResponsiveContainer>
+                    <div className="h-[300px] w-full">
+                        {departmentData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={departmentData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={60}
+                                        outerRadius={100}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                    >
+                                        {departmentData.map((entry: any, index: number) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', color: 'var(--card-foreground)' }}
+                                        itemStyle={{ color: 'var(--primary)' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 animate-in fade-in zoom-in duration-700">
+                                <div className="p-4 rounded-full bg-muted/20 border border-border/50 shadow-inner">
+                                    <Users className="w-10 h-10 text-muted-foreground/40" />
+                                </div>
+                                <p className="text-sm text-muted-foreground font-medium tracking-wide">No departmental data available</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -192,7 +205,8 @@ export default function AdminDashboard() {
                             <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={12} />
                             <YAxis stroke="var(--muted-foreground)" fontSize={12} />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px' }}
+                                contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', color: 'var(--card-foreground)' }}
+                                itemStyle={{ color: 'var(--card-foreground)' }}
                             />
                             <Legend />
                             <Bar dataKey="approved" fill="#10B981" radius={[4, 4, 0, 0]} />
@@ -210,20 +224,153 @@ export default function AdminDashboard() {
                         Activity Stream
                     </h3>
                     <div className="space-y-4">
-                        {recentActivities.map((activity) => (
-                            <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-2xl hover:bg-muted/50 transition-colors group">
-                                <div className="shrink-0 w-2.5 h-2.5 mt-2 bg-primary rounded-full shadow-lg shadow-primary/50 group-hover:animate-pulse"></div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-foreground">
-                                        <span className="font-black text-primary">{activity.user}</span> <span className="text-muted-foreground font-medium">{activity.action}</span>
-                                    </p>
-                                    <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-1.5 flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {activity.time}
-                                    </p>
+                        {recentActivities.length > 0 ? (
+                            recentActivities.map((activity: any) => (
+                                <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-2xl hover:bg-muted/50 transition-colors group">
+                                    <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${activity.action.includes("joined") ? "bg-blue-500/10 text-blue-600" :
+                                        activity.action.includes("celebrates") ? "bg-amber-500/10 text-amber-600" :
+                                            activity.action.includes("requested") ? "bg-purple-500/10 text-purple-600" :
+                                                "bg-primary/10 text-primary"
+                                        }`}>
+                                        {activity.action.includes("joined") ? <UserPlus className="w-5 h-5" /> :
+                                            activity.action.includes("celebrates") ? <Award className="w-5 h-5" /> :
+                                                activity.action.includes("leave") ? <Calendar className="w-5 h-5" /> :
+                                                    <Clock className="w-5 h-5" />}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-foreground">
+                                            <span className="font-black text-primary">{activity.user}</span> <span className="text-muted-foreground font-medium">{activity.action}</span>
+                                        </p>
+                                        <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest mt-1.5 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {moment(activity.time).fromNow()}
+                                        </p>
+                                    </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                                <Clock className="w-12 h-12 text-muted-foreground/30" />
+                                <p className="text-sm text-muted-foreground font-medium">No recent activities found</p>
                             </div>
-                        ))}
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-6 lg:flex-row">
+                    {/* Upcoming Celebrations */}
+                    <div className="w-full h-full bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                        <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                            <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
+                            Upcoming Celebrations
+                        </h3>
+                        <div className="space-y-4">
+                            {upcomingEvents.length > 0 ? (
+                                upcomingEvents.slice(0, 5).map((event: any) => (
+                                    <div key={event.id} className="flex items-center space-x-4 p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-all group">
+                                        <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner overflow-hidden ${!event.profilePicture ? (event.type === 'birthday' ? 'bg-amber-500/10 text-amber-600' : 'bg-blue-500/10 text-blue-600') : ''
+                                            }`}>
+                                            {event.profilePicture ? (
+                                                <Image
+                                                    src={event.profilePicture.startsWith('http') ? event.profilePicture : `${process.env.NEXT_PUBLIC_API_URL || ''}${event.profilePicture}`}
+                                                    alt={event.user}
+                                                    width={48}
+                                                    height={48}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-sm font-black uppercase">
+                                                    {event.user.split(' ').map((n: string) => n[0]).join('').substring(0, 2)}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-black text-foreground truncate">{event.user}</p>
+                                            <p className="text-xs text-muted-foreground font-medium">
+                                                {event.type === 'birthday' ? 'Birthday' : 'Work Anniversary'} • {moment(event.date).format('MMM D')}
+                                            </p>
+                                        </div>
+                                        <div className="shrink-0">
+                                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-tighter ${event.daysUntil === 0 ? 'bg-red-500 text-white animate-pulse' : 'bg-muted text-muted-foreground'
+                                                }`}>
+                                                {event.daysUntil === 0 ? 'Today' : `In ${event.daysUntil} days`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-12 text-center space-y-3">
+                                    <Gift className="w-12 h-12 text-muted-foreground/30" />
+                                    <p className="text-sm text-muted-foreground font-medium">No upcoming events this month</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Upcoming Team Absences */}
+                <div className="w-full h-full bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 mb-20">
+                    <div className="flex items-center justify-between mb-8">
+                        <h3 className="text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+                            <div className="w-1.5 h-6 bg-primary rounded-full" />
+                            Upcoming Absences
+                        </h3>
+                        <div className="px-4 py-1.5 bg-muted rounded-full">
+                            <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Next 14 Days</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {stats.upcomingLeaves?.length > 0 ? (
+                            stats.upcomingLeaves.map((leave: any) => (
+                                <div key={leave.id} className="group p-6 bg-muted/20 border border-border/50 rounded-3xl hover:bg-muted/40 hover:border-primary/30 transition-all duration-300">
+                                    <div className="flex items-center gap-4 mb-5">
+                                        <div className="w-12 h-12 rounded-2xl bg-background border border-border/50 overflow-hidden flex items-center justify-center">
+                                            {leave.profilePicture ? (
+                                                <Image
+                                                    src={leave.profilePicture.startsWith('http') ? leave.profilePicture : `${process.env.NEXT_PUBLIC_API_URL || ''}${leave.profilePicture}`}
+                                                    alt={leave.user}
+                                                    width={48}
+                                                    height={48}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-sm font-black text-primary">{leave.user.split(' ').map((n: string) => n[0]).join('')}</span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-black text-foreground truncate">{leave.user}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${leave.status === 'approved' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
+                                                    }`}>
+                                                    {leave.status}
+                                                </span>
+                                                <span className="text-[9px] font-bold text-muted-foreground/60 uppercase">{leave.leaveType}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between bg-background/50 p-4 rounded-2xl border border-border/40">
+                                        <div className="flex items-center gap-3">
+                                            <Calendar className="w-4 h-4 text-primary opacity-40" />
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black text-foreground flex items-center gap-2">
+                                                    {moment(leave.fromDate).format("MMM DD")}
+                                                    <ArrowRight className="w-2 h-2 opacity-30" />
+                                                    {moment(leave.toDate).format("MMM DD")}
+                                                </span>
+                                                <span className="text-[9px] font-bold text-muted-foreground uppercase">{leave.duration} Operational Day(s)</span>
+                                            </div>
+                                        </div>
+                                        <Clock className="w-4 h-4 text-primary opacity-20 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="col-span-full py-16 text-center border-2 border-dashed border-border/50 rounded-4xl">
+                                <Calendar className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+                                <p className="text-sm text-muted-foreground font-medium italic">Full team presence indicated for the upcoming cycle.</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -236,7 +383,7 @@ export default function AdminDashboard() {
                     Strategic Actions
                 </h3>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                    <Link href="/employees" className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-1 translate-y-[-1] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
                             <Users className="w-12 h-12" />
                         </div>
@@ -244,28 +391,36 @@ export default function AdminDashboard() {
                             <Users className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-black text-foreground uppercase tracking-widest">Add Employee</span>
-                    </button>
-                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                    </Link>
+                    <Link href="/leaves" className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-1 translate-y-[-1] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+                            <Calendar className="w-12 h-12" />
+                        </div>
                         <div className="w-12 h-12 mx-auto bg-emerald-500/10 text-emerald-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
                             <Calendar className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-black text-foreground uppercase tracking-widest">Approve Leaves</span>
-                    </button>
-                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                    </Link>
+                    <Link href="/payroll" className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-1 translate-y-[-1] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+                            <DollarSign className="w-12 h-12" />
+                        </div>
                         <div className="w-12 h-12 mx-auto bg-primary/10 text-primary rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
                             <DollarSign className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-black text-foreground uppercase tracking-widest">Run Payroll</span>
-                    </button>
-                    <button className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                    </Link>
+                    <Link href="/reports" className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-1 translate-y-[-1] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
+                            <TrendingUp className="w-12 h-12" />
+                        </div>
                         <div className="w-12 h-12 mx-auto bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
                             <TrendingUp className="w-6 h-6" />
                         </div>
                         <span className="text-xs font-black text-foreground uppercase tracking-widest">View Reports</span>
-                    </button>
+                    </Link>
                 </div>
             </div>
-
         </div>
     );
 }

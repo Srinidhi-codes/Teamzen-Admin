@@ -21,42 +21,49 @@ export const GET_ATTENDANCE = gql`
 `;
 
 export const GET_ATTENDANCE_CORRECTIONS = gql`
-  query AttendanceCorrections($status: String) {
-    attendanceCorrections(status: $status) {
-      id
-      attendanceRecord {
-        attendanceDate
-        loginTime
-        logoutTime
-        actualLoginTime
-        actualLogoutTime
-        loginDistance
-        logoutDistance
-        isVerified
-        workedHours
-        status
-        correctionStatus
-        correctionId
-        correctionReason
-        approvalComment
-      }
-      correctedLoginTime
-      correctedLogoutTime
-      status
-      reason
-      approvalComments
-      requestedBy {
+    query AttendanceCorrections($page: Int
+    $pageSize: Int
+    $filters: AttendanceCorrectionFilterInput
+    $sort: AttendanceCorrectionSortInput
+    $input: AttendanceInput) {
+    attendanceCorrections(page: $page, pageSize: $pageSize, filters: $filters, sort: $sort, input: $input) {
+      results {
         id
-        firstName
-        lastName
-        designation {
+        attendanceRecord {
+          attendanceDate
+          loginTime
+          logoutTime
+          actualLoginTime
+          actualLogoutTime
+          loginDistance
+          logoutDistance
+          isVerified
+          workedHours
+          status
+          correctionStatus
+          correctionId
+          correctionReason
+          approvalComment
+        }
+        correctedLoginTime
+        correctedLogoutTime
+        status
+        reason
+        approvalComments
+        requestedBy {
           id
-          name
+          firstName
+          lastName
+          designation {
+            id
+            name
+          }
         }
       }
-
+      total
+      page
+      pageSize
     }
-  }
-
+}
 `;
 

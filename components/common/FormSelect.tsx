@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface Option {
   label: string;
@@ -45,11 +46,14 @@ export function FormSelect({
       </label>
 
       <Select value={value} onValueChange={onValueChange}>
-        <SelectTrigger className={`h-auto px-5 py-4 w-full bg-background border rounded-2xl text-sm font-medium text-foreground transition-all duration-300 focus:ring-4 focus:ring-primary/10 ${error ? "border-destructive/50" : "border-border focus:border-primary/50"} ${className}`}>
+        <SelectTrigger className={cn("h-auto px-5 py-4 w-full bg-background border rounded-2xl text-sm font-medium text-foreground transition-all duration-300 focus:ring-4 focus:ring-primary/10",
+          error ? "border-destructive/50" : "border-border focus:border-primary/50",
+          className
+        )}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
 
-        <SelectContent className="rounded-2xl border-border shadow-2xl animate-in zoom-in-95 duration-200">
+        <SelectContent position="popper" className="rounded-2xl border-border shadow-2xl" sideOffset={4}>
           {options
             ? options.map((option) => (
               <SelectItem key={option.value} value={option.value} className="rounded-xl focus:bg-primary/10 focus:text-primary transition-colors">

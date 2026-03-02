@@ -7,9 +7,6 @@ const API_BASE_URL =
 const client = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // ✅ REQUIRED for cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 /* ----------------------------------
@@ -42,7 +39,7 @@ const scheduleTokenRefresh = (expiresIn: number = 3600) => {
 
   // Schedule refresh 5 minutes before expiration (or 80% of token lifetime)
   const refreshTime = Math.max((expiresIn * 1000 * 0.8), (expiresIn * 1000) - 300000);
-  
+
   tokenRefreshTimer = setTimeout(async () => {
     try {
       await refreshAuthToken();
@@ -107,7 +104,7 @@ client.interceptors.response.use(
           import("@/lib/store/useStore").then(({ useStore }) => {
             useStore.getState().logoutUser();
           });
-          
+
           // Only redirect if not already on login page
           if (!window.location.pathname.includes("/login")) {
             window.location.href = "/login";
@@ -128,6 +125,15 @@ client.interceptors.response.use(
    Manual Token Refresh
 ---------------------------------- */
 export const refreshAuthToken = async () => {
+  // Check if we even have a session flag (non-httponly cookie)
+  if (typeof document !== "undefined") {
+    const hasSession = document.cookie.includes("session_can_refresh=true");
+    if (!hasSession) {
+      console.log("No active session detected, skipping refresh.");
+      throw new Error("No active session");
+    }
+  }
+
   // If already refreshing, return the existing promise
   if (isRefreshing && refreshTokenPromise) {
     return refreshTokenPromise;
@@ -145,22 +151,22 @@ export const refreshAuthToken = async () => {
   refreshTokenPromise = (async () => {
     try {
       const response = await client.post(API_ENDPOINTS.REFRESH);
-      
+
       // Schedule next refresh if expiration info is provided
       if (response.data?.expires_in) {
         scheduleTokenRefresh(response.data.expires_in);
       }
-      
+
       processQueue();
     } catch (error) {
       processQueue(error);
-      
+
       // Clear scheduled refresh on error
       if (tokenRefreshTimer) {
         clearTimeout(tokenRefreshTimer);
         tokenRefreshTimer = null;
       }
-      
+
       throw error;
     } finally {
       isRefreshing = false;

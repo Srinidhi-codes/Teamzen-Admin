@@ -47,9 +47,15 @@ export type GetAttendanceResponse = {
 };
 
 export type GetAttendanceCorrectionsResponse = {
-  attendanceCorrections: AttendanceCorrection[];
+  attendanceCorrections: {
+    results: AttendanceCorrection[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
 };
 
 export type GetAttendanceVars = {
+  status?: string;
   input?: AttendanceInput;
 };

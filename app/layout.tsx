@@ -24,7 +24,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" style={{ scrollbarGutter: 'stable' }}>
+    <html lang="en" style={{ scrollbarGutter: 'stable' }} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var storage = localStorage.getItem('payroll-app-storage');
+                  if (storage) {
+                    var state = JSON.parse(storage);
+                    if (state && state.state && state.state.accent) {
+                      document.documentElement.setAttribute('data-accent', state.state.accent);
+                    }
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

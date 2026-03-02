@@ -1,15 +1,23 @@
 import { OrganizationResponse, OfficeLocationResponse, DepartmentResponse, DesignationResponse, CreateOrganizationInput, CreateOfficeLocationInput, CreateDepartmentInput, CreateDesignationInput, OrganizationInput, DepartmentInput, DesignationInput, UpdateOfficeLocationInput } from "./types";
-import { GET_ORGANIZATIONS, GET_OFFICE_LOCATIONS, GET_DEPARTMENTS, GET_DESIGNATIONS } from "./queries";
+import { GET_ORGANIZATIONS, GET_OFFICE_LOCATIONS, GET_DEPARTMENTS, GET_DESIGNATIONS, GET_ORGANIZATION } from "./queries";
 import { useMutation, useQuery } from "@apollo/client/react";
+import { useMemo, useEffect } from "react";
 import { ACTIVATE_DEPARTMENT, ACTIVATE_DESIGNATION, ACTIVATE_OFFICE_LOCATION, ACTIVATE_ORGANIZATION, CREATE_DEPARTMENT, CREATE_DESIGNATION, CREATE_OFFICE_LOCATION, CREATE_ORGANIZATION, SUSPEND_DEPARTMENT, SUSPEND_DESIGNATION, SUSPEND_OFFICE_LOCATION, SUSPEND_ORGANIZATION, UPDATE_DEPARTMENT, UPDATE_DESIGNATION, UPDATE_OFFICE_LOCATION, UPDATE_ORGANIZATION } from "./mutations";
 import { toast } from "sonner";
+import { useStore } from "@/lib/store/useStore";
 
 
 export function useGraphQLOrganizations() {
+    const { setOrganizations } = useStore();
     const { data, loading, error, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
         fetchPolicy: 'cache-and-network',
     })
 
+    useEffect(() => {
+        if (data?.organizations) {
+            setOrganizations(data.organizations);
+        }
+    }, [data, setOrganizations]);
 
     return {
         organizations: data?.organizations,
@@ -19,11 +27,43 @@ export function useGraphQLOrganizations() {
     }
 }
 
+export function useGraphQLOrganization(id: string) {
+    const { setOrganizations } = useStore();
+    const { data: pluralData, loading: pluralLoading, error: pluralError, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
+        fetchPolicy: 'cache-and-network',
+    });
+
+    useEffect(() => {
+        if (pluralData?.organizations) {
+            setOrganizations(pluralData.organizations);
+        }
+    }, [pluralData, setOrganizations]);
+
+    const organization = useMemo(() => {
+        return pluralData?.organizations?.find(org => String(org.id) === String(id));
+    }, [pluralData, id]);
+
+    return {
+        organization,
+        isOrganizationLoading: pluralLoading,
+        isOrganizationError: pluralError,
+        refetchOrganization: refetch
+    }
+}
+
 
 export function useGraphQLOfficeLocations() {
+    const { setOfficeLocations } = useStore();
     const { data, loading, error, refetch } = useQuery<OfficeLocationResponse>(GET_OFFICE_LOCATIONS, {
         fetchPolicy: 'cache-and-network',
     })
+
+    useEffect(() => {
+        if (data?.officeLocations) {
+            setOfficeLocations(data.officeLocations);
+        }
+    }, [data, setOfficeLocations]);
+
     return {
         officeLocations: data?.officeLocations,
         isOfficeLocationsLoading: loading,
@@ -33,9 +73,17 @@ export function useGraphQLOfficeLocations() {
 }
 
 export function useGraphQLDepartments() {
+    const { setDepartments } = useStore();
     const { data, loading, error, refetch } = useQuery<DepartmentResponse>(GET_DEPARTMENTS, {
         fetchPolicy: 'cache-and-network',
     })
+
+    useEffect(() => {
+        if (data?.departments) {
+            setDepartments(data.departments);
+        }
+    }, [data, setDepartments]);
+
     return {
         departments: data?.departments,
         isDepartmentsLoading: loading,
@@ -45,9 +93,17 @@ export function useGraphQLDepartments() {
 }
 
 export function useGraphQLDesignations() {
+    const { setDesignations } = useStore();
     const { data, loading, error, refetch } = useQuery<DesignationResponse>(GET_DESIGNATIONS, {
         fetchPolicy: 'cache-and-network',
     })
+
+    useEffect(() => {
+        if (data?.designations) {
+            setDesignations(data.designations);
+        }
+    }, [data, setDesignations]);
+
     return {
         designations: data?.designations,
         isDesignationsLoading: loading,

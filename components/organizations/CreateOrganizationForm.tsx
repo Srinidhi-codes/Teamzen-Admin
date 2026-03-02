@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Building } from "lucide-react";
-
-import { FormInput } from "../common/FormInput";
 import { useGraphQLOrganizationMutation, useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizationsHook";
 import Image from "next/image";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
+import { Input } from "../common/Input";
 
 interface CreateOrganizationFormProps {
     orgEditData?: any;
@@ -111,7 +110,7 @@ export default function CreateOrganizationForm({
             </div>
 
             <div className="space-y-6">
-                <FormInput
+                <Input
                     label="Organization Name"
                     name="name"
                     required
@@ -121,14 +120,14 @@ export default function CreateOrganizationForm({
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormInput
+                    <Input
                         label="Fiscal identifier (GST)"
                         name="gstNumber"
                         placeholder="GST Number"
                         value={formData.gstNumber}
                         onChange={handleChange}
                     />
-                    <FormInput
+                    <Input
                         label="Financial Identifier (PAN)"
                         name="panNumber"
                         placeholder="PAN Number"

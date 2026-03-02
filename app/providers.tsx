@@ -8,6 +8,7 @@ import { client } from "@/lib/apolloClient";
 import { Toaster } from "sonner";
 import { ThemeProvider, useTheme } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
+import { AssistantWidget } from "@/components/ai/AssistantWidget";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +32,7 @@ function ThemeInitializer({ children }: { children: ReactNode }) {
         document.documentElement.style.colorScheme = target;
       };
       update();
-      const interval = setInterval(update);
+      const interval = setInterval(update, 60000);
       return () => clearInterval(interval);
     }
   }, [theme]);
@@ -51,7 +52,10 @@ export function Providers({ children }: { children: ReactNode }) {
         >
           <ThemeInitializer>
             <Toaster />
-            <ToastProvider>{children}</ToastProvider>
+            <ToastProvider>
+              {children}
+              <AssistantWidget />
+            </ToastProvider>
           </ThemeInitializer>
         </ThemeProvider>
       </QueryClientProvider>

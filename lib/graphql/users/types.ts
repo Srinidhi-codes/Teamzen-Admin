@@ -7,7 +7,7 @@ export interface User {
   lastName: string;
   phoneNumber?: string | null;
 
-  role: "admin" | "hr" | "manager" | "employee";
+  role: "superadmin" | "admin" | "hr" | "manager" | "employee";
   isActive: boolean;
   isVerified: boolean;
   isStaff: boolean;
