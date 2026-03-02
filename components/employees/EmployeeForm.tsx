@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
 import { z } from "zod";
 import { useStore } from "@/lib/store/useStore";
-import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations } from "@/lib/graphql/organization/organizationsHook";
+import { useGraphQLDepartments, useGraphQLDesignations, useGraphQLOrganizations, useGraphQLOfficeLocations } from "@/lib/graphql/organization/organizationsHook";
 import { DatePickerSimple } from "../ui/datePicker";
 import moment from "moment";
 import { Input } from "../ui/input";
@@ -35,6 +35,7 @@ const employeeSchema = z.object({
     isActive: z.boolean().default(true),
     departmentId: z.string().min(1, "Department is required "),
     designationId: z.string().min(1, "Designation is required "),
+    officeLocationId: z.string().optional(),
     isStaff: z.boolean().default(false),
     isVerified: z.boolean().default(false),
     organizationId: z.string().min(1, "Organization is required "),
@@ -60,6 +61,7 @@ export default function EmployeeForm({
         isActive: true,
         departmentId: "",
         designationId: "",
+        officeLocationId: "",
         isStaff: false,
         isVerified: false,
         managerId: "",
@@ -71,6 +73,7 @@ export default function EmployeeForm({
     const { organizations, isOrganizationsLoading } = useGraphQLOrganizations();
     const { designations, isDesignationsLoading } = useGraphQLDesignations();
     const { departments, isDepartmentsLoading } = useGraphQLDepartments();
+    const { officeLocations, isOfficeLocationsLoading } = useGraphQLOfficeLocations();
     const [showPassword, setShowPassword] = useState(false);
     const isLoading = isCreatingUser || isUpdatingUser;
 
@@ -89,7 +92,7 @@ export default function EmployeeForm({
         // For creating, filter by organization
         if (user?.role !== "admin" && user?.organization?.id) {
             return departments
-                .filter((d: any) => String(d.organizationId) === String(user?.organization?.id))
+                .filter((d: any) => String(d.organization?.id) === String(user?.organization?.id))
                 .map((d: any) => ({
                     label: d.name,
                     value: String(d.id),
@@ -116,7 +119,7 @@ export default function EmployeeForm({
         // For creating, filter by organization
         if (user?.role !== "admin" && user?.organization?.id) {
             return designations
-                .filter((d: any) => String(d.organizationId) === String(user?.organization?.id))
+                .filter((d: any) => String(d.organization?.id) === String(user?.organization?.id))
                 .map((d: any) => ({
                     label: d.name,
                     value: String(d.id),
@@ -129,8 +132,36 @@ export default function EmployeeForm({
         }));
     };
 
+    const getOfficeLocationOptions = () => {
+        if (!officeLocations) return [];
+
+        // For editing, always show the user's current office location
+        if (initialData && formData.officeLocationId) {
+            return officeLocations.map((o: any) => ({
+                label: o.name,
+                value: String(o.id),
+            }));
+        }
+
+        // For creating, filter by organization
+        if (user?.role !== "admin" && user?.organization?.id) {
+            return officeLocations
+                .filter((o: any) => String(o.organizationId) === String(user?.organization?.id))
+                .map((o: any) => ({
+                    label: o.name,
+                    value: String(o.id),
+                }));
+        }
+
+        return officeLocations.map((o: any) => ({
+            label: o.name,
+            value: String(o.id),
+        }));
+    };
+
     const departmentOptions = getDepartmentOptions();
     const designationOptions = getDesignationOptions();
+    const officeLocationOptions = getOfficeLocationOptions();
 
     useEffect(() => {
         const orgId = user?.organization?.id;
@@ -159,6 +190,9 @@ export default function EmployeeForm({
                 : "",
             designationId: initialData.designation?.id
                 ? String(initialData.designation.id)
+                : "",
+            officeLocationId: initialData.officeLocation?.id
+                ? String(initialData.officeLocation.id)
                 : "",
             isStaff: initialData.isStaff !== false,
             isVerified: initialData.isVerified !== false,
@@ -275,7 +309,7 @@ export default function EmployeeForm({
     };
 
     // Show loading state while options are being fetched
-    if (isDepartmentsLoading || isDesignationsLoading || (user?.role === "admin" && isOrganizationsLoading)) {
+    if (isDepartmentsLoading || isDesignationsLoading || isOfficeLocationsLoading || (user?.role === "admin" && isOrganizationsLoading)) {
         return (
             <div className="flex items-center justify-center py-12">
                 <div className="flex flex-col items-center gap-4">
@@ -435,6 +469,15 @@ export default function EmployeeForm({
                         { label: "Contract", value: "contract" },
                         { label: "Intern", value: "intern" },
                     ]}
+                />
+
+                <FormSelect
+                    label="Office Location"
+                    value={formData.officeLocationId}
+                    onValueChange={(value) => handleSelectChange("officeLocationId", value)}
+                    placeholder="Select Office Location"
+                    error={errors.officeLocationId}
+                    options={officeLocationOptions}
                 />
             </div>
 

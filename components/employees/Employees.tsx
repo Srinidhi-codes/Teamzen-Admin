@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import { SearchInput } from "@/components/ui/search";
 import { Switch } from "../ui/switch";
+import Image from "next/image";
 
 export default function EmployeesPage() {
     const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
@@ -188,7 +189,11 @@ export default function EmployeesPage() {
                 <div className="flex items-center gap-4 py-1">
                     <div className="relative group">
                         <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner">
-                            {user.firstName.charAt(0)}
+                            {user?.profilePictureUrl ? (
+                                <Image src={user?.profilePictureUrl} alt={user.firstName} fill className="rounded-2xl object-cover" />
+                            ) : (
+                                user.firstName.charAt(0)
+                            )}
                         </div>
                     </div>
                     <div>
@@ -267,24 +272,26 @@ export default function EmployeesPage() {
             key: "actions",
             label: "",
             render: (val: any, user: User) => (
-                <div className="flex items-center justify-end gap-2 pr-2">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(user);
-                        }}
-                        className="p-2.5 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all duration-300"
-                    >
-                        <Edit className="w-4 h-4" />
-                    </button>
-                    <Switch
-                        checked={user.isActive}
-                        onCheckedChange={(checked) => {
-                            handleStatusToggle(user.id, checked);
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
+                user.role === 'admin' || user.role === 'hr' ? (
+                    <div className="flex items-center justify-end gap-2 pr-2" >
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(user);
+                            }}
+                            className="p-2.5 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all duration-300"
+                        >
+                            <Edit className="w-4 h-4" />
+                        </button>
+                        <Switch
+                            checked={user.isActive}
+                            onCheckedChange={(checked) => {
+                                handleStatusToggle(user.id, checked);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                ) : null
             ),
         },
     ];
@@ -370,7 +377,11 @@ export default function EmployeesPage() {
                 data={users || []}
                 columns={columns}
                 isLoading={isUsersLoading}
-                onRowClick={(employee: User) => handleEdit(employee)}
+                onRowClick={(employee: User) => {
+                    if (employee.role !== 'manager') {
+                        handleEdit(employee);
+                    }
+                }}
                 // Pagination
                 total={total}
                 currentPage={currentPage}

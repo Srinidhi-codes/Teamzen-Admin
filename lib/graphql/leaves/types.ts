@@ -15,6 +15,10 @@ export interface LeaveType {
     prorateOnJoin: boolean;
     prorateOnExit: boolean;
     prorationBasis: string;
+    organizationId: {
+        id: string;
+        name: string;
+    }
     isActive: boolean;
 }
 

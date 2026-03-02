@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
-
-import { NotificationBell } from "./NotificationBell";
-import client from "@/lib/api/client";
+import client, { cleanupTokenRefresh } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { NotificationBell } from "./NotificationBell";
+import { Menu } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +20,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+interface NavbarProps {
+  onMenuClick?: () => void;
+}
 
-export function Navbar() {
+export function Navbar({ onMenuClick }: NavbarProps) {
   const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
-  const { navbarTabs, activeNavbarTab, setActiveNavbarTab, logoutUser } = useStore();
+  const { logoutUser, organizations } = useStore();
   const router = useRouter();
+
+  const orgLogo = organizations?.[0]?.logo?.url;
 
   const handleLogout = async () => {
     try {
@@ -39,44 +45,36 @@ export function Navbar() {
   };
 
   return (
-    <nav className="bg-background/80 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
+    <nav className="bg-linear-to-br from-primary/20 via-background/10 to-background/50 backdrop-blur-sm border-b border-border/50 sticky top-0 z-50">
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20 gap-4">
-          {/* Logo */}
-          <Link href="/dashboard" className="flex items-center space-x-3 group shrink-0">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 group-hover:scale-110 transition-transform">
-              <span className="text-primary-foreground font-black text-xl">P</span>
-            </div>
-            <div className="flex-col hidden sm:flex">
-              <span className="font-black text-lg text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
-                Payroll
-              </span>
-              <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mt-1">
-                Admin Panel
-              </span>
-            </div>
-          </Link>
+          <div className="flex items-center space-x-4">
+            {/* Mobile Menu Toggle */}
+            {onMenuClick && (
+              <button
+                onClick={onMenuClick}
+                className="md:hidden p-2 hover:bg-muted/50 rounded-xl transition-all active:scale-95 text-foreground"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            )}
 
-          {/* Dynamic Tabs */}
-          {navbarTabs.length > 0 && (
-            <div className="flex-1 flex justify-center px-4 overflow-hidden">
-              <div className="flex items-center bg-muted/20 p-1.5 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto no-scrollbar">
-                {navbarTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveNavbarTab(tab.id)}
-                    className={`flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap ${activeNavbarTab === tab.id
-                      ? `bg-linear-to-r ${tab.color} text-white shadow-lg shadow-primary/20 -translate-y-0.5`
-                      : 'hover:bg-background/50 text-muted-foreground hover:text-foreground'
-                      }`}
-                  >
-                    <span className="text-lg">{tab.iconElement}</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">{tab.label}</span>
-                  </button>
-                ))}
+            {/* Logo */}
+            <Link href="/dashboard" className="flex items-center space-x-3 group shrink-0">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform overflow-hidden">
+                {orgLogo ? (
+                  <Image src={orgLogo} alt="Logo" width={40} height={40} className="object-cover" />
+                ) : (
+                  <span className="text-primary-foreground font-black text-xl">P</span>
+                )}
               </div>
-            </div>
-          )}
+              <div className="flex-col hidden sm:flex">
+                <span className="font-black text-lg text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
+                  {organizations?.[0]?.name || "Payroll"}
+                </span>
+              </div>
+            </Link>
+          </div>
 
 
           {/* User Menu */}
@@ -90,10 +88,10 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center space-x-3 px-2 py-2 rounded-2xl transition-all hover:bg-muted/50 text-foreground group focus:outline-hidden">
-                    <div className="w-10 h-10 bg-linear-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center text-primary-foreground text-sm font-black shadow-lg shadow-primary/10">
+                    {user.profilePictureUrl ? <Image src={user.profilePictureUrl || ""} alt="Avatar" width={40} height={40} className="object-cover rounded-xl w-10 h-10" /> : <div className="w-10 h-10 bg-linear-to-br from-primary to-primary/60 rounded-xl flex items-center justify-center text-primary-foreground text-sm font-black shadow-lg shadow-primary/10">
                       {user.firstName?.charAt(0)}
                       {user.lastName?.charAt(0)}
-                    </div>
+                    </div>}
                     <div className="flex-col items-start hidden sm:flex">
                       <span className="text-sm font-black tracking-tight leading-none group-hover:text-primary transition-colors">
                         {user.firstName} {user.lastName}
@@ -131,15 +129,17 @@ export function Navbar() {
                       </div>
                     </a>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/settings"
-                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
-                    >
-                      <span className="text-lg group-hover:scale-110 transition-transform">⚙️</span>
-                      <span className="text-sm font-bold">Settings</span>
-                    </Link>
-                  </DropdownMenuItem>
+                  {(user.role === "admin" || user.role === "superadmin") && (
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/settings"
+                        className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
+                      >
+                        <span className="text-lg group-hover:scale-110 transition-transform">⚙️</span>
+                        <span className="text-sm font-bold">Settings</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
                   <DropdownMenuItem
                     onClick={handleLogout}

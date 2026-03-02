@@ -5,32 +5,56 @@ import LeaveRequests from './LeaveRequests'
 import LeaveBalance from './LeaveBalance'
 import LeaveTypes from './LeaveTypes'
 import { useStore } from '@/lib/store/useStore'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const LeavesPage = () => {
-    const { user, setNavbarTabs, setActiveNavbarTab, activeNavbarTab, clearNavbarTabs } = useStore();
+    const { user } = useStore();
+    const router = useRouter();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab');
 
-    const tabs = useMemo(() => [
-        user?.role !== "manager" && { id: "types", label: "Types", iconElement: <Settings className="w-5 h-5" />, color: "from-indigo-500 to-blue-600" },
-        { id: "balance", label: "Balance", iconElement: <BarChart3 className="w-5 h-5" />, color: "from-emerald-500 to-teal-600" },
-        { id: "requests", label: "Requests", iconElement: <Clock className="w-5 h-5" />, color: "from-orange-500 to-red-600" },
-        user?.role !== "manager" && { id: "holidays", label: "Holidays", iconElement: <Gift className="w-5 h-5" />, color: "from-purple-500 to-fuchsia-600" },
-    ].filter(Boolean) as any[], [user?.role]);
+    const tabs = useMemo(() => {
+        if (!user) return [];
+        const isRestrictedRole = user.role === "manager" || user.role === "hr";
+        return [
+            !isRestrictedRole && { id: "types", label: "Types", iconElement: <Settings className="w-5 h-5" />, color: "from-indigo-500 to-blue-600" },
+            { id: "balance", label: "Balance", iconElement: <BarChart3 className="w-5 h-5" />, color: "from-emerald-500 to-teal-600" },
+            { id: "requests", label: "Requests", iconElement: <Clock className="w-5 h-5" />, color: "from-orange-500 to-red-600" },
+            !isRestrictedRole && { id: "holidays", label: "Holidays", iconElement: <Gift className="w-5 h-5" />, color: "from-purple-500 to-fuchsia-600" },
+        ].filter(Boolean) as any[];
+    }, [user]);
+
+    const [activeTab, setActiveTab] = useState(() => {
+        const isRestrictedRole = user?.role === "manager" || user?.role === "hr";
+        const defaultTab = isRestrictedRole ? "balance" : "types";
+        return (tabParam && tabs.find(t => t.id === tabParam)) ? tabParam : defaultTab;
+    });
 
     useEffect(() => {
-        setNavbarTabs(tabs);
+        const isRestrictedRole = user?.role === "manager" || user?.role === "hr";
+        const defaultTab = isRestrictedRole ? "balance" : "types";
 
         if (tabParam && tabs.find(t => t.id === tabParam)) {
-            setActiveNavbarTab(tabParam);
-        } else if (!activeNavbarTab) {
-            setActiveNavbarTab(user?.role !== "manager" ? "types" : "balance");
+            setActiveTab(tabParam);
+        } else if (!tabs.find(t => t.id === activeTab)) {
+            setActiveTab(defaultTab);
         }
-        return () => clearNavbarTabs();
-    }, [user?.role, tabs, setNavbarTabs, setActiveNavbarTab, clearNavbarTabs, tabParam]);
+    }, [tabs, tabParam, user?.role, activeTab]);
 
-    const activeTab = activeNavbarTab || (user?.role !== "manager" ? "types" : "balance");
+    const handleActiveTab = (tab: string) => {
+        if (tab) {
+            setActiveTab(tab);
+            router.push(`/leaves?tab=${tab}`);
+        }
+    }
+
+    // Prevent rendering until user is loaded to avoid flicker
+    if (!user) return (
+        <div className="flex flex-col items-center justify-center p-20 space-y-4">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-muted-foreground animate-pulse font-medium">Synchronizing Leave Data...</p>
+        </div>
+    );
 
 
     return (
@@ -46,10 +70,24 @@ const LeavesPage = () => {
                 <p className="text-muted-foreground font-medium pl-13">Regulate and synchronize the organizational flow of absence.</p>
             </div>
 
-
-            < div className="flex justify-end items-center" >
-                {/* Tabs are now in Navbar */}
-            </div >
+            {/* Local Tab Switcher - Sticky */}
+            <div className="sticky top-[80px] z-45 -mx-4 px-4 sm:-mx-8 sm:px-8 py-4 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm transition-all duration-300">
+                <div className="flex items-center bg-muted/40 p-1.5 rounded-2xl border border-border/50 backdrop-blur-md w-fit ml-auto">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => handleActiveTab(tab.id)}
+                            className={`flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap ${activeTab === tab.id
+                                ? `bg-primary text-white shadow-lg shadow-primary/20 -translate-y-0.5 font-bold`
+                                : 'hover:bg-background/50 text-muted-foreground hover:text-foreground font-medium text-sm'
+                                }`}
+                        >
+                            <span>{tab.iconElement}</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {/* Dynamic Content Repository */}
             < div className="animate-in fade-in slide-in-from-bottom-6 duration-700" >

@@ -13,10 +13,10 @@ import {
 } from "@/lib/graphql/organization/organizationsHook";
 import { toast } from "sonner";
 import { Textarea } from "../ui/textarea";
-import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store/useStore";
+import { Input } from "../common/Input";
 
 
 interface BaseFormProps {
@@ -44,7 +44,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
         geoRadiusMeters: 100,
         country: "",
         isActive: true,
-        organizationId: officeLocationEditData.organizationId || officeLocationEditData.organization?.id || "",
+        organizationId: officeLocationEditData?.organizationId || officeLocationEditData?.organization?.id || "",
     });
 
     const { organizations } = useGraphQLOrganizations();
@@ -95,10 +95,10 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
             // Ensure data types are correct for the GraphQL input
             const payload = {
                 ...formData,
-                latitude: String(formData.latitude),
-                longitude: String(formData.longitude),
-                geoRadiusMeters: Math.round(Number(formData.geoRadiusMeters)),
-                organizationId: organizationId || formData.organizationId
+                latitude: String(formData?.latitude),
+                longitude: String(formData?.longitude),
+                geoRadiusMeters: Math.round(Number(formData?.geoRadiusMeters)),
+                organizationId: organizationId || formData?.organizationId
             };
 
             if (officeLocationEditData) {
@@ -195,7 +195,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
             <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
                 <Button variant={"outline"} type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
                 <Button variant={"default"} type="submit" className="px-8 h-11 rounded-xl min-w-[140px]" disabled={loading || isCreatingOfficeLocationLoading || isUpdatingOfficeLocationLoading}>
-                    {loading ? "Processing..." : officeLocationEditData ? "Refine Location" : "Deploy Location"}
+                    {loading ? "Processing..." : officeLocationEditData ? "Update Location" : "Create Location"}
                 </Button>
             </div>
         </form>
@@ -316,7 +316,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
             <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
                 <Button variant="outline" type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
                 <Button variant="default" className="px-8 h-11 rounded-xl min-w-[140px]" type="submit" disabled={loading}>
-                    {loading ? "Processing..." : departmentEditData ? "Update Unit" : "Save Unit"}
+                    {loading ? "Processing..." : departmentEditData ? "Update Department" : "Save Department"}
                 </Button>
             </div>
         </form>

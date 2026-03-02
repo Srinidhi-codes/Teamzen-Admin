@@ -90,6 +90,7 @@ export function useGraphQLLeaveMutations() {
 
 export function useGraphQLLeaveBalances() {
     const { data, loading, error, refetch } = useQuery<GetLeaveBalanceResponse>(GET_LEAVE_BALANCE, {
+        variables: { allOrg: true },
         fetchPolicy: 'network-only',
     })
 

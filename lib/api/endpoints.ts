@@ -24,4 +24,11 @@ export const API_ENDPOINTS = {
   SALARY_STRUCTURES: "/payroll/salary-structures/",
   PAYROLL_RUNS: "/payroll/runs/",
   PAYROLL_RECORDS: "/payroll/records/",
+
+  // AI Policies
+  POLICIES: "/ai/policies/",
+  SMART_CHAT: "/ai/chat/",
+
+  // Organizations
+  ORGANIZATIONS: "/organizations/",
 };
