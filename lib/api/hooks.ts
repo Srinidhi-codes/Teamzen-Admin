@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import client, { refreshAuthToken } from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 import { useEffect } from "react";
+import { useStore } from "../store/useStore";
 
 /* ---------------- AUTH ---------------- */
 
@@ -29,7 +30,11 @@ export const useAuth = () => {
 // hooks/useTokenRefresh.ts
 
 export const useTokenRefresh = () => {
+  const isAuthenticated = useStore((state) => state.isAuthenticated);
+
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     // Refresh token every 25 minutes (before 30-minute expiry)
     const interval = setInterval(async () => {
       try {
@@ -41,7 +46,7 @@ export const useTokenRefresh = () => {
     }, 25 * 60 * 1000); // 25 minutes
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isAuthenticated]);
 };
 
 /* ---------------- USER ---------------- */

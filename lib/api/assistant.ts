@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useStore } from "../store/useStore";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 
@@ -15,14 +16,16 @@ export type AssistantResponse = {
 
 export const useAssistant = () => {
     const queryClient = useQueryClient();
+    const isAuthenticated = useStore((state) => state.isAuthenticated);
 
-    // 1. Fetch persistent history on mount
+    // 1. Fetch persistent history on mount - only if authenticated
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
             const response = await client.get<{ history: ChatMessage[] }>(API_ENDPOINTS.SMART_CHAT);
             return response.data;
         },
+        enabled: isAuthenticated, // ✅ Only fetch if logged in
     });
 
     const [history, setHistory] = useState<ChatMessage[]>([]);

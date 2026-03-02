@@ -20,8 +20,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import moment from "moment";
+import { useStore } from "@/lib/store/useStore";
 
 export function AssistantWidget() {
+    const isAuthenticated = useStore((state) => state.isAuthenticated);
     const [isOpen, setIsOpen] = useState(false);
     const [input, setInput] = useState("");
     const { messages, sendMessage, isLoading, clearHistory } = useAssistant();
@@ -33,6 +35,8 @@ export function AssistantWidget() {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages, isLoading]);
+
+    if (!isAuthenticated) return null;
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
