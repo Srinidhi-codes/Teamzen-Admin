@@ -52,18 +52,19 @@ export function Sidebar() {
         {filteredItems.map((item) => {
           const isActive = pathname?.startsWith(item.href);
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition ${isActive
-                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                }`}
+            <Link href={item.href}>
+              <div
+                key={item.href}
+                className={`flex items-center justify-center space-x-3 px-4 py-3 rounded-lg transition ${isActive
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  }`}
 
-              title={isCollapsed ? item.name : ""}
-            >
-              <span className="text-xl">{item.icon}</span>
-              {!isCollapsed && <span className="font-medium">{item.name}</span>}
+                title={isCollapsed ? item.name : ""}
+              >
+                <span className="text-xl">{item.icon}</span>
+                {!isCollapsed && <span className="font-medium">{item.name}</span>}
+              </div>
             </Link>
           );
         })}

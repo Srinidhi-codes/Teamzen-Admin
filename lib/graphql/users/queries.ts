@@ -95,6 +95,11 @@ export const GET_ALL_USERS = gql`
           name
           address
         }
+        manager {
+          id
+          firstName
+          lastName
+        }
         bankAccountNumber
         bankIfscCode
         panNumber

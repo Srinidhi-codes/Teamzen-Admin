@@ -25,8 +25,8 @@ export const GET_LEAVES = gql`
 `;
 
 export const GET_LEAVE_BALANCE = gql`
-    query LeaveBalance {
-    leaveBalance{
+    query LeaveBalance($allOrg: Boolean) {
+    leaveBalance(allOrg: $allOrg){
     id
     user{
         id

@@ -14,8 +14,13 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
             const urlObj = new URL(apiUrl);
             protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
             host = urlObj.host;
-        } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
-            host = "localhost:8000";
+        } else {
+            // Fallback for local development
+            if (window.location.port === "3000" || window.location.port === "3001") {
+                host = `${window.location.hostname}:8000`;
+            } else {
+                host = window.location.host;
+            }
         }
 
         const url = `${protocol}//${host}/ws/notifications/`;
@@ -29,15 +34,15 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
         onOpen: () => console.log("Admin Notification Socket Connected ✅"),
         onClose: () => console.log("Admin Notification Socket Disconnected ❌"),
         onError: (err) => {
-            console.error("Admin Notification Socket Error ⚠️:", err);
+            console?.error("Admin Notification Socket Error ⚠️:", err);
             if (err instanceof Error) {
                 console.error("Error Message:", err.message);
             }
         },
         onMessage: (event) => {
             const data = JSON.parse(event.data);
-            // Only process notifications for the correct level (or all if no level provided)
-            if (data.level === 'admin') {
+            // Process both personal and admin notifications
+            if (data.level === 'admin' || data.level === 'personal') {
                 toast.success(data.message, {
                     description: `Alert: ${data.verb}`,
                     duration: 5000,

@@ -19,6 +19,10 @@ const LeaveBalance = () => {
     const { users } = useUsers();
     const { createLeaveBalance, updateLeaveBalance, deleteLeaveBalance } = useGraphQLLeaveMutations();
 
+    // Role-based logic
+    const isManager = me?.role === 'manager';
+    const isAdmin = me?.role === 'admin' || me?.role === 'superadmin' || me?.role === 'hr';
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBalance, setEditingBalance] = useState<LeaveBalanceType | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -60,7 +64,13 @@ const LeaveBalance = () => {
         });
 
         return row;
-    }).filter(row => Object.keys(row).length > 3);
+    }).filter(row => {
+        // Filter rows based on role
+        if (isManager) {
+            return row.user.manager?.id === me?.id;
+        }
+        return Object.keys(row).length > 3;
+    });
 
     const dynamicColumns: Column<any>[] = [
         {
@@ -76,54 +86,64 @@ const LeaveBalance = () => {
             )
         },
 
-        ...leaveTypes.map(lt => ({
-            key: lt.id,
-            label: lt.name,
-            render: (val: any, row: any) => {
-                const isSelf = row.user.id === me?.id;
-                return val ? (
-                    <div
-                        className={cn(
-                            "group relative p-3 rounded-2xl transition-all duration-300",
-                            isSelf ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-primary/5"
-                        )}
-                        onClick={(e) => {
-                            if (isSelf) return;
-                            e.stopPropagation();
-                            setEditingBalance(val.original);
-                            setFormData({
-                                userId: row.user.id,
-                                leaveTypeId: val.leaveType.id,
-                                year: val.original.year,
-                                totalEntitled: val.total
-                            });
-                            setIsModalOpen(true);
-                        }}
-                    >
-                        <div className="flex items-baseline gap-1.5 mb-2">
-                            <span className={cn(
-                                "text-xl font-black text-foreground transition-colors",
-                                !isSelf && "group-hover:text-primary"
-                            )}>
-                                {val.available}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">/ {val.total}d</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
-                                style={{ width: `${Math.min((val.available / (val.total || 1)) * 100, 100)}%` }}
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <div className="flex items-center justify-center py-4">
-                        <span className="text-muted-foreground/30 text-[10px] font-black uppercase tracking-[0.2em]">—</span>
-                    </div>
-                )
-            }
+        ...leaveTypes
+            .filter(lt => {
+                if (isManager) {
+                    const name = lt.name.toLowerCase();
+                    return name.includes('complementary leave') || name.includes('comp off');
+                }
+                return true;
+            })
+            .map(lt => ({
+                key: lt.id,
+                label: lt.name,
+                render: (val: any, row: any) => {
+                    const isSelf = row.user.id === me?.id;
+                    const canEdit = isAdmin || (isManager && row.user.manager?.id === me?.id);
 
-        }))
+                    return val ? (
+                        <div
+                            className={cn(
+                                "group relative p-3 rounded-2xl transition-all duration-300",
+                                !canEdit ? "opacity-40 cursor-not-allowed" : "cursor-pointer hover:bg-primary/5"
+                            )}
+                            onClick={(e) => {
+                                if (!canEdit) return;
+                                e.stopPropagation();
+                                setEditingBalance(val.original);
+                                setFormData({
+                                    userId: row.user.id,
+                                    leaveTypeId: val.leaveType.id,
+                                    year: val.original.year,
+                                    totalEntitled: val.total
+                                });
+                                setIsModalOpen(true);
+                            }}
+                        >
+                            <div className="flex items-baseline gap-1.5 mb-2">
+                                <span className={cn(
+                                    "text-xl font-black text-foreground transition-colors",
+                                    canEdit && "group-hover:text-primary"
+                                )}>
+                                    {val.available}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">/ {val.total}d</span>
+                            </div>
+                            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
+                                    style={{ width: `${Math.min((val.available / (val.total || 1)) * 100, 100)}%` }}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center justify-center py-4">
+                            <span className="text-muted-foreground/30 text-[10px] font-black uppercase tracking-[0.2em]">—</span>
+                        </div>
+                    )
+                }
+
+            }))
 
     ];
 
@@ -255,8 +275,14 @@ const LeaveBalance = () => {
                         formData={formData}
                         setFormData={setFormData}
                         editingBalance={!!editingBalance}
-                        users={users}
-                        leaveTypes={leaveTypes}
+                        users={isManager ? users.filter(u => u.manager?.id === me?.id) : users}
+                        leaveTypes={isManager
+                            ? leaveTypes.filter(lt => {
+                                const name = lt.name.toLowerCase();
+                                return name.includes('complementary leave') || name.includes('comp off');
+                            })
+                            : leaveTypes
+                        }
 
                     />
                 )}

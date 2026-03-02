@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, FileText, Upload, Trash2 } from "lucide-react";
 import moment from "moment";
+import { useStore } from "@/lib/store/useStore";
+import { useRouter } from "next/navigation";
 
 export default function PoliciesPage() {
     const { policies, isLoading, isUploading, upload, remove } = usePolicies();
@@ -21,6 +23,8 @@ export default function PoliciesPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [file, setFile] = useState<File | null>(null);
+    const { user } = useStore();
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,6 +51,8 @@ export default function PoliciesPage() {
         }
     };
 
+    const isAuthorized = user?.role === "admin" || user?.role === "superadmin";
+
     return (
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
@@ -54,7 +60,7 @@ export default function PoliciesPage() {
                     <h1 className="text-2xl font-bold tracking-tight">Policy Management</h1>
                     <p className="text-muted-foreground">Upload and manage organization policies and documents.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                {isAuthorized && <div className="flex items-center gap-2">
                     <Dialog open={isOpen} onOpenChange={setIsOpen}>
                         <DialogTrigger asChild>
                             <Button>
@@ -106,7 +112,7 @@ export default function PoliciesPage() {
                             </form>
                         </DialogContent>
                     </Dialog>
-                </div>
+                </div>}
             </div>
 
             {isLoading ? (
@@ -167,6 +173,7 @@ export default function PoliciesPage() {
                                         </div>
                                     </button>
                                     <button
+                                        hidden={!isAuthorized}
                                         onClick={async () => {
                                             if (window.confirm("Are you sure you want to delete this policy? This will also remove its AI embeddings.")) {
                                                 try {

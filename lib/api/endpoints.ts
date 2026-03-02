@@ -28,4 +28,7 @@ export const API_ENDPOINTS = {
   // AI Policies
   POLICIES: "/ai/policies/",
   SMART_CHAT: "/ai/chat/",
+
+  // Organizations
+  ORGANIZATIONS: "/organizations/",
 };

@@ -4,6 +4,11 @@ import type { NextRequest } from 'next/server'
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // Optimization: Skip session/role checks for Next.js prefetch requests
+  if (request.headers.get('x-nextjs-prefetch') === '1') {
+    return NextResponse.next()
+  }
+
   const protectedPaths = [
     '/dashboard',
     '/attendance',
@@ -13,7 +18,7 @@ export async function proxy(request: NextRequest) {
     '/organizations',
   ]
 
-  const authPaths = ['/login', '/register']
+  const authPaths = ['/login', '/register', '/forgot-password']
 
   const isProtected = protectedPaths.some(path => pathname.startsWith(path))
   const isAuth = authPaths.some(path => pathname.startsWith(path))

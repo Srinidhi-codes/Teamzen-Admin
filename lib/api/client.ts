@@ -7,9 +7,6 @@ const API_BASE_URL =
 const client = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // ✅ REQUIRED for cookies
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 /* ----------------------------------

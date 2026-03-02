@@ -92,7 +92,7 @@ export default function EmployeeForm({
         // For creating, filter by organization
         if (user?.role !== "admin" && user?.organization?.id) {
             return departments
-                .filter((d: any) => String(d.organizationId) === String(user?.organization?.id))
+                .filter((d: any) => String(d.organization?.id) === String(user?.organization?.id))
                 .map((d: any) => ({
                     label: d.name,
                     value: String(d.id),
@@ -119,7 +119,7 @@ export default function EmployeeForm({
         // For creating, filter by organization
         if (user?.role !== "admin" && user?.organization?.id) {
             return designations
-                .filter((d: any) => String(d.organizationId) === String(user?.organization?.id))
+                .filter((d: any) => String(d.organization?.id) === String(user?.organization?.id))
                 .map((d: any) => ({
                     label: d.name,
                     value: String(d.id),

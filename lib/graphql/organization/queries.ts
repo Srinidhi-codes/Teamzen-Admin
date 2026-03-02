@@ -13,6 +13,27 @@ export const GET_ORGANIZATIONS = gql`
             panNumber
             headquartersAddress
             isActive
+            registrationNumber
+            createdAt
+            updatedAt
+        }
+    }
+`
+
+export const GET_ORGANIZATION = gql`
+    query organization($id: ID!) {
+        organization(id: $id) {
+            id
+            name
+            logo {
+                url
+            }
+            gstNumber
+            employeeCount
+            panNumber
+            headquartersAddress
+            isActive
+            registrationNumber
             createdAt
             updatedAt
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Edit, Building2, FileText, CreditCard, Hash, ArrowRight, Loader2 } from "lucide-react";
+import { Users, Edit, Building2, FileText, CreditCard, Hash, ArrowRight, Loader2, Paperclip } from "lucide-react";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store/useStore";
@@ -9,6 +9,7 @@ import {
     useGraphQLSuspendOrganizationMutation,
 } from "@/lib/graphql/organization/organizationsHook";
 import { Organization } from "@/lib/graphql/organization/types";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface Props {
@@ -31,6 +32,7 @@ const DetailRow = ({ icon: Icon, label, value }: { icon: any; label: string; val
 
 
 export default function OrganizationList({ organizations, onEdit, onViewEmployees }: Props) {
+    const router = useRouter();
     const { activateOrganization } = useGraphQLActivateOrganizationMutation();
     const { suspendOrganization } = useGraphQLSuspendOrganizationMutation();
     const { user } = useStore();
@@ -64,7 +66,7 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
 
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {organizations.map((org) => (
                 <div key={org.id} className="group premium-card p-0 overflow-hidden hover:scale-102 flex flex-col border-border/50">
                     {/* Header Image/Background */}
@@ -87,16 +89,25 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                         {/* Icon & Title */}
                         <div className="-mt-12 mb-8 flex items-end justify-between relative z-10">
                             <div className="flex items-end gap-4 px-1">
-                                <div className="w-20 h-20 bg-card border-4 border-background rounded-3xl flex items-center justify-center shadow-2xl group-hover:rotate-6 transition-transform duration-500">
-                                    <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/30">
-                                        <Building2 className="w-7 h-7" />
-                                    </div>
+                                <div className="w-20 h-20 bg-card border-4 border-background rounded-3xl flex items-center justify-center shadow-2xl group-hover:rotate-6 transition-transform duration-500 overflow-hidden">
+                                    {org.logo?.url ? (
+                                        <img src={org.logo.url} alt={org.name} className="w-full h-full object-contain p-2" />
+                                    ) : (
+                                        <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-xl shadow-primary/30">
+                                            <Building2 className="w-7 h-7" />
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="mb-1">
-                                    <h3 className="text-xl font-black text-foreground tracking-tight leading-none group-hover:text-primary transition-colors truncate max-w-[180px]">{org.name}</h3>
+                                    <h3
+                                        onClick={() => router.push(`/organizations/${org.id}`)}
+                                        className="text-xl font-black text-foreground tracking-tight leading-none group-hover:text-primary transition-colors truncate max-w-[180px] cursor-pointer"
+                                    >
+                                        {org.name}
+                                    </h3>
                                     <div className="flex items-center gap-2 mt-2">
                                         <Users className="w-3.5 h-3.5 text-muted-foreground" />
-                                        <p className="text-premium-label text-[9px]">{org.employeeCount || 0} Core Users</p>
+                                        <p className="text-premium-label text-[9px]">{org.employeeCount || 0} Employees</p>
                                     </div>
                                 </div>
                             </div>
@@ -112,17 +123,17 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
 
                             <div className="space-y-2">
                                 {org.registrationNumber && (
-                                    <DetailRow icon={Hash} label="Licence ID" value={org.registrationNumber} />
+                                    <DetailRow icon={Hash} label="Reg Number" value={org.registrationNumber} />
                                 )}
-                                {org.gstNumber && <DetailRow icon={FileText} label="Fiscal ID" value={org.gstNumber} />}
-                                {org.panNumber && <DetailRow icon={CreditCard} label="Payment ID" value={org.panNumber} />}
+                                {org.gstNumber && <DetailRow icon={FileText} label="GST Number" value={org.gstNumber} />}
+                                {org.panNumber && <DetailRow icon={CreditCard} label="PAN Number" value={org.panNumber} />}
                             </div>
                         </div>
 
                         {/* Footer / Controls */}
                         <div className="mt-8 pt-8 border-t border-border/40">
                             <div className="flex items-center justify-between mb-6">
-                                <span className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.3em]">Ref: {org.id.substring(0, 8)}</span>
+                                <span className="text-xs font-black text-muted-foreground/60 uppercase tracking-[0.3em]">Ref: {org.id.substring(0, 8)}</span>
                                 {user?.role === "admin" && (
                                     <div className="flex items-center gap-3">
                                         <button
@@ -145,15 +156,24 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                                     </div>
                                 )}
                             </div>
-
-                            <button
-                                onClick={() => onViewEmployees(org)}
-                                className="w-full py-4.5 px-6 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-95 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group/btn"
-                            >
-                                <Users className="w-4.5 h-4.5" />
-                                <span>Navigate to Workforce</span>
-                                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => onViewEmployees(org)}
+                                    className="w-full py-4.5 px-6 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-95 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group/btn"
+                                >
+                                    <Users className="w-4.5 h-4.5" />
+                                    <span>Navigate to Workforce</span>
+                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
+                                </button>
+                                <button
+                                    onClick={() => router.push(`/organizations/${org.id}`)}
+                                    className="w-full py-4.5 px-6 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-95 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group/btn"
+                                >
+                                    <Paperclip className="w-4.5 h-4.5" />
+                                    <span>View Details</span>
+                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div >
