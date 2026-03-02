@@ -27,5 +27,11 @@ export const createUserSlice: StateCreator<UserSlice> = (set) => ({
     set((state) => ({
       user: state.user ? { ...state.user, ...updates } : null,
     })),
-  logoutUser: () => set({ user: null, isAuthenticated: false }),
+  logoutUser: () => {
+    // Clear the session refresh flag cookie
+    if (typeof document !== 'undefined') {
+      document.cookie = "session_can_refresh=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    }
+    set({ user: null, isAuthenticated: false });
+  },
 });
