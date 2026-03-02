@@ -24,6 +24,10 @@ export default function LoginForm() {
       // Update global store - transformation happens inside the slice!
       if (response && response.user) {
         loginUser(response.user);
+
+        // Set a non-httpOnly cookie to signal that we have an active session
+        // This is used by the client-side token refresh logic
+        document.cookie = "session_can_refresh=true; path=/; max-age=604800; SameSite=Lax";
       }
 
       router.push("/dashboard");
