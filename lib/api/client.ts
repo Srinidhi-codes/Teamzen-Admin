@@ -1,8 +1,12 @@
 import axios from "axios";
 import { API_ENDPOINTS } from "./endpoints";
 
+// All client-side requests MUST go through the Next.js same-origin proxy
+// at /api/ so the browser sends/receives cookies correctly.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+  typeof window !== "undefined"
+    ? "/api"
+    : (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api");
 
 const client = axios.create({
   baseURL: API_BASE_URL,
