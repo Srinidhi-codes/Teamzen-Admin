@@ -118,7 +118,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a
-                      href="http://localhost:3000/dashboard"
+                      href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000/dashboard"}
                       className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/10 text-primary cursor-pointer group"
                     >
                       <span className="text-lg group-hover:scale-110 transition-transform">🏠</span>
