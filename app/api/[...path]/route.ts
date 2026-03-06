@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/';
-const DJANGO_BASE = RAW_API_URL.endsWith('/') ? RAW_API_URL.slice(0, -1) : RAW_API_URL;
+// Strip /api if it exists so we can target root level endpoints like /graphql/
+const DJANGO_BASE = RAW_API_URL.replace(/\/api\/?$/, '');
 
 async function handler(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
     const { path } = await params;
-    const djangoPath = path.join('/');
+
+    // If the Next.js route is /api/graphql, the path array is ['graphql']
+    // For /api/users, the path array is ['users']
+    const isGraphQL = path[0] === 'graphql';
+
+    // Build the Django path. If it's not graphql, prepend 'api/' since we stripped it from base.
+    const djangoPath = isGraphQL ? path.join('/') : `api/${path.join('/')}`;
 
     const trailingSlash = djangoPath.endsWith('/') ? '' : '/';
     const searchParams = request.nextUrl.searchParams.toString();
@@ -15,7 +22,9 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     const forwardedHeaders: Record<string, string> = {};
 
     request.headers.forEach((value, key) => {
-        if (!['host', 'connection', 'transfer-encoding', 'cookie'].includes(key.toLowerCase())) {
+        // Strip accept-encoding to prevent backend from gzipping, 
+        // passing compressed bytes verbatim can cause ERR_CONTENT_DECODING_FAILED
+        if (!['host', 'connection', 'transfer-encoding', 'cookie', 'accept-encoding'].includes(key.toLowerCase())) {
             forwardedHeaders[key] = value;
         }
     });
