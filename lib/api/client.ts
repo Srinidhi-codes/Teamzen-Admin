@@ -53,8 +53,14 @@ client.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // 🔄 Refresh token (cookies auto-sent)
-        await client.post(API_ENDPOINTS.REFRESH);
+        // 🔄 Refresh via same-origin proxy — cross-origin Set-Cookie is blocked
+        // by browsers, so we MUST go through /api/auth/refresh (Next.js proxy)
+        // not directly to the Render backend.
+        const refreshResp = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (!refreshResp.ok) throw new Error('Refresh failed');
 
         processQueue();
         return client(originalRequest);
@@ -112,7 +118,11 @@ export const refreshAuthToken = async () => {
 
   refreshTokenPromise = (async () => {
     try {
-      await client.post(API_ENDPOINTS.REFRESH);
+      const r = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!r.ok) throw new Error('Refresh failed');
       processQueue();
     } catch (error) {
       processQueue(error);
