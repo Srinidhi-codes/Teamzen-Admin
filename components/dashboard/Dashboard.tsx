@@ -7,6 +7,7 @@ import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
 import moment from "moment";
 import Image from "next/image";
 import Link from "next/link";
+import AssistantWidget from "../ai";
 
 export default function AdminDashboard() {
     const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
@@ -421,6 +422,7 @@ export default function AdminDashboard() {
                     </Link>
                 </div>
             </div>
+            <AssistantWidget />
         </div>
     );
 }

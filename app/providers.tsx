@@ -8,7 +8,6 @@ import { client } from "@/lib/apolloClient";
 import { Toaster } from "sonner";
 import { ThemeProvider, useTheme } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
-import { AssistantWidget } from "@/components/ai/AssistantWidget";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +53,6 @@ export function Providers({ children }: { children: ReactNode }) {
             <Toaster />
             <ToastProvider>
               {children}
-              <AssistantWidget />
             </ToastProvider>
           </ThemeInitializer>
         </ThemeProvider>
