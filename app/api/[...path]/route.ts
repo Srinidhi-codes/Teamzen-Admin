@@ -48,7 +48,18 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
 
         const responseHeaders = new Headers();
         djangoResponse.headers.forEach((value, key) => {
-            if (!['transfer-encoding', 'connection', 'keep-alive'].includes(key.toLowerCase())) {
+            // Next.js fetch automatically decompresses the response body.
+            // If we forward the 'content-encoding' header (e.g. gzip) but serve 
+            // the decompressed bytes, the browser will fail to decode it.
+            // We also strip content-length because the uncompressed size differs.
+            const stripHeaders = [
+                'transfer-encoding',
+                'connection',
+                'keep-alive',
+                'content-encoding',
+                'content-length'
+            ];
+            if (!stripHeaders.includes(key.toLowerCase())) {
                 responseHeaders.set(key, value);
             }
         });
