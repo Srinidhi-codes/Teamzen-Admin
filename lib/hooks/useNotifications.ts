@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useEffect, useCallback } from "react";
 
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
-    const getSocketUrl = useCallback(() => {
+    const getSocketUrl = useCallback(async () => {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         let host = window.location.host;
@@ -23,7 +23,18 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
             }
         }
 
-        const url = `${protocol}//${host}/ws/notifications/`;
+        let token = "";
+        try {
+            const res = await fetch('/api/auth/ws-token');
+            if (res.ok) {
+                const data = await res.json();
+                token = data.token;
+            }
+        } catch (e) {
+            console.error("Failed to fetch Admin WebSocket token:", e);
+        }
+
+        const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
         console.log("Attempting Admin Notification Socket connection to:", url);
         return url;
     }, []);
