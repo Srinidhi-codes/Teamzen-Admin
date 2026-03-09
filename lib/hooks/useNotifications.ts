@@ -2,44 +2,49 @@
 
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
-import { useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
-    const getSocketUrl = useCallback(async () => {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        let host = window.location.host;
+    const [socketUrl, setSocketUrl] = useState<string | null>(null);
 
-        if (apiUrl) {
-            const urlObj = new URL(apiUrl);
-            protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
-            host = urlObj.host;
-        } else {
-            // Fallback for local development
-            if (window.location.port === "3000" || window.location.port === "3001") {
-                host = `${window.location.hostname}:8000`;
+    useEffect(() => {
+        const fetchTokenAndConnect = async () => {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            let protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            let host = window.location.host;
+
+            if (apiUrl) {
+                const urlObj = new URL(apiUrl);
+                protocol = urlObj.protocol === "https:" ? "wss:" : "ws:";
+                host = urlObj.host;
             } else {
-                host = window.location.host;
+                if (window.location.port === "3000" || window.location.port === "3001") {
+                    host = `${window.location.hostname}:8000`;
+                } else {
+                    host = window.location.host;
+                }
             }
-        }
 
-        let token = "";
-        try {
-            const res = await fetch('/api/auth/ws-token');
-            if (res.ok) {
-                const data = await res.json();
-                token = data.token;
+            let token = "";
+            try {
+                const res = await fetch('/api/auth/ws-token');
+                if (res.ok) {
+                    const data = await res.json();
+                    token = data.token;
+                }
+            } catch (e) {
+                console.error("Failed to fetch Admin WebSocket token:", e);
             }
-        } catch (e) {
-            console.error("Failed to fetch Admin WebSocket token:", e);
-        }
 
-        const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
-        console.log("Attempting Admin Notification Socket connection to:", url);
-        return url;
+            const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
+            console.log("Setting Admin Notification Socket connection to:", url);
+            setSocketUrl(url);
+        };
+
+        fetchTokenAndConnect();
     }, []);
 
-    const { readyState } = useWebSocket(getSocketUrl, {
+    const { readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
         reconnectInterval: 5000,
         onOpen: () => console.log("Admin Notification Socket Connected ✅"),
@@ -63,7 +68,7 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
                 }
             }
         }
-    });
+    }, socketUrl !== null);
 
     return { readyState, isConnected: readyState === ReadyState.OPEN };
 }
