@@ -1,68 +1,57 @@
-import {
-    Body,
-    Button,
-    Container,
-    Head,
-    Heading,
-    Hr,
-    Html,
-    Preview,
-    Section,
-    Text,
-    Tailwind,
-} from '@react-email/components';
 import React from 'react';
+import { Section, Text, Button } from '@react-email/components';
+import { BaseEmailLayout } from './components/BaseEmailLayout';
 
-// Using {{ variable }} syntax for Django templating after export
 export const LeaveRequestAlert = () => {
     return (
-        <Html>
-            <Head />
-            <Preview>Leave Request Update: {"{{"} status {"}}"}</Preview>
-            <Tailwind>
-                <Body className="bg-gray-100 font-sans my-auto mx-auto pt-8 px-2">
-                    <Container className="border border-solid border-gray-200 rounded-lg my-10 mx-auto p-8 max-w-[500px] bg-white shadow-sm">
-                        <Heading className="text-gray-900 text-[24px] font-bold text-center p-0 my-[10px] mx-0">
-                            Leave Request <span className="uppercase text-blue-600">{"{{"} status {"}}"}</span>
-                        </Heading>
+        <BaseEmailLayout
+            previewText="Leave Request Submitted"
+            heroGradient="linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 50%, #C7D2FE 100%)"
+            heroIcon="🏖️"
+            heroTitle="Leave Request Submitted"
+            heroBadgeText="PENDING"
+            heroBadgeBg="#DBEAFE"
+            heroBadgeColor="#1E40AF"
+        >
+            {/* Message Area */}
+            <Section className="px-[40px] pt-[28px] pb-[16px]">
+                <Text className="text-[#475569] text-[15px] leading-[1.7] m-0 mb-4">
+                    Hi <strong>{"{{ managerName }}"}</strong>,
+                </Text>
+                <Text className="text-[#475569] text-[15px] leading-[1.7] m-0">
+                    You have a new leave request from <strong>{"{{ employeeName }}"}</strong>
+                    that requires your approval. Here are the details:
+                </Text>
+            </Section>
 
-                        <Text className="text-gray-800 text-[16px] leading-[24px] mt-6">
-                            Hello {"{{"} managerName {"}}"},
-                        </Text>
+            {/* Leave Details */}
+            <Section className="px-[40px] pt-[16px] pb-[24px]">
+                <Section className="bg-[#F8FAFC] border border-solid border-[#E2E8F0] rounded-xl p-[24px]">
+                    <Text className="text-[#3B82F6] font-bold m-0 mb-[12px] uppercase tracking-wider text-[13px]">
+                        📋 Request Details
+                    </Text>
+                    <Text className="text-[#475569] m-0 mb-2 text-[14px]">
+                        <strong style={{ color: "#3B82F6" }}>🏷️ Leave Type:</strong> {"{{ leaveType }}"}
+                    </Text>
+                    <Text className="text-[#475569] m-0 mb-2 text-[14px]">
+                        <strong style={{ color: "#3B82F6" }}>📅 Dates:</strong> {"{{ dates }}"}
+                    </Text>
+                    <Text className="text-[#475569] m-0 mb-2 text-[14px]">
+                        <strong style={{ color: "#3B82F6" }}>⏱️ Duration:</strong> {"{{ duration }}"} days
+                    </Text>
+                </Section>
+            </Section>
 
-                        <Text className="text-gray-800 text-[16px] leading-[24px]">
-                            The leave request for <strong className="text-black">{"{{"} employeeName {"}}"}</strong> has been updated.
-                        </Text>
-
-                        <Section className="bg-blue-50 border border-blue-100 p-6 rounded-md my-[24px]">
-                            <Text className="text-blue-800 font-bold mb-2 uppercase tracking-wider text-xs">Details</Text>
-                            <Text className="text-gray-800 m-0 leading-[24px]">
-                                <strong>Dates Requested:</strong> {"{{"} dates {"}}"}
-                            </Text>
-                            <Text className="text-gray-800 m-0 leading-[24px] mt-2">
-                                <strong>Current Status:</strong> <span className="uppercase font-bold text-black">{"{{"} status {"}}"}</span>
-                            </Text>
-                        </Section>
-
-                        <Section className="text-center mt-[32px] mb-[32px]">
-                            <Button
-                                className="bg-black rounded-md text-white px-6 py-3 font-semibold no-underline text-center"
-                                href="{{ dashboardUrl }}"
-                            >
-                                View in Dashboard
-                            </Button>
-                        </Section>
-
-                        <Hr className="border border-solid border-gray-200 my-[26px] mx-0 w-full" />
-
-                        <Text className="text-gray-500 text-[12px] leading-[24px]">
-                            This notification was generated by TeamZen HRMS. Please do not reply directly to this email.
-                        </Text>
-                    </Container>
-                </Body>
-            </Tailwind>
-        </Html>
+            {/* CTA */}
+            <Section className="px-[40px] pb-[40px] text-center">
+                <Button
+                    className="bg-[#4F46E5] rounded-md text-white px-[24px] py-[12px] font-semibold no-underline text-center inline-block"
+                    href={"{{ dashboardUrl }}"}
+                >
+                    ✅ Review Request
+                </Button>
+            </Section>
+        </BaseEmailLayout>
     );
 };
-
 export default LeaveRequestAlert;
