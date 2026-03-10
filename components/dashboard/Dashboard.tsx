@@ -40,47 +40,47 @@ export default function AdminDashboard() {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight">Admin Dashboard</h1>
-                    <p className="text-muted-foreground font-medium mt-1">Welcome back! Here's what's happening today.</p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">Admin Dashboard</h1>
+                    <p className="text-muted-foreground font-medium mt-1 text-sm sm:text-base">Welcome back! Here's what's happening today.</p>
                 </div>
-                <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest bg-muted px-3 py-1 rounded-lg">
+                <div className="w-fit text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted px-3 py-1.5 rounded-lg border border-border/50">
                     Last updated: {new Date().toLocaleString()}
                 </div>
             </div>
 
             {/* Wish Message Banner */}
             {wishMessage && (
-                <div className="relative overflow-hidden bg-linear-to-r from-primary/20 via-primary/10 to-transparent border border-primary/30 rounded-4xl p-8 flex items-center gap-6 animate-in slide-in-from-top-4 duration-1000">
+                <div className="relative overflow-hidden bg-linear-to-r from-primary/20 via-primary/10 to-transparent border border-primary/30 rounded-3xl sm:rounded-4xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 animate-in slide-in-from-top-4 duration-1000">
                     <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                         <PartyPopper className="w-32 h-32 rotate-12" />
                     </div>
-                    <div className="shrink-0 w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
-                        <Cake className="w-8 h-8" />
+                    <div className="shrink-0 w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
+                        <Cake className="w-7 h-7" />
                     </div>
-                    <div className="relative z-10">
-                        <h2 className="text-2xl font-black text-foreground tracking-tight mb-1">Congratulations!</h2>
-                        <p className="text-lg font-medium text-muted-foreground">{wishMessage}</p>
+                    <div className="relative z-10 text-center sm:text-left">
+                        <h2 className="text-xl sm:text-2xl font-black text-foreground tracking-tight mb-1">Congratulations!</h2>
+                        <p className="text-base sm:text-lg font-medium text-muted-foreground">{wishMessage}</p>
                     </div>
                 </div>
             )}
 
 
             {/* Hero Section */}
-            <div className="relative h-56 rounded-4xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 group">
+            <div className="relative h-48 sm:h-56 rounded-3xl sm:rounded-4xl overflow-hidden border border-primary/20 shadow-2xl shadow-primary/10 group">
                 <img
                     src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200"
                     alt="Admin Dashboard"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-linear-to-r from-background via-background/60 to-transparent flex items-center">
-                    <div className="px-12 max-w-lg">
-                        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground mb-4 shadow-lg shadow-primary/30">
-                            <TrendingUp className="w-6 h-6" />
+                <div className="absolute inset-0 bg-linear-to-r from-background via-background/60 sm:to-transparent flex items-center">
+                    <div className="px-6 sm:px-12 max-w-lg">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground mb-4 shadow-lg shadow-primary/30">
+                            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <h2 className="text-3xl font-black text-foreground tracking-tight leading-tight">HRMS Control Center</h2>
-                        <p className="mt-3 text-muted-foreground font-medium text-lg italic">"Operational excellence is the precursor to organizational success."</p>
+                        <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight leading-tight">HRMS Control Center</h2>
+                        <p className="mt-2 sm:mt-3 text-muted-foreground font-medium text-base sm:text-lg italic">"Operational excellence is the precursor to organizational success."</p>
                     </div>
                 </div>
             </div>
@@ -129,8 +129,8 @@ export default function AdminDashboard() {
             {/* Charts Row 1 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Employee Growth Chart */}
-                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
-                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                <div className="bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-lg sm:text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
                         <div className="w-1.5 h-6 bg-primary rounded-full" />
                         Employee Growth
                     </h3>
@@ -150,8 +150,8 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Department Distribution */}
-                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
-                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                <div className="bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-lg sm:text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
                         <div className="w-1.5 h-6 bg-primary rounded-full" />
                         Departmental Hub
                     </h3>
@@ -195,8 +195,8 @@ export default function AdminDashboard() {
             {/* Charts Row 2 */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Leave Trends */}
-                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
-                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                <div className="bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-lg sm:text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
                         <div className="w-1.5 h-6 bg-primary rounded-full" />
                         Leave Request Flux
                     </h3>
@@ -219,8 +219,8 @@ export default function AdminDashboard() {
 
 
                 {/* Recent Activities */}
-                <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
-                    <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                <div className="bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                    <h3 className="text-lg sm:text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
                         <div className="w-1.5 h-6 bg-primary rounded-full" />
                         Activity Stream
                     </h3>
@@ -260,8 +260,8 @@ export default function AdminDashboard() {
 
                 <div className="flex flex-col gap-6 lg:flex-row">
                     {/* Upcoming Celebrations */}
-                    <div className="w-full h-full bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
-                        <h3 className="text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
+                    <div className="w-full h-full bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
+                        <h3 className="text-lg sm:text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
                             <div className="w-1.5 h-6 bg-amber-500 rounded-full" />
                             Upcoming Celebrations
                         </h3>
@@ -310,9 +310,9 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Upcoming Team Absences */}
-                <div className="w-full h-full bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 mb-20">
-                    <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
+                <div className="w-full h-full bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 mb-10 sm:mb-20">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                        <h3 className="text-lg sm:text-xl font-black text-foreground uppercase tracking-tight flex items-center gap-2">
                             <div className="w-1.5 h-6 bg-primary rounded-full" />
                             Upcoming Absences
                         </h3>
@@ -378,8 +378,8 @@ export default function AdminDashboard() {
 
 
             {/* Quick Actions */}
-            <div className="bg-card rounded-4xl border border-border p-8 shadow-xl shadow-primary/5">
-                <h3 className="text-xl font-black text-foreground mb-8 uppercase tracking-tight flex items-center gap-2">
+            <div className="bg-card rounded-3xl sm:rounded-4xl border border-border p-6 sm:p-8 shadow-xl shadow-primary/5">
+                <h3 className="text-lg sm:text-xl font-black text-foreground mb-8 uppercase tracking-tight flex items-center gap-2">
                     <div className="w-1.5 h-6 bg-primary rounded-full" />
                     Strategic Actions
                 </h3>
@@ -411,14 +411,14 @@ export default function AdminDashboard() {
                         </div>
                         <span className="text-xs font-black text-foreground uppercase tracking-widest">Run Payroll</span>
                     </Link>
-                    <Link href="/reports" className="group p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
+                    <Link href="/reports" className="group p-4 sm:p-6 border border-border rounded-3xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-500 text-center relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 opacity-5 translate-x-1 translate-y-[-1] group-hover:translate-x-0 group-hover:translate-y-0 transition-transform">
-                            <TrendingUp className="w-12 h-12" />
+                            <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12" />
                         </div>
-                        <div className="w-12 h-12 mx-auto bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner">
-                            <TrendingUp className="w-6 h-6" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 mx-auto bg-amber-500/10 text-amber-600 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-inner text-[10px]">
+                            <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
-                        <span className="text-xs font-black text-foreground uppercase tracking-widest">View Reports</span>
+                        <span className="text-[10px] font-black text-foreground uppercase tracking-widest leading-tight block">View Reports</span>
                     </Link>
                 </div>
             </div>
