@@ -2,10 +2,15 @@
 
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useNotifications(onMessageReceived?: (msg: any) => void) {
     const [socketUrl, setSocketUrl] = useState<string | null>(null);
+    const callbackRef = useRef(onMessageReceived);
+
+    useEffect(() => {
+        callbackRef.current = onMessageReceived;
+    }, [onMessageReceived]);
 
     useEffect(() => {
         const fetchTokenAndConnect = async () => {
@@ -63,8 +68,8 @@ export function useNotifications(onMessageReceived?: (msg: any) => void) {
                     description: `Alert: ${data.verb}`,
                     duration: 5000,
                 });
-                if (onMessageReceived) {
-                    onMessageReceived(data);
+                if (callbackRef.current) {
+                    callbackRef.current(data);
                 }
             }
         }
