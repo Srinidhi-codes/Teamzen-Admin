@@ -4,10 +4,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
-import client, { cleanupTokenRefresh } from "@/lib/api/client";
+import client from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { NotificationBell } from "./NotificationBell";
 import { Menu } from "lucide-react";
@@ -33,7 +32,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
-      await client.post(API_ENDPOINTS.LOGOUT);
+      await fetch('/api/auth/logout', { method: 'POST' });
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
@@ -119,7 +118,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a
-                      href="http://localhost:3000/dashboard"
+                      href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000/dashboard"}
                       className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/10 text-primary cursor-pointer group"
                     >
                       <span className="text-lg group-hover:scale-110 transition-transform">🏠</span>

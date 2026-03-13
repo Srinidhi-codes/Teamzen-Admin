@@ -97,3 +97,33 @@ export const DELETE_LEAVE_BALANCE = gql`
     deleteLeaveBalance(id: $id)
   }
 `;
+
+export const CREATE_COMPANY_HOLIDAY = gql`
+  mutation CreateCompanyHoliday($input: CompanyHolidayInput!) {
+    createCompanyHoliday(input: $input) {
+      id
+      name
+      holidayDate
+      isOptional
+      description
+    }
+  }
+`;
+
+export const UPDATE_COMPANY_HOLIDAY = gql`
+  mutation UpdateCompanyHoliday($input: UpdateCompanyHolidayInput!) {
+    updateCompanyHoliday(input: $input) {
+      id
+      name
+      holidayDate
+      isOptional
+      description
+    }
+  }
+`;
+
+export const DELETE_COMPANY_HOLIDAY = gql`
+  mutation DeleteCompanyHoliday($id: ID!) {
+    deleteCompanyHoliday(id: $id)
+  }
+`;

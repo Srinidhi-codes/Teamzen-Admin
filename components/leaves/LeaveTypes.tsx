@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useGraphQLLeaveTypes, useGraphQLLeaveMutations } from '@/lib/graphql/leaves/leavesHook'
 import { DataTable, Column } from '../common/DataTable'
 import { LeaveType } from '@/lib/graphql/leaves/types'
-import { Plus, X, Edit, Trash2, AlertCircle } from 'lucide-react'
+import { Plus, X, Edit, Trash2, AlertCircle, RotateCcw } from 'lucide-react'
 import LeaveTypeModal from './LeaveTypeModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 import { useStore } from '@/lib/store/useStore'
@@ -238,18 +238,26 @@ const LeaveTypes = () => {
                     <p className="text-premium-label mt-2 opacity-60">Manage leave policies and configurations</p>
                 </div>
 
-                <button
-                    onClick={() => {
-                        setEditingType(null);
-                        resetForm();
-                        setIsModalOpen(true);
-                    }}
-                    className="btn-primary"
-                >
-                    <Plus className="w-5 h-5 mr-3" />
-                    <span>Initialize Protocol</span>
-                </button>
-
+                <div className="flex items-center gap-4 w-full lg:w-auto">
+                    <button
+                        onClick={() => refetch()}
+                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => {
+                            setEditingType(null);
+                            resetForm();
+                            setIsModalOpen(true);
+                        }}
+                        className="btn-primary flex-1 lg:flex-none"
+                    >
+                        <Plus className="w-5 h-5 mr-3" />
+                        <span>Initialize Protocol</span>
+                    </button>
+                </div>
 
             </div>
 
