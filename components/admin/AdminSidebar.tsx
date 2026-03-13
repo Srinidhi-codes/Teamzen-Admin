@@ -143,6 +143,7 @@ export function AdminSidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                id={`nav-${item.name.toLowerCase()}`}
                 onClick={() => isMobileOpen && closeMobile()} // Close sidebar on mobile nav click
                 className={`flex items-center ${isCollapsed ? "justify-center" : ""} space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02] "
