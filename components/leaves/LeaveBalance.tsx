@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useGraphQLLeaveBalances, useGraphQLLeaveMutations, useGraphQLLeaveTypes } from '@/lib/graphql/leaves/leavesHook'
 import { useUsers, useMe } from '@/lib/graphql/users/userHooks'
 import { LeaveBalance as LeaveBalanceType } from '@/lib/graphql/leaves/types'
-import { Plus, Edit, Trash2, Search } from 'lucide-react'
+import { Plus, Edit, Trash2, Search, RotateCcw } from 'lucide-react'
 import { cn } from "@/lib/utils"
 
 
@@ -217,7 +217,14 @@ const LeaveBalance = () => {
                     <p className="text-premium-label mt-2 opacity-60">Unified synchronization of leave balances.</p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 w-full lg:w-auto">
+                    <button
+                        onClick={() => refetch()}
+                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-5 h-5" />
+                    </button>
                     <div className="relative flex-1 sm:w-80 group w-full">
                         <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                             <Search className="w-5 h-5" />

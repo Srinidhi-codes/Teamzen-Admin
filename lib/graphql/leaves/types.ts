@@ -88,3 +88,16 @@ export type GetLeaveBalanceResponse = {
 export type GetLeavesResponse = {
     leaveTypes: LeaveType[];
 }
+
+export interface CompanyHoliday {
+    id: string;
+    name: string;
+    holidayDate: string;
+    isOptional: boolean;
+    description: string;
+    createdAt: string;
+}
+
+export type GetCompanyHolidaysResponse = {
+    companyHolidays: CompanyHoliday[];
+}

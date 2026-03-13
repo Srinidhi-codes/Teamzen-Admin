@@ -4,6 +4,9 @@ import { AdminSidebar } from "./AdminSidebar";
 import { Menu } from "lucide-react";
 import { useTokenRefresh } from "@/lib/api/hooks";
 import { Navbar } from "../common/Navbar";
+import AssistantWidget from "../ai";
+import { OnboardingTour } from "../common/OnboardingTour";
+
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -30,6 +33,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </main>
       </div>
+      <AssistantWidget />
+      <OnboardingTour />
     </div>
   );
 }

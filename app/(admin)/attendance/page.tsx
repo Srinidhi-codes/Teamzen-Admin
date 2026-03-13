@@ -16,7 +16,8 @@ import {
     NotebookPen,
     ArrowRight,
     User,
-    FilePenLine
+    FilePenLine,
+    RotateCcw
 } from "lucide-react";
 import { DatePickerSimple } from "@/components/ui/datePicker";
 import { Stat } from "@/components/common/Stats";
@@ -319,13 +320,22 @@ export default function AttendancePage() {
                                 onChange={(date) => setEndDate(moment(date).format("YYYY-MM-DD"))}
                             />
                         </div>
-                        <button
-                            onClick={() => loadAttendance(startDate, endDate)}
-                            className="btn-primary w-full md:w-auto"
-                        >
-                            <Search className="w-5 h-5 mr-3" />
-                            Synchronize
-                        </button>
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                            <button
+                                onClick={() => refetchAttendanceCorrections({ startDate, endDate })}
+                                className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                                title="Synchronize Data"
+                            >
+                                <RotateCcw className="w-5 h-5" />
+                            </button>
+                            <button
+                                onClick={() => loadAttendance(startDate, endDate)}
+                                className="btn-primary flex-1 md:flex-none"
+                            >
+                                <Search className="w-5 h-5 mr-3" />
+                                Synchronize
+                            </button>
+                        </div>
                     </div>
                     <div className="relative w-full md:max-w-lg group">
                         <SearchInput

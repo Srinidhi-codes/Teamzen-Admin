@@ -74,6 +74,7 @@ export function AdminSidebar({
     w-72
     border-r border-sidebar-border
     shadow-2xl md:shadow-none
+    overflow-x-hidden
   `;
 
 
@@ -92,11 +93,19 @@ export function AdminSidebar({
         {/* Header */}
         <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border/50">
           {(!isCollapsed || isMobileOpen) && (
-            <div className="flex items-center space-x-1 animate-in fade-in slide-in-from-left-4 duration-500">
-              <div className="w-24 h-24 rounded-lg flex items-center justify-center">
-                <Image src={"/images/teamzen_zoomed.png"} alt="Logo" width={60} height={60} style={{ width: "auto", height: "auto" }} />
+            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
+                <Image 
+                  src={"/images/teamzen_zoomed.png"} 
+                  alt="Logo" 
+                  width={32} 
+                  height={32} 
+                  className="w-8 h-8 object-contain"
+                />
               </div>
-              <h1 className="text-sm font-black text-foreground uppercase text-nowrap">Teamzen <span className="text-primary">Admin</span></h1>
+              <h1 className="text-sm font-black text-foreground uppercase text-nowrap tracking-tight">
+                Teamzen <span className="text-primary">Admin</span>
+              </h1>
             </div>
           )}
 
@@ -134,6 +143,7 @@ export function AdminSidebar({
               <Link
                 key={item.href}
                 href={item.href}
+                id={`nav-${item.name.toLowerCase()}`}
                 onClick={() => isMobileOpen && closeMobile()} // Close sidebar on mobile nav click
                 className={`flex items-center ${isCollapsed ? "justify-center" : ""} space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group ${isActive
                   ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02] "
@@ -146,11 +156,11 @@ export function AdminSidebar({
               >
                 <Icon className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
                 {(!isCollapsed || isMobileOpen) && (
-                  <span className={`font-black text-[13px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
+                  <span className={`font-black text-[11px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
                     {item.name}
                   </span>
                 )}
-                {isActive && !isCollapsed && (
+               {isActive && !isCollapsed && (
                   <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary-foreground animate-pulse" />
                 )}
               </Link>

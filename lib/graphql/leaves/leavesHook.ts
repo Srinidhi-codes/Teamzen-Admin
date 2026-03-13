@@ -6,10 +6,13 @@ import {
     UPDATE_LEAVE_TYPE,
     DELETE_LEAVE_TYPE,
     UPDATE_LEAVE_BALANCE,
-    DELETE_LEAVE_BALANCE
+    DELETE_LEAVE_BALANCE,
+    CREATE_COMPANY_HOLIDAY,
+    UPDATE_COMPANY_HOLIDAY,
+    DELETE_COMPANY_HOLIDAY
 } from "./mutations";
-import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES } from "./queries";
-import { GetLeaveRequestResponse, GetLeaveBalanceResponse, GetLeavesResponse } from "./types";
+import { GET_LEAVE_BALANCE, GET_LEAVE_REQUESTS, GET_LEAVES, GET_COMPANY_HOLIDAYS } from "./queries";
+import { GetLeaveRequestResponse, GetLeaveBalanceResponse, GetLeavesResponse, GetCompanyHolidaysResponse } from "./types";
 
 export function useGraphQLLeaveMutations() {
     const [createLeaveTypeMutation] = useMutation(CREATE_LEAVE_TYPE, {
@@ -151,4 +154,58 @@ export function useGraphQLLeaveRequestProcess() {
         leaveRequestProcessError: leaveRequestProcessState.error,
     }
 
+}
+
+export function useGraphQLCompanyHolidays() {
+    const { data, loading, error, refetch } = useQuery<GetCompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS, {
+        fetchPolicy: 'network-only',
+    })
+
+    return {
+        companyHolidays: data?.companyHolidays ?? [],
+        isLoading: loading,
+        error,
+        refetch
+    }
+}
+
+export function useGraphQLCompanyHolidayMutations() {
+    const [createHolidayMutation] = useMutation(CREATE_COMPANY_HOLIDAY, {
+        refetchQueries: [{ query: GET_COMPANY_HOLIDAYS }]
+    });
+
+    const [updateHolidayMutation] = useMutation(UPDATE_COMPANY_HOLIDAY, {
+        refetchQueries: [{ query: GET_COMPANY_HOLIDAYS }]
+    });
+
+    const [deleteHolidayMutation] = useMutation(DELETE_COMPANY_HOLIDAY, {
+        refetchQueries: [{ query: GET_COMPANY_HOLIDAYS }]
+    });
+
+    const createCompanyHoliday = async (input: any) => {
+        const response = await createHolidayMutation({
+            variables: { input }
+        });
+        return response.data;
+    };
+
+    const updateCompanyHoliday = async (input: any) => {
+        const response = await updateHolidayMutation({
+            variables: { input }
+        });
+        return response.data;
+    };
+
+    const deleteCompanyHoliday = async (id: string) => {
+        const response = await deleteHolidayMutation({
+            variables: { id }
+        });
+        return response.data;
+    };
+
+    return {
+        createCompanyHoliday,
+        updateCompanyHoliday,
+        deleteCompanyHoliday
+    };
 }

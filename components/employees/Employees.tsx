@@ -15,7 +15,8 @@ import {
     UserX,
     Users,
     Building2,
-    UserCheck as UserCheckIcon
+    UserCheck as UserCheckIcon,
+    RotateCcw
 } from "lucide-react";
 
 import { Stat } from "@/components/common/Stats";
@@ -109,8 +110,7 @@ export default function EmployeesPage() {
         },
         {
             header: "Role",
-            accessor: "role",
-            formatter: (value) => value?.toUpperCase() || ""
+            accessor: (value) => value?.role?.toUpperCase() || ""
         },
         {
             header: "Status",
@@ -313,6 +313,13 @@ export default function EmployeesPage() {
 
 
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => refetchUsers()}
+                        className="p-3.5 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-5 h-5" />
+                    </button>
                     <button
                         onClick={handleExportCSV}
                         className="btn-secondary flex items-center gap-3"

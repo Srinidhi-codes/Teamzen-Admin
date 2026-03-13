@@ -4,6 +4,7 @@ import { Calendar, Settings, BarChart3, Clock, Gift } from 'lucide-react'
 import LeaveRequests from './LeaveRequests'
 import LeaveBalance from './LeaveBalance'
 import LeaveTypes from './LeaveTypes'
+import CompanyHolidays from './CompanyHolidays'
 import { useStore } from '@/lib/store/useStore'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -95,16 +96,8 @@ const LeavesPage = () => {
                 {activeTab === "balance" && <LeaveBalance />}
                 {activeTab === "requests" && <LeaveRequests />}
                 {
-                    activeTab === "holidays" && (
-                        <div className="bg-card rounded-4xl border border-border p-20 text-center shadow-2xl shadow-primary/5 animate-in zoom-in-95 duration-700">
-                            <div className="text-7xl mb-6 animate-bounce-slow">✨</div>
-                            <h3 className="text-2xl font-black text-foreground tracking-tight mb-2">Global Festivals</h3>
-                            <p className="text-muted-foreground font-medium max-w-sm mx-auto">Architecting the future of corporate festivities and observances.</p>
-                            <div className="mt-8">
-                                <span className="px-4 py-1.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-full">Phase: In Development</span>
-                            </div>
-                        </div>
-                    )}
+                    activeTab === "holidays" && <CompanyHolidays />
+                }
 
             </div>
         </div>

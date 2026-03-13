@@ -1,12 +1,13 @@
 "use client"
 import { useState } from "react";
-import { Check, X, Calendar, Clock, AlertCircle, FileText, User, ArrowRight, MessageSquare, XCircle, CheckCircle, CheckCircle2 } from "lucide-react";
+import { Check, X, Calendar, Clock, AlertCircle, FileText, User, ArrowRight, MessageSquare, XCircle, CheckCircle, CheckCircle2, RotateCcw } from "lucide-react";
 import { LeaveRequest } from "@/lib/graphql/leaves/types";
 import { DataTable, Column } from "../common/DataTable";
 import { useGraphQLLeaveRequests, useGraphQLLeaveRequestProcess } from "@/lib/graphql/leaves/leavesHook";
 import moment from "moment";
 import { Textarea } from "../ui/textarea";
 import { Stat } from "../common/Stats";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 
 
 export default function LeaveRequests() {
@@ -14,6 +15,14 @@ export default function LeaveRequests() {
     const { leaveRequestProcess } = useGraphQLLeaveRequestProcess();
     const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
     const [comments, setComments] = useState("");
+
+    // Socket-based Real-time Refresh
+    useNotifications((msg) => {
+        if (msg.target_type === "Leave Request" && msg.level === "admin") {
+            console.log("Admin: Real-time Leave Request Update Received 🔃");
+            refetch();
+        }
+    }, { silent: true });
 
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center py-32 space-y-6">
@@ -210,12 +219,19 @@ export default function LeaveRequests() {
                     <h2 className="text-premium-h2 leading-none">Leave Requests</h2>
                     <p className="text-premium-label mt-2 opacity-60">Audit and resolve employee leave requests.</p>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => refetch()}
+                        className="p-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-4 h-4" />
+                    </button>
                     <div className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-premium-label flex items-center gap-3 shadow-xl shadow-primary/20">
                         {pendingCount} Pending Requests
                     </div>
                 </div>
-            </div>
+           </div>
 
 
 

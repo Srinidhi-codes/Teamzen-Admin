@@ -79,3 +79,16 @@ export const GET_LEAVE_REQUESTS = gql`
   }
 `
 
+export const GET_COMPANY_HOLIDAYS = gql`
+  query CompanyHolidays {
+    companyHolidays {
+      id
+      name
+      holidayDate
+      isOptional
+      description
+      createdAt
+    }
+  }
+`;
+
