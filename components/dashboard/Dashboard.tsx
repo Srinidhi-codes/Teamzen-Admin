@@ -7,10 +7,11 @@ import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
 import moment from "moment";
 import Image from "next/image";
 import Link from "next/link";
-import AssistantWidget from "../ai";
+import { useStore } from "@/lib/store/useStore";
 
 export default function AdminDashboard() {
     const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
+    const { user } = useStore();
 
     if (loading) {
         return (
@@ -38,7 +39,7 @@ export default function AdminDashboard() {
     const wishMessage = stats.wishMessage;
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 mt-20">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -127,7 +128,7 @@ export default function AdminDashboard() {
 
 
             {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {user?.role !== "manager" && <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Employee Growth Chart */}
                 <div className="bg-card rounded-3xl sm:rounded-4xl border border-border p-4 sm:p-8 shadow-xl shadow-primary/5 hover:shadow-primary/10 transition-shadow">
                     <h3 className="text-lg sm:text-xl font-black text-foreground mb-6 uppercase tracking-tight flex items-center gap-2">
@@ -189,7 +190,7 @@ export default function AdminDashboard() {
                         )}
                     </div>
                 </div>
-            </div>
+            </div>}
 
 
             {/* Charts Row 2 */}
@@ -422,7 +423,6 @@ export default function AdminDashboard() {
                     </Link>
                 </div>
             </div>
-            <AssistantWidget />
         </div>
     );
 }
