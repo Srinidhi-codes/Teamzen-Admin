@@ -22,7 +22,7 @@ export default function LeaveRequests() {
             console.log("Admin: Real-time Leave Request Update Received 🔃");
             refetch();
         }
-    });
+    }, { silent: true });
 
     if (isLoading) return (
         <div className="flex flex-col items-center justify-center py-32 space-y-6">
