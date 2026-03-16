@@ -27,7 +27,7 @@ export function StatsCard({
   color = "blue",
 }: StatsCardProps) {
   return (
-    <div className="bg-card rounded-2xl border border-border p-6 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 group">
+    <div className="bg-card rounded-3xl border border-border/50 p-6 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 group">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-bold text-muted-foreground uppercase tracking-wider">{title}</p>

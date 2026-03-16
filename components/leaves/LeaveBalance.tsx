@@ -57,7 +57,7 @@ const LeaveBalance = () => {
             row[b.leaveType.id] = {
                 id: b.id,
                 available: b.availableBalance,
-                total: b.totalEntitled,
+                total: b.totalAllocation,
                 leaveType: b.leaveType,
                 original: b
             };
@@ -132,7 +132,11 @@ const LeaveBalance = () => {
                             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
-                                    style={{ width: `${Math.min((val.available / (val.total || 1)) * 100, 100)}%` }}
+                                    style={{ 
+                                        width: `${val.total > 0 
+                                            ? Math.min((val.available / val.total) * 100, 100) 
+                                            : (val.available > 0 ? 100 : 0)}%` 
+                                    }}
                                 />
                             </div>
                         </div>
