@@ -34,6 +34,7 @@ export interface LeaveBalance {
     used: number;
     pendingApproval: number;
     availableBalance: number;
+    totalAllocation: number;
     carriedForward: number;
     lastAccruedDate: string;
     accrued: number;

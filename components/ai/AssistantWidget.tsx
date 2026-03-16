@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import moment from "moment";
 import { useStore } from "@/lib/store/useStore";
+import { InsightCard } from "./cards/InsightCard";
 
 export function AssistantWidget() {
     const isAuthenticated = useStore((state) => state.isAuthenticated);
@@ -90,13 +91,12 @@ export function AssistantWidget() {
         const balanceRegex = /\[BALANCE_CARD\]([\s\S]*?)\[\/BALANCE_CARD\]/g;
         const attendanceRegex = /\[ATTENDANCE_CARD\]([\s\S]*?)\[\/ATTENDANCE_CARD\]/g;
         const errorRegex = /\[ERROR_CARD\]([\s\S]*?)\[\/ERROR_CARD\]/g;
+        const insightRegex = /\[INSIGHT_CARD\]([\s\S]*?)\[\/INSIGHT_CARD\]/g;
 
         const parts: any[] = [];
         let lastIndex = 0;
 
-        // Combined parsing logic using a single loop for efficiency
         const allMatches: any[] = [];
-
         let match;
         while ((match = balanceRegex.exec(content)) !== null) {
             allMatches.push({ type: 'balance', index: match.index, lastIndex: balanceRegex.lastIndex, data: match[1] });
@@ -107,8 +107,10 @@ export function AssistantWidget() {
         while ((match = errorRegex.exec(content)) !== null) {
             allMatches.push({ type: 'error', index: match.index, lastIndex: errorRegex.lastIndex, data: match[1] });
         }
+        while ((match = insightRegex.exec(content)) !== null) {
+            allMatches.push({ type: 'insight', index: match.index, lastIndex: insightRegex.lastIndex, data: match[1] });
+        }
 
-        // Sort matches by index
         allMatches.sort((a, b) => a.index - b.index);
 
         allMatches.forEach(m => {
@@ -117,10 +119,23 @@ export function AssistantWidget() {
             }
 
             const data: any = {};
-            m.data.trim().split('|').forEach((part: string) => {
-                const [key, val] = part.split(':').map(s => s.trim());
-                if (key && val) data[key.toLowerCase()] = val;
-            });
+            const contentData = m.data.trim();
+            // Robust parsing for key: value pairs, handles missing pipes
+            const fieldRegex = /(title|message|type|stats|topic):\s*/gi;
+            let fieldMatch;
+            let lastKey = '';
+            let lastIdx = 0;
+
+            while ((fieldMatch = fieldRegex.exec(contentData)) !== null) {
+                if (lastKey) {
+                    data[lastKey] = contentData.slice(lastIdx, fieldMatch.index).trim().replace(/^\|+|\|+$/g, '').trim();
+                }
+                lastKey = fieldMatch[1].toLowerCase();
+                lastIdx = fieldMatch.index + fieldMatch[0].length;
+            }
+            if (lastKey) {
+                data[lastKey] = contentData.slice(lastIdx).trim().replace(/^\|+|\|+$/g, '').trim();
+            }
 
             parts.push({ type: m.type, value: data });
             lastIndex = m.lastIndex;
@@ -234,6 +249,8 @@ export function AssistantWidget() {
                                 </p>
                             </div>
                         );
+                    } else if (part.type === 'insight') {
+                        return <InsightCard key={idx} {...part.value} />;
                     }
                     return null;
                 })}
@@ -245,7 +262,7 @@ export function AssistantWidget() {
         <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
-                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[400px] h-[calc(100vh-5rem)] md:h-[600px] max-h-[600px] bg-card border border-border rounded-4xl sm:rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100vh-10rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] shadow-3xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
                     <div className="p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
                         <div className="flex items-center gap-3">
