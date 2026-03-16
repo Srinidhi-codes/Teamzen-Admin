@@ -6,6 +6,7 @@ import { useTokenRefresh } from "@/lib/api/hooks";
 import { Navbar } from "../common/Navbar";
 import AssistantWidget from "../ai";
 import { OnboardingTour } from "../common/OnboardingTour";
+import { useStore } from "@/lib/store/useStore";
 
 
 interface AdminLayoutProps {
@@ -13,12 +14,16 @@ interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { 
+    sidebarCollapsed: isCollapsed, 
+    setSidebarCollapsed: setIsCollapsed, 
+    sidebarMobileOpen: isMobileOpen, 
+    setSidebarMobileOpen: setIsMobileOpen 
+  } = useStore();
   useTokenRefresh();
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground" style={{ scrollbarGutter: 'stable' }}>
+    <div className="flex min-h-screen bg-background text-foreground mt-20" style={{ scrollbarGutter: 'stable' }}>
 
       <AdminSidebar
         isCollapsed={isCollapsed}
