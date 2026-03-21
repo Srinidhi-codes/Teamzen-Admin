@@ -155,7 +155,6 @@ const LeaveTypes = () => {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        console.log(user?.organization?.id)
         e.preventDefault();
         try {
             const submitData = {

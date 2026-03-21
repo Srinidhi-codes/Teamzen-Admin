@@ -101,7 +101,6 @@ export const refreshAuthToken = async () => {
   if (typeof document !== "undefined") {
     const hasSession = document.cookie.includes("session_can_refresh=true");
     if (!hasSession) {
-      console.log("No active session detected, skipping refresh.");
       throw new Error("No active session");
     }
   }

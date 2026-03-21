@@ -19,7 +19,6 @@ export default function LeaveRequests() {
     // Socket-based Real-time Refresh
     useNotifications((msg) => {
         if (msg.target_type === "Leave Request" && msg.level === "admin") {
-            console.log("Admin: Real-time Leave Request Update Received 🔃");
             refetch();
         }
     }, { silent: true });
@@ -231,7 +230,7 @@ export default function LeaveRequests() {
                         {pendingCount} Pending Requests
                     </div>
                 </div>
-           </div>
+            </div>
 
 
 
