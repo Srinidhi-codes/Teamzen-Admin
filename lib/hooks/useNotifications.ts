@@ -45,7 +45,6 @@ export function useNotifications(
             }
 
             const url = `${protocol}//${host}/ws/notifications/${token ? `?token=${token}` : ''}`;
-            console.log("Setting Admin Notification Socket connection to:", url);
             setSocketUrl(url);
         };
 
@@ -56,8 +55,8 @@ export function useNotifications(
         shouldReconnect: () => true,
         reconnectInterval: 5000,
         share: true,
-        onOpen: () => console.log("Admin Notification Socket Connected ✅"),
-        onClose: () => console.log("Admin Notification Socket Disconnected ❌"),
+        onOpen: () => { },
+        onClose: () => { },
         onError: (err) => {
             console?.error("Admin Notification Socket Error ⚠️:", err);
             if (err instanceof Error) {
