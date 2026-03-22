@@ -15,6 +15,8 @@ export const UPDATE_PROFILE = gql`
       panNumber
       aadharNumber
       uanNumber
+      hasSeenOnboarding
+      hasSeenAiOnboarding
       error
     }
   }

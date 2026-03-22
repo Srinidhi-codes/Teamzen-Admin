@@ -17,10 +17,17 @@ export const mapBackendUserToFrontendUser = (backendUser: any): User => {
     profilePictureUrl: backendUser.profile_picture || backendUser.profilePictureUrl || null,
     employeeId: backendUser.employee_id,
     employmentType: backendUser.employment_type,
-    organization: backendUser.organization ? {
+    organization: backendUser.organization ? (typeof backendUser.organization === 'object' ? {
+      id: backendUser.organization.id,
+      name: backendUser.organization.name || backendUser.organization_name,
+      logo: backendUser.organization.logo
+    } : {
       id: backendUser.organization,
-      name: backendUser.organization_name || "Unknown Organization"
-    } : null,
+      name: backendUser.organization_name || "Unknown Organization",
+      logo: null
+    }) : null,
+    hasSeenOnboarding: backendUser.has_seen_onboarding || backendUser.hasSeenOnboarding || false,
+    hasSeenAiOnboarding: backendUser.has_seen_ai_onboarding || backendUser.hasSeenAiOnboarding || false,
     // Relationships might be objects or IDs depending on serializer depth
     manager: backendUser.manager, 
     department: backendUser.department ? (typeof backendUser.department === 'object' ? backendUser.department : { id: backendUser.department, name: backendUser.department_name }) : null,
