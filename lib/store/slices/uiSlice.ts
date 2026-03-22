@@ -19,6 +19,10 @@ export interface UISlice {
     sidebarMobileOpen: boolean;
     setSidebarCollapsed: (state: boolean) => void;
     setSidebarMobileOpen: (state: boolean) => void;
+    assistantOpen: boolean;
+    setAssistantOpen: (state: boolean) => void;
+    assistantQuery: string;
+    setAssistantQuery: (query: string) => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set) => ({
@@ -31,4 +35,8 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
     clearNavbarTabs: () => set({ navbarTabs: [], activeNavbarTab: '' }),
     setSidebarCollapsed: (sidebarCollapsed) => set({ sidebarCollapsed }),
     setSidebarMobileOpen: (sidebarMobileOpen) => set({ sidebarMobileOpen }),
+    assistantOpen: false,
+    setAssistantOpen: (assistantOpen) => set({ assistantOpen }),
+    assistantQuery: '',
+    setAssistantQuery: (assistantQuery) => set({ assistantQuery }),
 });

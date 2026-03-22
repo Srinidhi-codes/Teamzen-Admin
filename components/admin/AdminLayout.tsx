@@ -32,9 +32,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         closeMobile={() => setIsMobileOpen(false)}
       />
 
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 w-full ${isCollapsed ? "md:ml-24" : "md:ml-72"}`}>
+      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full md:ml-24">
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
-        <main className="flex-1 p-4 sm:p-8 bg-background">
+        <main className="flex-1 p-4 sm:p-8 pt-24 sm:pt-24 bg-background">
           {children}
         </main>
       </div>

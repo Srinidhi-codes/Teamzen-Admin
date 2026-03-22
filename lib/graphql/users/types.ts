@@ -25,7 +25,13 @@ export interface User {
   organization?: {
     id: string;
     name: string;
+    logo?: {
+      url: string;
+    } | null;
   } | null;
+
+  hasSeenOnboarding: boolean;
+  hasSeenAiOnboarding: boolean;
 
   manager?: {
     id: string;

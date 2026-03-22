@@ -36,11 +36,12 @@ const IMPORTANT_ROUTES = [
 ];
 
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
-  const { logoutUser, user, organizations } = useStore();
+  const { logoutUser, user: storeUser } = useStore();
+  const { user } = useGraphQLUser(); // Sync with DB
   const { startTour } = useOnboardingTour();
   const router = useRouter();
   const pathname = usePathname();
-  const orgLogo = organizations?.[0]?.logo?.url;
+  const orgLogo = user?.organization?.logo?.url;
 
   const handleLogout = async () => {
     try {

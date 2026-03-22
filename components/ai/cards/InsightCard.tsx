@@ -12,7 +12,6 @@ interface InsightCardProps {
     topic?: string;
 }
 
-export        const fieldRegex = /(title|message|type|stats|topic):\s*/gi;
 export const InsightCard = ({ title, message, type, stats, topic }: InsightCardProps) => {
     const isWarning = type === 'warning' || type === 'anomaly';
 
