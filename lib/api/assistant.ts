@@ -6,6 +6,7 @@ import { API_ENDPOINTS } from "./endpoints";
 export type ChatMessage = {
     role: 'user' | 'assistant';
     content: string;
+    timestamp?: string;
 };
 
 export type AssistantResponse = {
@@ -16,11 +17,14 @@ export type AssistantResponse = {
 export const useAssistant = () => {
     const queryClient = useQueryClient();
 
-    // 1. Fetch persistent history on mount
+    // 1. Fetch persistent history & config on mount
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
-            const response = await client.get<{ history: ChatMessage[] }>(API_ENDPOINTS.SMART_CHAT);
+            const response = await client.get<{ 
+                history: ChatMessage[],
+                config: { model_name: string } 
+            }>(`${API_ENDPOINTS.SMART_CHAT}?context=admin`);
             return response.data;
         },
     });
@@ -33,24 +37,77 @@ export const useAssistant = () => {
         }
     }, [data]);
 
-    const chatMutation = useMutation({
-        mutationFn: async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
-            const response = await client.post<AssistantResponse>(API_ENDPOINTS.SMART_CHAT, {
-                query,
-                // No need to send history anymore - handled by Redis!
-                latitude,
-                longitude
+    const [isStreaming, setIsStreaming] = useState(false);
+
+    const sendMessage = async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
+        setIsStreaming(true);
+
+        try {
+            // 2. Prepare streaming message
+            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString() };
+            setHistory(prev => [...prev, assistantMsg]);
+
+            // 3. Start Stream
+            const response = await fetch(`/api${API_ENDPOINTS.SMART_CHAT}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query, latitude, longitude, context: 'admin' }),
+                credentials: 'include',
             });
-            return response.data;
-        },
-        onSuccess: (data) => {
-            setHistory(data.history);
+
+            if (!response.ok) throw new Error('Failed to start chat stream');
+            if (!response.body) throw new Error('No response body');
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullContent = "";
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]') break;
+
+                        try {
+                            const data = JSON.parse(dataStr);
+                            if (data.token) {
+                                fullContent += data.token;
+                                // Update the last message in history with the accumulated content
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.content = fullContent;
+                                    }
+                                    return newHistory;
+                                });
+                            } else if (data.history) {
+                                // Final sync
+                                setHistory(data.history);
+                            }
+                        } catch (e) {
+                            console.warn("Error parsing stream chunk", e);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Streaming error", error);
+        } finally {
+            setIsStreaming(false);
+            queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         }
-    });
+    };
 
     const clearHistory = async () => {
         try {
-            await client.delete(API_ENDPOINTS.SMART_CHAT);
+            await client.delete(`${API_ENDPOINTS.SMART_CHAT}?context=admin`);
             setHistory([]);
             queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         } catch (error) {
@@ -60,10 +117,12 @@ export const useAssistant = () => {
 
     return {
         messages: history,
-        sendMessage: chatMutation.mutateAsync,
-        isLoading: chatMutation.isPending || isHistoryLoading,
-        isError: chatMutation.isError,
-        error: chatMutation.error,
-        clearHistory
+        setMessages: setHistory,
+        sendMessage,
+        isLoading: isStreaming || isHistoryLoading,
+        isHistoryLoading,
+        isStreaming,
+        clearHistory,
+        config: data?.config
     };
 };

@@ -64,7 +64,7 @@ export function AdminSidebar({
   });
 
   const sidebarClasses = `
-    fixed inset-y-0 left-0 z-60
+    fixed inset-y-0 left-0 z-100
     flex flex-col
     bg-sidebar text-sidebar-foreground
     transition-all duration-500 ease-in-out
@@ -77,15 +77,13 @@ export function AdminSidebar({
     overflow-x-hidden
   `;
 
-
-
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobileOpen && (
+      {/* Overlay Backdrop - High z-index behind sidebar */}
+      {(isMobileOpen || !isCollapsed) && (
         <div
-          className="fixed inset-0 bg-black/50 z-55 md:hidden"
-          onClick={closeMobile}
+          className="fixed inset-0 bg-black/50 z-90 transition-opacity duration-500"
+          onClick={isMobileOpen ? closeMobile : toggleCollapse}
         />
       )}
 

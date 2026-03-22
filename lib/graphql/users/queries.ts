@@ -41,9 +41,14 @@ export const GET_ME = gql`
       panNumber
       aadharNumber
       uanNumber
+      hasSeenOnboarding
+      hasSeenAiOnboarding
       organization {
         id
         name
+        logo {
+          url
+        }
       }
     }
   }

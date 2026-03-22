@@ -256,3 +256,33 @@ export const usePolicies = () => {
   };
 };
 
+/* ---------------- AI CONFIG ---------------- */
+
+export const useAIConfig = () => {
+  const query = useQuery({
+    queryKey: ['aiConfig'],
+    queryFn: async () => {
+      const response = await client.get(API_ENDPOINTS.AI_CONFIG);
+      return response.data;
+    },
+  });
+
+  const update = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await client.patch(API_ENDPOINTS.AI_CONFIG, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      query.refetch();
+    },
+  });
+
+  return {
+    config: query.data,
+    isLoading: query.isLoading,
+    isUpdating: update.isPending,
+    error: query.error,
+    updateAIConfig: update.mutateAsync,
+  };
+};
+
