@@ -129,6 +129,18 @@ export default function SecuritySettingsPage() {
                             )
                         },
                         {
+                            key: "location",
+                            label: "Access Location",
+                            render: (val) => (
+                                <div className="flex items-center gap-2">
+                                    <Globe className="w-3.5 h-3.5 text-primary/60" />
+                                    <span className="text-[10px] font-bold text-muted-foreground truncate max-w-[150px]" title={val}>
+                                        {val || "Unknown Location"}
+                                    </span>
+                                </div>
+                            )
+                        },
+                        {
                             key: "loginTime",
                             label: "Entry Timestamp",
                             render: (val) => (
