@@ -28,7 +28,7 @@ export interface UISlice {
 export const createUISlice: StateCreator<UISlice> = (set) => ({
     navbarTabs: [],
     activeNavbarTab: '',
-    sidebarCollapsed: false,
+    sidebarCollapsed: true,
     sidebarMobileOpen: false,
     setNavbarTabs: (navbarTabs) => set({ navbarTabs }),
     setActiveNavbarTab: (activeNavbarTab) => set({ activeNavbarTab }),

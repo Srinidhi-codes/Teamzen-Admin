@@ -119,10 +119,11 @@ export function useGraphQLLeaveTypes() {
 }
 
 
-export function useGraphQLLeaveRequests() {
-    const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
-        fetchPolicy: 'network-only',
-    })
+export function useGraphQLLeaveRequests(approvalsOnly: boolean = true) {
+  const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
+    variables: { approvalsOnly },
+    fetchPolicy: 'network-only',
+  })
 
     return {
         leaveRequestData: data?.getLeaveRequests ?? [],

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useStore } from "@/lib/store/useStore";
@@ -9,11 +9,15 @@ import { useGraphQLUpdateUser } from "@/lib/api/graphqlHooks";
 export function useOnboardingTour() {
     const { user, setSidebarCollapsed, setSidebarMobileOpen } = useStore();
     const { updateUserAsync } = useGraphQLUpdateUser();
+    const hasSentUpdateRef = useRef(false);
 
     const startTour = useCallback(() => {
-        // Ensure sidebar is visible for the tour
-        setSidebarCollapsed(false);
-        setSidebarMobileOpen(true);
+        // Only force open the sidebar on mobile devices
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            setSidebarMobileOpen(true);
+        }
+        // Note: We no longer force setSidebarCollapsed(false) for desktop, 
+        // ensuring the tour respects the user's preferred layout on wider screens.
 
         const driverObj = driver({
             showProgress: true,
@@ -77,16 +81,26 @@ export function useOnboardingTour() {
             ]
         });
 
-        driverObj.drive();
+        // Small delay to allow sidebar to expand/open before highlighting
+        setTimeout(() => {
+            driverObj.drive();
+        }, 500);
     }, [setSidebarCollapsed, setSidebarMobileOpen]);
 
     useEffect(() => {
-        if (user && user.hasSeenOnboarding === false) {
+        // Only trigger if user exists, hasn't seen onboarding, and we haven't already sent an update this session
+        if (user && user.hasSeenOnboarding === false && !hasSentUpdateRef.current) {
             const timer = setTimeout(() => {
-                startTour();
-                // Persist to DB immediately
+                hasSentUpdateRef.current = true;
+                
+                // 1. Persist to DB immediately
                 updateUserAsync({ has_seen_onboarding: true }).catch(console.error);
-            }, 2000);
+
+                // 2. Start tour with a delay to ensure sidebar transition is handled
+                setTimeout(() => {
+                    startTour();
+                }, 1000);
+            }, 3000); // 3s delay on initial mount
             return () => clearTimeout(timer);
         }
     }, [user, startTour, updateUserAsync]);

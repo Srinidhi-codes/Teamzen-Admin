@@ -18,11 +18,11 @@ import ConfirmationModal from "@/components/common/ConfirmationModal";
 export function AssistantWidget() {
     const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
     const [input, setInput] = useState("");
-    const { 
-        messages, 
+    const {
+        messages,
         setMessages,
-        sendMessage, 
-        isLoading, 
+        sendMessage,
+        isLoading,
         isStreaming,
         clearHistory,
         config
@@ -35,7 +35,7 @@ export function AssistantWidget() {
         }
     });
     const [isMicErrorModalOpen, setIsMicErrorModalOpen] = useState(false);
-    
+
     // Watch for mic errors
     useEffect(() => {
         if (voiceError === "device-not-found" || voiceError === "permission-denied") {
@@ -75,10 +75,10 @@ export function AssistantWidget() {
         if (!query.trim() || isLoading) return;
 
         // --- OPTIMISTIC UPDATE ---
-        setMessages(prev => [...prev, { 
-            role: 'user', 
-            content: query, 
-            timestamp: new Date().toISOString() 
+        setMessages(prev => [...prev, {
+            role: 'user',
+            content: query,
+            timestamp: new Date().toISOString()
         }]);
 
         if (!customQuery) {
@@ -176,7 +176,7 @@ export function AssistantWidget() {
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-1 gap-2 w-full pt-4">
                                     {[
                                         "What is the analysis of my team?",
@@ -267,8 +267,8 @@ export function AssistantWidget() {
                                     disabled={isLoading || isVoiceProcessing}
                                     className={cn(
                                         "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg",
-                                        isRecording 
-                                            ? "bg-destructive text-destructive-foreground shadow-destructive/20" 
+                                        isRecording
+                                            ? "bg-destructive text-destructive-foreground shadow-destructive/20"
                                             : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
                                     )}
                                 >
@@ -282,7 +282,7 @@ export function AssistantWidget() {
                                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                                 </button>
                             </div>
-                            
+
                             {/* Listening Overlay/Wave */}
                             {(isRecording || isVoiceProcessing) && (
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -310,22 +310,35 @@ export function AssistantWidget() {
                 id="ai-assistant-trigger"
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "w-16 h-16 rounded-4xl shadow-2xl flex items-center justify-center transition-all duration-500 active:scale-90 group relative overflow-hidden",
+                    "w-16 h-16 rounded-[2rem] shadow-2xl flex items-center justify-center transition-all duration-500 hover:-translate-y-2 active:scale-90 group relative overflow-hidden",
                     isOpen
                         ? "bg-card border border-border text-foreground hover:bg-muted"
-                        : "bg-primary text-primary-foreground hover:shadow-primary/30"
+                        : "bg-linear-to-tr from-primary via-primary to-violet-600 text-primary-foreground hover:shadow-primary/30"
                 )}
             >
-                {isOpen ? (
-                    <X className="w-7 h-7" />
-                ) : (
-                    <div className="relative">
-                        <MessageSquare className="w-7 h-7" />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-primary animate-pulse" />
-                    </div>
-                )}
+                {/* Ambient Aura */}
                 {!isOpen && (
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <>
+                        <div className="absolute inset-0 rounded-[2rem] bg-primary/40 animate-ping opacity-20 scale-125" />
+                        <div className="absolute inset-0 rounded-[2rem] bg-linear-to-tr from-primary to-violet-600 blur-xl opacity-40 group-hover:opacity-80 transition-opacity animate-pulse-slow" />
+                    </>
+                )}
+
+                <div className="relative z-10">
+                    {isOpen ? (
+                        <X className="w-7 h-7 animate-in fade-in zoom-in spin-in-90 duration-500" />
+                    ) : (
+                        <div className="relative">
+                            <Sparkles className="w-7 h-7 animate-in fade-in zoom-in duration-500 group-hover:rotate-12 transition-transform" />
+                        </div>
+                    )}
+                </div>
+
+                {/* Status Dot */}
+                {!isOpen && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-[10px] font-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background animate-in slide-in-from-bottom-2 duration-700">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                    </div>
                 )}
             </button>
 

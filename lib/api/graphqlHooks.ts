@@ -62,7 +62,10 @@ export function useGraphQLUser() {
   };
 }
 
+import { useStore } from "../store/useStore";
+
 export function useGraphQLUpdateUser() {
+  const { updateUser: syncStoreUser } = useStore();
   const [updateProfile, { loading, error }] = useMutation(UPDATE_PROFILE, {
     refetchQueries: [{ query: GET_ME }],
   }) as any;
@@ -92,6 +95,10 @@ export function useGraphQLUpdateUser() {
     if (response.data?.updateProfile?.error) {
       throw new Error(response.data.updateProfile.error);
     }
+    
+    // Sync store with new values immediately
+    syncStoreUser(input);
+    
     return response.data?.updateProfile;
   };
 

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { X, Calendar, Building2 } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
 import { InsightCard } from "./cards/InsightCard";
+import { PayrollCard } from "./cards/PayrollCard";
 
 interface MessageRendererProps {
     content: string;
@@ -40,7 +41,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                         <div key={idx} className={cn(
                             "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
                             role === 'user'
-                                ? "bg-primary text-primary-foreground rounded-tr-none ml-auto shadow-md shadow-primary/10"
+                                ? "bg-primary text-primary-foreground rounded-tr-none ml-auto"
                                 : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90"
                         )}>
                             {text}
@@ -56,7 +57,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                          const percent = Math.min((usedNum / totalNum) * 100, 100);
 
                          return (
-                             <div key={idx} className="bg-card border border-border rounded-3xl p-5 shadow-sm space-y-4 animate-in zoom-in-95 duration-300">
+                             <div key={idx} className="bg-card border border-border rounded-3xl p-5 space-y-4 animate-in zoom-in-95 duration-300">
                                  <div className="flex items-center justify-between">
                                      <div className="flex items-center gap-3">
                                          <div className="w-10 h-10 rounded-2xl bg-primary/5 text-primary flex items-center justify-center">
@@ -90,7 +91,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                 } else if (part.type === 'attendance') {
                          const { action, status, time, office, distance, hours } = part.value;
                          return (
-                             <div key={idx} className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-5 shadow-sm space-y-4 animate-in zoom-in-95 duration-300">
+                             <div key={idx} className="bg-emerald-500/5 border border-emerald-500/20 rounded-3xl p-5 space-y-4 animate-in zoom-in-95 duration-300">
                                  <div className="flex items-center justify-between">
                                      <div className="flex items-center gap-3">
                                          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
@@ -129,7 +130,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                 } else if (part.type === 'error') {
                     const { title, message } = part.value;
                     return (
-                        <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded-3xl p-5 shadow-sm space-y-2 animate-in zoom-in-95 duration-500 w-full">
+                        <div key={idx} className="bg-destructive/5 border border-destructive/20 rounded-3xl p-5 space-y-2 animate-in zoom-in-95 duration-500 w-full">
                             <div className="flex items-center gap-2 text-destructive">
                                 <X className="w-4 h-4" />
                                 <h4 className="font-black text-xs uppercase tracking-widest">{title || "Error Occurred"}</h4>
@@ -139,6 +140,8 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     );
                 } else if (part.type === 'insight') {
                     return <InsightCard key={idx} {...part.value} />;
+                } else if (part.type === 'payroll') {
+                    return <PayrollCard key={idx} {...part.value} />;
                 }
                 return null;
             })}

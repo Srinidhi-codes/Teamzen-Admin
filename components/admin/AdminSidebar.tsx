@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
@@ -32,10 +33,11 @@ const navItems: NavItem[] = [
   { name: "Employees", href: "/employees", icon: Users },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Leaves", href: "/leaves", icon: Calendar },
-  { name: "Payroll", href: "/payroll", icon: DollarSign },
+  { name: "Payroll", href: "/payroll", icon: DollarSign, roles: ["admin"] },
   { name: "Performance", href: "/performance", icon: TrendingUp },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Policies", href: "/policies", icon: FileText, roles: ["admin", "superadmin"] },
+  { name: "Security", href: "/settings/security", icon: ShieldCheck, roles: ["admin", "superadmin"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["admin", "superadmin"] },
 ];
 
@@ -134,7 +136,14 @@ export function AdminSidebar({
         <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
           {filteredNavItems.map((item, index) => {
             const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
+              pathname === item.href ||
+              (pathname.startsWith(item.href + "/") &&
+                !filteredNavItems.some(
+                  (other) =>
+                    other.href !== item.href &&
+                    pathname.startsWith(other.href) &&
+                    other.href.length > item.href.length
+                ));
             const Icon = item.icon;
 
             return (

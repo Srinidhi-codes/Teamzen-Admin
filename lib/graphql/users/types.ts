@@ -60,6 +60,16 @@ export interface User {
   panNumber?: string | null;
   aadharNumber?: string | null;
   uanNumber?: string | null;
+  salaryDetails?: {
+    id: string;
+    salaryStructure: {
+      id: string;
+      name: string;
+    };
+    annualCtc: number;
+    effectiveFrom: string;
+    isActive: boolean;
+  } | null;
 }
 
 export type UserResponse = User[];

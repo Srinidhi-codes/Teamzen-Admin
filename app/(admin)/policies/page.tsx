@@ -11,6 +11,7 @@ import { Loader2, FileText, Upload, Trash2 } from "lucide-react";
 import moment from "moment";
 import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 export default function PoliciesPage() {
     const { policies, isLoading, isUploading, upload, remove } = usePolicies();
@@ -19,6 +20,8 @@ export default function PoliciesPage() {
     const [isOpen, setIsOpen] = useState(false);
     const [isViewOpen, setIsViewOpen] = useState(false);
     const [selectedPdf, setSelectedPdf] = useState<{ url: string; title: string } | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [policyToDelete, setPolicyToDelete] = useState<string | null>(null);
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -174,15 +177,9 @@ export default function PoliciesPage() {
                                     </button>
                                     <button
                                         hidden={!isAuthorized}
-                                        onClick={async () => {
-                                            if (window.confirm("Are you sure you want to delete this policy? This will also remove its AI embeddings.")) {
-                                                try {
-                                                    await remove.mutateAsync(policy.id);
-                                                    toast.success("Policy deleted successfully");
-                                                } catch (err) {
-                                                    toast.error("Failed to delete policy");
-                                                }
-                                            }
+                                        onClick={() => {
+                                            setPolicyToDelete(policy.id);
+                                            setIsDeleteModalOpen(true);
                                         }}
                                         className="w-8 h-8 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-all duration-300"
                                         title="Delete Policy"
@@ -230,6 +227,26 @@ export default function PoliciesPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={async () => {
+                    if (policyToDelete) {
+                        try {
+                            await remove.mutateAsync(policyToDelete);
+                            toast.success("Policy deleted successfully");
+                        } catch (err) {
+                            toast.error("Failed to delete policy");
+                        }
+                    }
+                }}
+                variant="destructive"
+                title="Erase Corporate Policy?"
+                description="This will permanently delete the document and its AI brain (vector embeddings). This action is irreversible."
+                confirmText="Execute Deletion"
+                cancelText="Retain Document"
+            />
         </div>
     );
 }
