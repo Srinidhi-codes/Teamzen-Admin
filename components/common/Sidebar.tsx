@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useState } from "react";
+import { useStore } from "@/lib/store/useStore";
 
 interface NavItem {
   name: string;
@@ -16,7 +16,7 @@ const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: "📊" },
   { name: "Leaves", href: "/leaves", icon: "📅" },
   { name: "Attendance", href: "/attendance", icon: "📍" },
-  { name: "Payroll", href: "/payroll", icon: "💰" },
+  { name: "Payroll", href: "/payroll", icon: "💰", roles: ["admin"] },
   { name: "Employees", href: "/employees", icon: "👥" },
   { name: "Notifications", href: "/notifications", icon: "🔔" },
   { name: "Analytics", href: "/analytics", icon: "📈" },
@@ -25,8 +25,8 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { user, isLoading: isUserLoading, error: userError } = useGraphQLUser();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { user } = useGraphQLUser();
+  const { sidebarCollapsed: isCollapsed, setSidebarCollapsed } = useStore();
 
   const filteredItems = navItems.filter(
     (item) => !item.roles || (user && item.roles.includes(user.role))
@@ -40,26 +40,31 @@ export function Sidebar() {
 
       {/* Collapse Button */}
       <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
+        onClick={() => setSidebarCollapsed(!isCollapsed)}
         className="p-4 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition text-xl"
       >
-
         {isCollapsed ? "→" : "←"}
       </button>
 
       {/* Navigation Items */}
       <nav className="flex-1 px-2 py-4 space-y-2">
         {filteredItems.map((item) => {
-          const isActive = pathname?.startsWith(item.href);
+          const isActive =
+            pathname === item.href ||
+            (pathname.startsWith(item.href + "/") &&
+              !filteredItems.some(
+                (other) =>
+                  other.href !== item.href &&
+                  pathname.startsWith(other.href) &&
+                  other.href.length > item.href.length
+              ));
           return (
-            <Link href={item.href}>
+            <Link key={item.href} href={item.href}>
               <div
-                key={item.href}
                 className={`flex items-center justify-center space-x-3 px-4 py-3 rounded-lg transition ${isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/20"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                   }`}
-
                 title={isCollapsed ? item.name : ""}
               >
                 <span className="text-xl">{item.icon}</span>

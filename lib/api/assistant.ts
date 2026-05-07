@@ -87,6 +87,18 @@ export const useAssistant = () => {
                                     }
                                     return newHistory;
                                 });
+                            } else if (data.error) {
+                                // Handle backend errors gracefully
+                                const errorMsg = `[ERROR_CARD] title: Assistant Error | message: ${data.error} [/ERROR_CARD]`;
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.content = errorMsg;
+                                    }
+                                    return newHistory;
+                                });
+                                break; // Stop streaming on error
                             } else if (data.history) {
                                 // Final sync
                                 setHistory(data.history);

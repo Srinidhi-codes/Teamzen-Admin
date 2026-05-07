@@ -17,7 +17,7 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
 
     return (
         <div className={cn(
-            "relative overflow-hidden bg-card border border-border/50 rounded-4xl p-6 shadow-md space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full group/insight",
+            "relative overflow-hidden bg-card border border-border/50 rounded-4xl p-6 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full group/insight",
             "before:absolute before:inset-0 before:bg-linear-to-br before:opacity-[0.03] before:pointer-events-none",
             isWarning ? "before:from-amber-500 before:to-transparent border-amber-500/20" : "before:from-primary before:to-transparent"
         )}>
@@ -29,7 +29,7 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
 
             <div className="flex items-center gap-3">
                 <div className={cn(
-                    "w-10 h-10 rounded-2xl flex items-center justify-center border shadow-inner",
+                    "w-10 h-10 rounded-2xl flex items-center justify-center border",
                     isWarning ? "bg-amber-500/10 border-amber-500/20 text-amber-600" : "bg-primary/10 border-primary/20 text-primary"
                 )}>
                     <Sparkles className="w-5 h-5 animate-pulse" />

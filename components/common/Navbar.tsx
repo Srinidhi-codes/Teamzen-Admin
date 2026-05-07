@@ -32,16 +32,25 @@ const IMPORTANT_ROUTES = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Attendance", href: "/attendance", icon: Clock },
-  { name: "Payroll", href: "/payroll", icon: CircleDollarSign },
+  { name: "Payroll", href: "/payroll", icon: CircleDollarSign, roles: ["admin"] },
 ];
 
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
-  const { logoutUser, user: storeUser } = useStore();
-  const { user } = useGraphQLUser(); // Sync with DB
+  const { logoutUser, user: storeUser, setAuthenticatedUser } = useStore();
+  const { user: graphqlUser, isLoading: isUserLoading } = useGraphQLUser(); // Sync with DB
   const { startTour } = useOnboardingTour();
   const router = useRouter();
   const pathname = usePathname();
-  const orgLogo = user?.organization?.logo?.url;
+  const orgLogo = (graphqlUser || storeUser)?.organization?.logo?.url;
+
+  // Sync GraphQL user to store if store is empty (e.g. after refresh)
+  useEffect(() => {
+    if (graphqlUser && !storeUser && !isUserLoading) {
+      setAuthenticatedUser(graphqlUser as any);
+    }
+  }, [graphqlUser, storeUser, isUserLoading, setAuthenticatedUser]);
+
+  const user = graphqlUser || storeUser;
 
   const handleLogout = async () => {
     try {
@@ -138,7 +147,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             <Link href="/dashboard" className="flex items-center space-x-3 group shrink-0">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform overflow-hidden">
                 {orgLogo ? (
-                  <Image src={orgLogo} alt="Logo" width={40} height={40} className="object-cover" />
+                  <Image src={orgLogo} alt="Logo" width={40} height={40} className="object-cover" unoptimized />
                 ) : (
                   <span className="text-primary-foreground font-black text-xl">
                     {user?.organization?.name?.charAt(0) || 'P'}
@@ -156,10 +165,9 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
             </Link>
           </div>
 
-          {/* Center Navigation - Always show Important routes */}
           <div className="flex-1 hidden lg:flex justify-center px-4 overflow-hidden">
             <div className="flex items-center bg-muted/40 p-1 rounded-2xl border border-border/50 backdrop-blur-md max-w-full overflow-x-auto scrollbar-hide animate-slide-up duration-300">
-              {IMPORTANT_ROUTES.map((route) => {
+              {IMPORTANT_ROUTES.filter(route => !route.roles || (user && route.roles.includes(user.role))).map((route) => {
                 const isActive = route.href === '/dashboard' ? pathname === route.href : pathname.startsWith(route.href);
                 return (
                   <Link
@@ -206,6 +214,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                           width={40}
                           height={40}
                           className="w-full h-full object-cover"
+                          unoptimized
                         />
                       ) : (
                         <>
@@ -228,15 +237,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-border/50 my-1" />
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
-                    >
-                      <span className="text-lg group-hover:scale-110 transition-transform">👤</span>
-                      <span className="text-sm font-bold">My Profile</span>
-                    </Link>
-                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <a
                       href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000/dashboard"}

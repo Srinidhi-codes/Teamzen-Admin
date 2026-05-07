@@ -50,6 +50,16 @@ export const GET_ME = gql`
           url
         }
       }
+      salaryDetails {
+        id
+        salaryStructure {
+          id
+          name
+        }
+        annualCtc
+        effectiveFrom
+        isActive
+      }
     }
   }
 `;
@@ -110,10 +120,40 @@ export const GET_ALL_USERS = gql`
         panNumber
         aadharNumber
         uanNumber
+        salaryDetails {
+          id
+          salaryStructure {
+            id
+            name
+          }
+          annualCtc
+          effectiveFrom
+          isActive
+        }
       }
       total
       page
       pageSize
+    }
+  }
+`;
+
+export const GET_LOGIN_HISTORY = gql`
+  query GlobalLoginHistory($page: Int, $pageSize: Int) {
+    globalLoginHistory(page: $page, pageSize: $pageSize) {
+      id
+      loginTime
+      ipAddress
+      userAgent
+      location
+      status
+      user {
+        id
+        firstName
+        lastName
+        email
+        profilePictureUrl
+      }
     }
   }
 `;

@@ -237,7 +237,7 @@ export const usePolicies = () => {
   });
 
   const remove = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: number | string) => {
       await client.delete(`${API_ENDPOINTS.POLICIES}${id}/`);
     },
     onSuccess: () => {

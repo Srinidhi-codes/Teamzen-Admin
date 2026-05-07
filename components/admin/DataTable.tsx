@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 export interface Column<T> {
   key: string;
   label: string;
-  render?: (item: T) => React.ReactNode;
+  render?: (value: any, item: T) => React.ReactNode;
   sortable?: boolean;
 }
 
@@ -16,6 +16,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   onRowClick?: (item: T) => void;
   itemsPerPage?: number;
+  isLoading?: boolean;
 }
 
 export function DataTable<T>({
@@ -25,6 +26,7 @@ export function DataTable<T>({
   searchPlaceholder = "Search...",
   onRowClick,
   itemsPerPage = 10,
+  isLoading = false,
 }: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,6 +34,15 @@ export function DataTable<T>({
     key: string;
     direction: "asc" | "desc";
   } | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 space-y-4">
+        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Synchronizing Ledger...</p>
+      </div>
+    );
+  }
 
   // Filter data based on search
   const filteredData = searchable
@@ -140,7 +151,7 @@ export function DataTable<T>({
                         key={column.key}
                         className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground/80 group-hover:text-foreground"
                       >
-                        {column.render ? column.render(item) : (item as any)[column.key]}
+                        {column.render ? column.render((item as any)[column.key], item) : (item as any)[column.key]}
                       </td>
                     ))}
                   </tr>

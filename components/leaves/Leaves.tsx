@@ -7,9 +7,12 @@ import LeaveTypes from './LeaveTypes'
 import CompanyHolidays from './CompanyHolidays'
 import { useStore } from '@/lib/store/useStore'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useGraphQLUser } from '@/lib/api/graphqlHooks'
 
 const LeavesPage = () => {
-    const { user } = useStore();
+    const { user: storeUser } = useStore();
+    const { user: graphqlUser, isLoading: isUserLoading } = useGraphQLUser();
+    const user = storeUser || graphqlUser;
     const router = useRouter();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab');
@@ -50,7 +53,7 @@ const LeavesPage = () => {
     }
 
     // Prevent rendering until user is loaded to avoid flicker
-    if (!user) return (
+    if (!user && isUserLoading) return (
         <div className="flex flex-col items-center justify-center p-20 space-y-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
             <p className="text-muted-foreground animate-pulse font-medium">Synchronizing Leave Data...</p>

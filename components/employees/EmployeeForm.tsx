@@ -16,6 +16,10 @@ import { Input } from "../ui/input";
 import ConfirmationModal from "../common/ConfirmationModal";
 
 
+import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucide-react";
+
 interface EmployeeFormProps {
     initialData?: User | null;
     onSuccess: () => void;
@@ -40,6 +44,16 @@ const employeeSchema = z.object({
     isVerified: z.boolean().default(false),
     organizationId: z.string().min(1, "Organization is required "),
     managerId: z.string().optional(),
+    // Financials
+    bankAccountNumber: z.string().optional(),
+    bankIfscCode: z.string().optional(),
+    panNumber: z.string().optional(),
+    aadharNumber: z.string().optional(),
+    uanNumber: z.string().optional(),
+    // Payroll
+    salaryStructureId: z.string().optional(),
+    annualCtc: z.string().optional(),
+    effectiveFrom: z.string().optional(),
 });
 
 export default function EmployeeForm({
@@ -66,6 +80,16 @@ export default function EmployeeForm({
         isVerified: false,
         managerId: "",
         organizationId: "",
+        // Financials
+        bankAccountNumber: "",
+        bankIfscCode: "",
+        panNumber: "",
+        aadharNumber: "",
+        uanNumber: "",
+        // Payroll
+        salaryStructureId: "",
+        annualCtc: "",
+        effectiveFrom: moment().startOf('month').format("YYYY-MM-DD"),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const { user } = useStore();
@@ -74,89 +98,27 @@ export default function EmployeeForm({
     const { designations, isDesignationsLoading } = useGraphQLDesignations();
     const { departments, isDepartmentsLoading } = useGraphQLDepartments();
     const { officeLocations, isOfficeLocationsLoading } = useGraphQLOfficeLocations();
+    const { salaryStructures, isStructuresLoading } = usePayrollQueries();
+    const { assignSalaryToEmployee } = usePayrollMutations();
+    
+    const [activeTab, setActiveTab] = useState("identity");
     const [showPassword, setShowPassword] = useState(false);
-    const isLoading = isCreatingUser || isUpdatingUser;
+    const isLoading = isCreatingUser || isUpdatingUser || isStructuresLoading;
 
-    // Get department and designation options - either filtered by org or all for admin
+    // Get options helpers...
     const getDepartmentOptions = () => {
         if (!departments) return [];
-
-        // For editing, always show the user's current department
-        if (initialData && formData.departmentId) {
-            return departments.map((d: any) => ({
-                label: d.name,
-                value: String(d.id),
-            }));
-        }
-
-        // For creating, filter by organization
-        if (user?.role !== "admin" && user?.organization?.id) {
-            return departments
-                .filter((d: any) => String(d.organization?.id) === String(user?.organization?.id))
-                .map((d: any) => ({
-                    label: d.name,
-                    value: String(d.id),
-                }));
-        }
-
-        return departments.map((d: any) => ({
-            label: d.name,
-            value: String(d.id),
-        }));
+        return departments.map((d: any) => ({ label: d.name, value: String(d.id) }));
     };
 
     const getDesignationOptions = () => {
         if (!designations) return [];
-
-        // For editing, always show the user's current designation
-        if (initialData && formData.designationId) {
-            return designations.map((d: any) => ({
-                label: d.name,
-                value: String(d.id),
-            }));
-        }
-
-        // For creating, filter by organization
-        if (user?.role !== "admin" && user?.organization?.id) {
-            return designations
-                .filter((d: any) => String(d.organization?.id) === String(user?.organization?.id))
-                .map((d: any) => ({
-                    label: d.name,
-                    value: String(d.id),
-                }));
-        }
-
-        return designations.map((d: any) => ({
-            label: d.name,
-            value: String(d.id),
-        }));
+        return designations.map((d: any) => ({ label: d.name, value: String(d.id) }));
     };
 
     const getOfficeLocationOptions = () => {
         if (!officeLocations) return [];
-
-        // For editing, always show the user's current office location
-        if (initialData && formData.officeLocationId) {
-            return officeLocations.map((o: any) => ({
-                label: o.name,
-                value: String(o.id),
-            }));
-        }
-
-        // For creating, filter by organization
-        if (user?.role !== "admin" && user?.organization?.id) {
-            return officeLocations
-                .filter((o: any) => String(o.organizationId) === String(user?.organization?.id))
-                .map((o: any) => ({
-                    label: o.name,
-                    value: String(o.id),
-                }));
-        }
-
-        return officeLocations.map((o: any) => ({
-            label: o.name,
-            value: String(o.id),
-        }));
+        return officeLocations.map((o: any) => ({ label: o.name, value: String(o.id) }));
     };
 
     const departmentOptions = getDepartmentOptions();
@@ -185,46 +147,37 @@ export default function EmployeeForm({
             dateOfExit: initialData.dateOfExit || "",
             employmentType: initialData.employmentType || "full_time",
             isActive: initialData.isActive !== false,
-            departmentId: initialData.department?.id
-                ? String(initialData.department.id)
-                : "",
-            designationId: initialData.designation?.id
-                ? String(initialData.designation.id)
-                : "",
-            officeLocationId: initialData.officeLocation?.id
-                ? String(initialData.officeLocation.id)
-                : "",
+            departmentId: initialData.department?.id ? String(initialData.department.id) : "",
+            designationId: initialData.designation?.id ? String(initialData.designation.id) : "",
+            officeLocationId: initialData.officeLocation?.id ? String(initialData.officeLocation.id) : "",
             isStaff: initialData.isStaff !== false,
             isVerified: initialData.isVerified !== false,
-            managerId: initialData.manager?.id
-                ? String(initialData.manager.id)
-                : "",
-            organizationId: initialData.organization?.id
-                ? String(initialData.organization.id)
-                : "",
+            managerId: initialData.manager?.id ? String(initialData.manager.id) : "",
+            organizationId: initialData.organization?.id ? String(initialData.organization.id) : "",
+            // Financials
+            bankAccountNumber: initialData.bankAccountNumber || "",
+            bankIfscCode: initialData.bankIfscCode || "",
+            panNumber: initialData.panNumber || "",
+            aadharNumber: initialData.aadharNumber || "",
+            uanNumber: initialData.uanNumber || "",
+            // Payroll
+            salaryStructureId: initialData.salaryDetails?.salaryStructure?.id ? String(initialData.salaryDetails.salaryStructure.id) : "",
+            annualCtc: initialData.salaryDetails?.annualCtc ? String(initialData.salaryDetails.annualCtc) : "",
+            effectiveFrom: initialData.salaryDetails?.effectiveFrom || moment().startOf('month').format("YYYY-MM-DD"),
         });
     }, [initialData]);
 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-
         setFormData((prev) => {
             const newData = { ...prev, [name]: value };
-
-            // Auto-generate password for new users when first name changes
             if (!initialData && name === "firstName") {
                 const firstWord = value.trim().split(" ")[0];
-                if (firstWord) {
-                    newData.password = `${firstWord}@123`;
-                } else {
-                    newData.password = "";
-                }
+                if (firstWord) newData.password = `${firstWord}@123`;
             }
-
             return newData;
         });
-
         if (errors[name]) {
             setErrors((prev) => {
                 const newErrors = { ...prev };
@@ -239,24 +192,10 @@ export default function EmployeeForm({
             ...prev,
             [name]: date ? moment(date).format("YYYY-MM-DD") : ""
         }));
-        if (errors[name]) {
-            setErrors((prev) => {
-                const newErrors = { ...prev };
-                delete newErrors[name];
-                return newErrors;
-            });
-        }
     };
 
     const handleSelectChange = (name: string, value: string) => {
         setFormData((prev) => ({ ...prev, [name]: value }));
-        if (errors[name]) {
-            setErrors((prev) => {
-                const newErrors = { ...prev };
-                delete newErrors[name];
-                return newErrors;
-            });
-        }
     };
 
     const handleSwitchChange = (name: string, checked: boolean) => {
@@ -272,274 +211,156 @@ export default function EmployeeForm({
                 const fieldErrors: Record<string, string> = {};
                 validationResult.error.issues.forEach((issue) => {
                     const path = issue.path[0]?.toString();
-                    if (path) {
-                        fieldErrors[path] = issue.message;
-                    }
+                    if (path) fieldErrors[path] = issue.message;
                 });
                 setErrors(fieldErrors);
+                toast.error("Please fix validation errors across all tabs");
                 return;
             }
 
-            if (!initialData && !formData.password) {
-                setErrors(prev => ({ ...prev, password: "Password is required for new users" }));
-                return;
-            }
-
+            let savedUser: any = null;
             if (initialData) {
-                const { password, ...updateData } = formData;
+                const { password, salaryStructureId, annualCtc, effectiveFrom, ...updateData } = formData;
                 const result = await updateUser(initialData.id, updateData);
                 if (result?.success) {
+                    savedUser = initialData;
                     toast.success("Employee updated successfully");
-                    onSuccess();
                 } else {
                     toast.error(result?.error || "Failed to update employee");
+                    return;
                 }
             } else {
-                const result = await createUser(formData);
+                const { salaryStructureId, annualCtc, effectiveFrom, ...createData } = formData;
+                const result = await createUser(createData);
                 if (result?.success) {
+                    savedUser = result.user;
                     toast.success("Employee created successfully");
-                    onSuccess();
                 } else {
                     toast.error(result?.error || "Failed to create employee");
+                    return;
                 }
             }
+
+            // Handle Payroll Assignment if fields are filled
+            if (savedUser && formData.salaryStructureId && formData.annualCtc) {
+                const payrollResult = await assignSalaryToEmployee(
+                    savedUser.id,
+                    formData.salaryStructureId,
+                    Number(formData.annualCtc),
+                    formData.effectiveFrom
+                );
+                if (payrollResult.success) {
+                    toast.success("Salary structure assigned successfully");
+                } else {
+                    toast.error("User saved, but failed to assign salary structure: " + payrollResult.error);
+                }
+            }
+
+            onSuccess();
         } catch (error: any) {
             toast.error(error.message || "An error occurred");
         }
     };
 
-    // Show loading state while options are being fetched
-    if (isDepartmentsLoading || isDesignationsLoading || isOfficeLocationsLoading || (user?.role === "admin" && isOrganizationsLoading)) {
+    if (isDepartmentsLoading || isDesignationsLoading || isOfficeLocationsLoading) {
         return (
             <div className="flex items-center justify-center py-12">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    <p className="text-sm text-muted-foreground font-medium">Loading form data...</p>
-                </div>
+                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4 ">
-            <div className="grid grid-cols-2 gap-4">
-                <Input
-                    label="First Name"
-                    name="firstName"
-                    required
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    error={errors.firstName}
-                />
-                <Input
-                    label="Last Name"
-                    name="lastName"
-                    required
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    error={errors.lastName}
-                />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid grid-cols-4 bg-muted/30 p-1 rounded-2xl mb-8">
+                    <TabsTrigger value="identity" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <UserIcon className="w-3.5 h-3.5" /> Identity
+                    </TabsTrigger>
+                    <TabsTrigger value="employment" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <Briefcase className="w-3.5 h-3.5" /> Work
+                    </TabsTrigger>
+                    <TabsTrigger value="financials" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <Landmark className="w-3.5 h-3.5" /> Finance
+                    </TabsTrigger>
+                    <TabsTrigger value="payroll" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <Wallet className="w-3.5 h-3.5" /> Payroll
+                    </TabsTrigger>
+                </TabsList>
 
-
-            <div className="grid grid-cols-2 gap-4">
-                <Input
-                    label="Email"
-                    name="email"
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={handleChange}
-                    error={errors.email}
-                />
-
-                {!initialData && (
-                    <Input
-                        label="Initial Password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={handleChange}
-                        hint="Default password for new user"
-                        error={errors.password}
-                        suffix={
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="p-1.5 hover:bg-muted rounded-xl transition-colors"
-                            >
-                                {showPassword ? (
-                                    <EyeOff className="w-4 h-4 text-muted-foreground" />
-                                ) : (
-                                    <Eye className="w-4 h-4 text-muted-foreground" />
-                                )}
-                            </button>
-                        }
-                    />
-                )}
-
-
-                <Input
-                    label="Phone Number"
-                    name="phoneNumber"
-                    required
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    error={errors.phoneNumber}
-                />
-
-                <DatePickerSimple
-                    label="Date of Birth"
-                    value={formData.dateOfBirth}
-                    onChange={(date) => handleDateChange("dateOfBirth", date)}
-                    error={errors.dateOfBirth}
-                />
-
-                {user?.role === "admin" && <FormSelect
-                    label="Organization"
-                    value={formData.organizationId}
-                    onValueChange={(value) => handleSelectChange("organizationId", value)}
-                    placeholder="Select Organization"
-                    error={errors.organizationId}
-                    options={organizations?.map((o: any) => ({
-                        label: o.name,
-                        value: String(o.id),
-                    })) || []}
-                />}
-
-                <FormSelect
-                    label="Role"
-                    value={formData.role}
-                    onValueChange={(value) => handleSelectChange("role", value)}
-                    placeholder="Select Role"
-                    error={errors.role}
-                    options={[
-                        { label: "Employee", value: "employee" },
-                        { label: "Manager", value: "manager" },
-                        { label: "HR", value: "hr" },
-                        ...(user?.role === "admin"
-                            ? [{ label: "Admin", value: "admin" }]
-                            : []),
-                    ]}
-                />
-
-                <DatePickerSimple
-                    label="Date of Joining"
-                    value={formData.dateOfJoining}
-                    onChange={(date) => handleDateChange("dateOfJoining", date)}
-                    error={errors.dateOfJoining}
-                />
-
-                <DatePickerSimple
-                    label="Date of Exit"
-                    value={formData.dateOfExit}
-                    onChange={(date) => handleDateChange("dateOfExit", date)}
-                    error={errors.dateOfExit}
-                />
-
-                <FormSelect
-                    label="Department"
-                    value={formData.departmentId}
-                    required
-                    onValueChange={(value) => handleSelectChange("departmentId", value)}
-                    placeholder="Select Department"
-                    error={errors.departmentId}
-                    options={departmentOptions}
-                />
-
-                <FormSelect
-                    label="Designation"
-                    value={formData.designationId}
-                    required
-                    onValueChange={(value) => handleSelectChange("designationId", value)}
-                    placeholder="Select Designation"
-                    error={errors.designationId}
-                    options={designationOptions}
-                />
-
-                <FormSelect
-                    label="Employment Type"
-                    value={formData.employmentType}
-                    required
-                    onValueChange={(value) => handleSelectChange("employmentType", value)}
-                    placeholder="Select Type"
-                    error={errors.employmentType}
-                    options={[
-                        { label: "Full Time", value: "full_time" },
-                        { label: "Contract", value: "contract" },
-                        { label: "Intern", value: "intern" },
-                    ]}
-                />
-
-                <FormSelect
-                    label="Office Location"
-                    value={formData.officeLocationId}
-                    onValueChange={(value) => handleSelectChange("officeLocationId", value)}
-                    placeholder="Select Office Location"
-                    error={errors.officeLocationId}
-                    options={officeLocationOptions}
-                />
-            </div>
-
-            <div className="grid grid-cols-3 gap-6 pt-2">
-                <div className="flex flex-col space-y-4 p-5 border border-border rounded-3xl bg-muted/20">
-                    <div className="space-y-1">
-                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Active Status</label>
-                        <p className="text-[10px] text-muted-foreground font-medium">Is this employee active?</p>
+                <TabsContent value="identity" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input label="First Name" name="firstName" required value={formData.firstName} onChange={handleChange} error={errors.firstName} />
+                        <Input label="Last Name" name="lastName" required value={formData.lastName} onChange={handleChange} error={errors.lastName} />
+                        <Input label="Email" name="email" type="email" required value={formData.email} onChange={handleChange} error={errors.email} />
+                        <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} error={errors.phoneNumber} />
+                        <DatePickerSimple label="Date of Birth" value={formData.dateOfBirth} onChange={(date) => handleDateChange("dateOfBirth", date)} error={errors.dateOfBirth} />
+                        <FormSelect label="Role" value={formData.role} onValueChange={(v) => handleSelectChange("role", v)} options={[{ label: "Employee", value: "employee" }, { label: "Manager", value: "manager" }, { label: "HR", value: "hr" }]} />
                     </div>
-                    <Switch
-                        checked={formData.isActive}
-                        onCheckedChange={(checked) => handleSwitchChange("isActive", checked)}
-                    />
-                </div>
+                </TabsContent>
 
-                <div className="flex flex-col space-y-4 p-5 border border-border rounded-3xl bg-muted/20">
-                    <div className="space-y-1">
-                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Staff Status</label>
-                        <p className="text-[10px] text-muted-foreground font-medium">Is this user a staff member?</p>
+                <TabsContent value="employment" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-2 gap-4">
+                        <DatePickerSimple label="Date of Joining" value={formData.dateOfJoining} onChange={(date) => handleDateChange("dateOfJoining", date)} />
+                        <DatePickerSimple label="Date of Exit" value={formData.dateOfExit} onChange={(date) => handleDateChange("dateOfExit", date)} />
+                        <FormSelect label="Department" value={formData.departmentId} onValueChange={(v) => handleSelectChange("departmentId", v)} options={departmentOptions} />
+                        <FormSelect label="Designation" value={formData.designationId} onValueChange={(v) => handleSelectChange("designationId", v)} options={designationOptions} />
+                        <FormSelect label="Employment Type" value={formData.employmentType} onValueChange={(v) => handleSelectChange("employmentType", v)} options={[{ label: "Full Time", value: "full_time" }, { label: "Contract", value: "contract" }, { label: "Intern", value: "intern" }]} />
+                        <FormSelect label="Office Location" value={formData.officeLocationId} onValueChange={(v) => handleSelectChange("officeLocationId", v)} options={officeLocationOptions} />
                     </div>
-                    <Switch
-                        checked={formData.isStaff}
-                        onCheckedChange={(checked) => handleSwitchChange("isStaff", checked)}
-                    />
-                </div>
+                </TabsContent>
 
-                <div className="flex flex-col space-y-4 p-5 border border-border rounded-3xl bg-muted/20">
-                    <div className="space-y-1">
-                        <label className="text-xs font-black text-foreground uppercase tracking-widest">Verified</label>
-                        <p className="text-[10px] text-muted-foreground font-medium">Has their email been verified?</p>
+                <TabsContent value="financials" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="grid grid-cols-2 gap-4">
+                        <Input label="Bank Account Number" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} />
+                        <Input label="IFSC Code" name="bankIfscCode" value={formData.bankIfscCode} onChange={handleChange} />
+                        <Input label="PAN Number" name="panNumber" value={formData.panNumber} onChange={handleChange} />
+                        <Input label="Aadhar Number" name="aadharNumber" value={formData.aadharNumber} onChange={handleChange} />
+                        <Input label="UAN Number" name="uanNumber" value={formData.uanNumber} onChange={handleChange} />
                     </div>
-                    <Switch
-                        checked={formData.isVerified}
-                        onCheckedChange={(checked) => handleSwitchChange("isVerified", checked)}
-                    />
-                </div>
-            </div>
+                </TabsContent>
 
+                <TabsContent value="payroll" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="p-6 border border-primary/20 bg-primary/5 rounded-3xl space-y-6">
+                        <div className="flex items-center gap-3">
+                            <CreditCard className="w-5 h-5 text-primary" />
+                            <div>
+                                <h3 className="text-sm font-black uppercase tracking-widest">Compensation Strategy</h3>
+                                <p className="text-[10px] text-muted-foreground font-medium">Define the salary structure and annual CTC for this individual.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FormSelect 
+                                label="Salary Structure" 
+                                value={formData.salaryStructureId} 
+                                onValueChange={(v) => handleSelectChange("salaryStructureId", v)} 
+                                options={salaryStructures.map((s: any) => ({ label: s.name, value: String(s.id) }))} 
+                            />
+                            <Input 
+                                label="Annual CTC (₹)" 
+                                name="annualCtc" 
+                                type="number" 
+                                value={formData.annualCtc} 
+                                onChange={handleChange} 
+                                hint="Total cost to company per year"
+                            />
+                            <DatePickerSimple 
+                                label="Effective From" 
+                                value={formData.effectiveFrom} 
+                                onChange={(date) => handleDateChange("effectiveFrom", date)} 
+                            />
+                        </div>
+                    </div>
+                </TabsContent>
+            </Tabs>
 
-
-            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border">
-                <button
-                    type="button"
-                    onClick={onCancel}
-                    className="px-8 py-4 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
-                    disabled={isLoading}
-                >
-                    Dismiss
-                </button>
-                <button
-                    type="submit"
-                    className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-50"
-                    disabled={isLoading}
-                >
-                    {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                    ) : (
-                        initialData ? "Apply Changes" : "Establish Profile"
-                    )}
+            <div className="flex justify-end gap-3 pt-6 border-t border-border">
+                <button type="button" onClick={onCancel} className="px-8 py-4 text-muted-foreground text-[11px] font-black uppercase tracking-widest">Dismiss</button>
+                <button type="submit" className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-3" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (initialData ? "Apply Changes" : "Establish Profile")}
                 </button>
             </div>
-
         </form>
     );
 }

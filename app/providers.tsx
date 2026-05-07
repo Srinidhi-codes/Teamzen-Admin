@@ -20,21 +20,7 @@ function ThemeInitializer({ children }: { children: ReactNode }) {
 
   const { theme } = useTheme();
 
-  useEffect(() => {
-    if (theme === "system") {
-      const update = () => {
-        const hour = new Date().getHours();
-        const isDay = hour >= 6 && hour < 18;
-        const target = isDay ? "light" : "dark";
-        document.documentElement.classList.remove("light", "dark");
-        document.documentElement.classList.add(target);
-        document.documentElement.style.colorScheme = target;
-      };
-      update();
-      const interval = setInterval(update, 60000);
-      return () => clearInterval(interval);
-    }
-  }, [theme]);
+
 
   return <>{children}</>;
 }
