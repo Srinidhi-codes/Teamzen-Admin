@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { useState, useEffect, useRef } from "react";
+import { useQuery } from "@apollo/client/react";
+import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
+import { SecurityLogResponse } from "@/lib/graphql/users/types";
 import { useStore } from "@/lib/store/useStore";
 import { ThemeSelector } from "./ThemeSelector";
 import client from "@/lib/api/client";
@@ -11,7 +14,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils";
 
 import { NotificationBell } from "./NotificationBell";
-import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User, Compass } from "lucide-react";
+import { Calendar, CircleDollarSign, Clock, LayoutDashboard, LogOut, Menu, Plane, Settings, User, Compass, Globe } from "lucide-react";
 import { useOnboardingTour } from "./OnboardingTour";
 import {
   DropdownMenu,
@@ -32,12 +35,16 @@ const IMPORTANT_ROUTES = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Attendance", href: "/attendance", icon: Clock },
-  { name: "Payroll", href: "/payroll", icon: CircleDollarSign, roles: ["admin"] },
+  { name: "Payroll", href: "/payroll", icon: CircleDollarSign, roles: ["admin", "superadmin"] },
 ];
 
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
   const { logoutUser, user: storeUser, setAuthenticatedUser } = useStore();
   const { user: graphqlUser, isLoading: isUserLoading } = useGraphQLUser(); // Sync with DB
+  const { data } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
+    variables: { page: 1, pageSize: 1 },
+    fetchPolicy: "cache-first" // Use cache from banner
+  });
   const { startTour } = useOnboardingTour();
   const router = useRouter();
   const pathname = usePathname();
@@ -159,7 +166,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                   {user?.organization?.name || 'Teamzen'}
                 </span>
                 <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mt-1">
-                  {user?.role === 'admin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
+                  {user?.role === 'admin' || user?.role === 'superadmin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
                 </span>
               </div>
             </Link>
@@ -194,7 +201,7 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
 
           {/* Right Section: User Menu & Tools */}
           <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
-            <div className="flex items-center bg-muted/30 p-1 rounded-xl sm:rounded-2xl border border-border/50 space-x-1">
+            <div className="flex items-center p-1 space-x-1">
               <NotificationBell />
               <ThemeSelector />
             </div>
@@ -227,10 +234,27 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 p-2 rounded-3xl shadow-2xl border-border bg-card/80 backdrop-blur-xl">
                   <DropdownMenuLabel className="px-4 py-3 bg-muted/20 rounded-2xl mb-1">
-                    <div className="flex-col items-start hidden xl:flex">
-                      <span className="text-md font-black text-primary uppercase tracking-widest">
-                        {user.firstName} {user.lastName}
-                      </span>
+                    <div className="flex flex-col items-start w-full">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-md font-black text-primary uppercase tracking-widest">
+                          {user.firstName} {user.lastName}
+                        </span>
+                        {/* Geo-Status Badge */}
+                        {(() => {
+                          const isVerified = data?.mySecurityLogs?.results?.[0]?.latitude;
+                          return (
+                            <div className={cn(
+                              "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[7px] font-black uppercase tracking-tighter",
+                              isVerified
+                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
+                            )}>
+                              <Globe className="w-2 h-2" />
+                              {isVerified ? "Verified" : "Unverified"}
+                            </div>
+                          );
+                        })()}
+                      </div>
                       <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mt-1">
                         {user.role}
                       </span>
@@ -242,7 +266,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                       href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000/dashboard"}
                       className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/10 text-primary cursor-pointer group"
                     >
-                      <span className="text-lg group-hover:scale-110 transition-transform">🏠</span>
                       <div className="flex flex-col">
                         <span className="text-sm font-bold">User Portal</span>
                         <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Personal View</span>
@@ -255,7 +278,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                         href="/settings"
                         className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-primary/5 cursor-pointer group"
                       >
-                        <span className="text-lg group-hover:scale-110 transition-transform">⚙️</span>
                         <span className="text-sm font-bold">Settings</span>
                       </Link>
                     </DropdownMenuItem>
@@ -265,7 +287,6 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                     onClick={handleLogout}
                     className="flex items-center space-x-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-destructive cursor-pointer group focus:bg-destructive/10 focus:text-destructive"
                   >
-                    <span className="text-lg group-hover:scale-110 transition-transform"><LogOut className="w-5 h-5" /></span>
                     <span className="text-sm font-bold">Logout</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>

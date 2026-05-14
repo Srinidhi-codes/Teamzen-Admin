@@ -13,7 +13,8 @@ import {
     User as UserIcon,
     AlertCircle,
     Loader2,
-    Search
+    Search,
+    Sparkles
 } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
@@ -21,12 +22,15 @@ import { cn } from "@/lib/utils";
 
 export default function SecuritySettingsPage() {
     const [page, setPage] = useState(1);
+    const pageSize = 20;
     const { data, loading, error, refetch } = useQuery(GET_LOGIN_HISTORY, {
-        variables: { page, pageSize: 50 },
+        variables: { page, pageSize },
         fetchPolicy: "network-only"
     }) as any;
 
-    const logs = data?.globalLoginHistory || [];
+    const response = data?.globalLoginHistory || {};
+    const logs = response.results || [];
+    const totalCount = response.total || 0;
 
     if (error) {
         return (
@@ -90,6 +94,10 @@ export default function SecuritySettingsPage() {
                 <DataTable
                     isLoading={loading}
                     data={logs}
+                    page={page}
+                    pageSize={pageSize}
+                    totalCount={totalCount}
+                    onPageChange={(p: number) => setPage(p)}
                     columns={[
                         {
                             key: "user",
@@ -125,18 +133,6 @@ export default function SecuritySettingsPage() {
                                         {val || "0.0.0.0"}
                                     </code>
                                     <Globe className="w-3 h-3 text-muted-foreground/50" />
-                                </div>
-                            )
-                        },
-                        {
-                            key: "location",
-                            label: "Access Location",
-                            render: (val) => (
-                                <div className="flex items-center gap-2">
-                                    <Globe className="w-3.5 h-3.5 text-primary/60" />
-                                    <span className="text-[10px] font-bold text-muted-foreground truncate max-w-[150px]" title={val}>
-                                        {val || "Unknown Location"}
-                                    </span>
                                 </div>
                             )
                         },
@@ -179,6 +175,31 @@ export default function SecuritySettingsPage() {
                             }
                         },
                         {
+                            key: "location",
+                            label: "Origin Point",
+                            render: (val) => (
+                                <div className="flex items-center gap-2">
+                                    <Globe className="w-3.5 h-3.5 text-primary/60" />
+                                    <span className="text-[10px] font-bold uppercase tracking-tight">{val || "Remote Link"}</span>
+                                </div>
+                            )
+                        },
+                        {
+                            key: "latitude",
+                            label: "Geo-Lock",
+                            render: (_val, row: any) => (
+                                <div className="space-y-0.5">
+                                    <p className="font-bold text-[9px] uppercase tracking-tight text-primary flex items-center gap-1">
+                                        <Sparkles className="w-2 h-2" />
+                                        {row.latitude ? Number(row.latitude).toFixed(4) : "0.0000"}
+                                    </p>
+                                    <p className="text-[9px] text-muted-foreground font-medium">
+                                        {row.longitude ? Number(row.longitude).toFixed(4) : "0.0000"}
+                                    </p>
+                                </div>
+                            )
+                        },
+                        {
                             key: "status",
                             label: "Authorization",
                             render: (val) => (
@@ -195,7 +216,7 @@ export default function SecuritySettingsPage() {
                     ]}
                 />
 
-                {logs.length === 0 && !loading && (
+                {logs?.length === 0 && !loading && (
                     <div className="p-20 text-center flex flex-col items-center justify-center space-y-4">
                         <div className="w-16 h-16 rounded-full bg-muted/30 flex items-center justify-center">
                             <ShieldCheck className="w-8 h-8 text-muted-foreground opacity-20" />

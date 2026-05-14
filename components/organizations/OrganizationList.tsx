@@ -121,7 +121,7 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                                 </p>
                             )}
 
-                            <div className="space-y-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 {org.registrationNumber && (
                                     <DetailRow icon={Hash} label="Reg Number" value={org.registrationNumber} />
                                 )}
@@ -161,15 +161,13 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                                     onClick={() => onViewEmployees(org)}
                                     className="w-full py-4.5 px-6 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-95 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group/btn"
                                 >
-                                    <Users className="w-4.5 h-4.5" />
-                                    <span>Navigate to Workforce</span>
+                                    <span>Manage Workforce</span>
                                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
                                 </button>
                                 <button
                                     onClick={() => router.push(`/organizations/${org.id}`)}
                                     className="w-full py-4.5 px-6 bg-primary text-primary-foreground font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-95 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group/btn"
                                 >
-                                    <Paperclip className="w-4.5 h-4.5" />
                                     <span>View Details</span>
                                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
                                 </button>

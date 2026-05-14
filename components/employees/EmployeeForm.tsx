@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useGraphQLUserMutations } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Plus } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
 import { z } from "zod";
@@ -19,6 +19,7 @@ import ConfirmationModal from "../common/ConfirmationModal";
 import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucide-react";
+import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 
 interface EmployeeFormProps {
     initialData?: User | null;
@@ -42,7 +43,7 @@ const employeeSchema = z.object({
     officeLocationId: z.string().optional(),
     isStaff: z.boolean().default(false),
     isVerified: z.boolean().default(false),
-    organizationId: z.string().min(1, "Organization is required "),
+    organizationId: z.string().optional(),
     managerId: z.string().optional(),
     // Financials
     bankAccountNumber: z.string().optional(),
@@ -92,7 +93,9 @@ export default function EmployeeForm({
         effectiveFrom: moment().startOf('month').format("YYYY-MM-DD"),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const { user } = useStore();
+    const { user: storeUser } = useStore();
+    const { user: graphqlUser } = useGraphQLUser();
+    const currentUser = graphqlUser || storeUser;
     const { createUser, updateUser, isCreatingUser, isUpdatingUser } = useGraphQLUserMutations();
     const { organizations, isOrganizationsLoading } = useGraphQLOrganizations();
     const { designations, isDesignationsLoading } = useGraphQLDesignations();
@@ -100,37 +103,56 @@ export default function EmployeeForm({
     const { officeLocations, isOfficeLocationsLoading } = useGraphQLOfficeLocations();
     const { salaryStructures, isStructuresLoading } = usePayrollQueries();
     const { assignSalaryToEmployee } = usePayrollMutations();
-    
+
     const [activeTab, setActiveTab] = useState("identity");
-    const [showPassword, setShowPassword] = useState(false);
+    const [profilePicture, setProfilePicture] = useState<File | null>(null);
+    const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(initialData?.profilePictureUrl || null);
     const isLoading = isCreatingUser || isUpdatingUser || isStructuresLoading;
 
-    // Get options helpers...
+    // Get options helpers
     const getDepartmentOptions = () => {
         if (!departments) return [];
-        return departments.map((d: any) => ({ label: d.name, value: String(d.id) }));
+        let filtered = departments;
+        if (formData.organizationId) {
+            filtered = departments.filter((d: any) => String(d.organization?.id) === formData.organizationId);
+        }
+        return filtered.map((d: any) => ({ label: d.name, value: String(d.id) }));
     };
 
     const getDesignationOptions = () => {
         if (!designations) return [];
-        return designations.map((d: any) => ({ label: d.name, value: String(d.id) }));
+        let filtered = designations;
+        if (formData.organizationId) {
+            filtered = designations.filter((d: any) => String(d.organization?.id) === formData.organizationId);
+        }
+        return filtered.map((d: any) => ({ label: d.name, value: String(d.id) }));
     };
 
     const getOfficeLocationOptions = () => {
         if (!officeLocations) return [];
-        return officeLocations.map((o: any) => ({ label: o.name, value: String(o.id) }));
+        let filtered = officeLocations;
+        if (formData.organizationId) {
+            filtered = officeLocations.filter((o: any) => String(o.organizationId) === formData.organizationId);
+        }
+        return filtered.map((o: any) => ({ label: o.name, value: String(o.id) }));
+    };
+
+    const getOrganizationOptions = () => {
+        if (!organizations) return [];
+        return organizations.map((o: any) => ({ label: o.name, value: String(o.id) }));
     };
 
     const departmentOptions = getDepartmentOptions();
     const designationOptions = getDesignationOptions();
     const officeLocationOptions = getOfficeLocationOptions();
+    const organizationOptions = getOrganizationOptions();
 
     useEffect(() => {
-        const orgId = user?.organization?.id;
+        const orgId = currentUser?.organization?.id;
         if (!initialData && orgId && !formData.organizationId) {
             setFormData(prev => ({ ...prev, organizationId: String(orgId) }));
         }
-    }, [user, initialData, formData.organizationId]);
+    }, [currentUser, initialData, formData.organizationId]);
 
     useEffect(() => {
         if (!initialData) return;
@@ -167,6 +189,17 @@ export default function EmployeeForm({
         });
     }, [initialData]);
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setProfilePicture(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfilePicturePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -195,7 +228,19 @@ export default function EmployeeForm({
     };
 
     const handleSelectChange = (name: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [name]: value }));
+        setFormData((prev) => {
+            const newData = { ...prev, [name]: value };
+            
+            // If organization changes, clear dependent fields to avoid cross-org data issues
+            if (name === "organizationId") {
+                newData.departmentId = "";
+                newData.designationId = "";
+                newData.officeLocationId = "";
+                newData.managerId = "";
+            }
+            
+            return newData;
+        });
     };
 
     const handleSwitchChange = (name: string, checked: boolean) => {
@@ -224,6 +269,21 @@ export default function EmployeeForm({
                 const result = await updateUser(initialData.id, updateData);
                 if (result?.success) {
                     savedUser = initialData;
+                    // Handle Photo Upload via REST if selected
+                    if (profilePicture) {
+                        const uploadFormData = new FormData();
+                        uploadFormData.append("profile_picture", profilePicture);
+                        try {
+                            const axios = (await import("axios")).default;
+                            await axios.post(`/api/users/${initialData.id}/upload_photo/`, uploadFormData, {
+                                headers: { "Content-Type": "multipart/form-data" },
+                                withCredentials: true
+                            });
+                            toast.success("Profile photo updated");
+                        } catch (err) {
+                            toast.error("Failed to upload photo");
+                        }
+                    }
                     toast.success("Employee updated successfully");
                 } else {
                     toast.error(result?.error || "Failed to update employee");
@@ -234,6 +294,20 @@ export default function EmployeeForm({
                 const result = await createUser(createData);
                 if (result?.success) {
                     savedUser = result.user;
+                    // Handle Photo Upload via REST for NEW user
+                    if (profilePicture && savedUser?.id) {
+                        const uploadFormData = new FormData();
+                        uploadFormData.append("profile_picture", profilePicture);
+                        try {
+                            const axios = (await import("axios")).default;
+                            await axios.post(`/api/users/${savedUser.id}/upload_photo/`, uploadFormData, {
+                                headers: { "Content-Type": "multipart/form-data" },
+                                withCredentials: true
+                            });
+                        } catch (err) {
+                            toast.error("User created, but photo upload failed");
+                        }
+                    }
                     toast.success("Employee created successfully");
                 } else {
                     toast.error(result?.error || "Failed to create employee");
@@ -241,7 +315,7 @@ export default function EmployeeForm({
                 }
             }
 
-            // Handle Payroll Assignment if fields are filled
+            // Handle Payroll Assignment...
             if (savedUser && formData.salaryStructureId && formData.annualCtc) {
                 const payrollResult = await assignSalaryToEmployee(
                     savedUser.id,
@@ -288,14 +362,47 @@ export default function EmployeeForm({
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="identity" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <TabsContent value="identity" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {/* Profile Picture Upload Section */}
+                    <div className="flex items-center gap-6 p-6 bg-muted/20 rounded-3xl border border-border/50">
+                        <div className="relative group">
+                            <div className="w-24 h-24 rounded-3xl bg-card border-4 border-background shadow-xl overflow-hidden flex items-center justify-center">
+                                {profilePicturePreview ? (
+                                    <img src={profilePicturePreview} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                    <UserIcon className="w-10 h-10 text-muted-foreground/30" />
+                                )}
+                            </div>
+                            <label className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform">
+                                <Plus className="w-4 h-4" />
+                                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                            </label>
+                        </div>
+                        <div className="flex-1">
+                            <h4 className="text-sm font-black uppercase tracking-widest mb-1">Profile Photo</h4>
+                            <p className="text-[10px] text-muted-foreground font-medium max-w-[200px]">
+                                Upload a professional photo. Supported formats: JPG, PNG. Max size: 2MB.
+                            </p>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <Input label="First Name" name="firstName" required value={formData.firstName} onChange={handleChange} error={errors.firstName} />
                         <Input label="Last Name" name="lastName" required value={formData.lastName} onChange={handleChange} error={errors.lastName} />
                         <Input label="Email" name="email" type="email" required value={formData.email} onChange={handleChange} error={errors.email} />
                         <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} error={errors.phoneNumber} />
                         <DatePickerSimple label="Date of Birth" value={formData.dateOfBirth} onChange={(date) => handleDateChange("dateOfBirth", date)} error={errors.dateOfBirth} />
-                        <FormSelect label="Role" value={formData.role} onValueChange={(v) => handleSelectChange("role", v)} options={[{ label: "Employee", value: "employee" }, { label: "Manager", value: "manager" }, { label: "HR", value: "hr" }]} />
+                        <FormSelect
+                            label="Role"
+                            value={formData.role}
+                            onValueChange={(v) => handleSelectChange("role", v)}
+                            options={[
+                                { label: "Employee", value: "employee" },
+                                { label: "Manager", value: "manager" },
+                                { label: "HR", value: "hr" },
+                                ...(currentUser?.role === 'superadmin' || currentUser?.role === 'admin' ? [{ label: "Admin", value: "admin" }] : [])
+                            ]}
+                        />
                     </div>
                 </TabsContent>
 
@@ -303,9 +410,14 @@ export default function EmployeeForm({
                     <div className="grid grid-cols-2 gap-4">
                         <DatePickerSimple label="Date of Joining" value={formData.dateOfJoining} onChange={(date) => handleDateChange("dateOfJoining", date)} />
                         <DatePickerSimple label="Date of Exit" value={formData.dateOfExit} onChange={(date) => handleDateChange("dateOfExit", date)} />
-                        <FormSelect label="Department" value={formData.departmentId} onValueChange={(v) => handleSelectChange("departmentId", v)} options={departmentOptions} />
-                        <FormSelect label="Designation" value={formData.designationId} onValueChange={(v) => handleSelectChange("designationId", v)} options={designationOptions} />
-                        <FormSelect label="Employment Type" value={formData.employmentType} onValueChange={(v) => handleSelectChange("employmentType", v)} options={[{ label: "Full Time", value: "full_time" }, { label: "Contract", value: "contract" }, { label: "Intern", value: "intern" }]} />
+                        
+                        {currentUser?.role === 'superadmin' && (
+                            <FormSelect label="Organization" required value={formData.organizationId} onValueChange={(v) => handleSelectChange("organizationId", v)} options={organizationOptions} />
+                        )}
+                        
+                        <FormSelect label="Department" required value={formData.departmentId} onValueChange={(v) => handleSelectChange("departmentId", v)} options={departmentOptions} />
+                        <FormSelect label="Designation" required value={formData.designationId} onValueChange={(v) => handleSelectChange("designationId", v)} options={designationOptions} />
+                        <FormSelect label="Employment Type" required value={formData.employmentType} onValueChange={(v) => handleSelectChange("employmentType", v)} options={[{ label: "Full Time", value: "full_time" }, { label: "Contract", value: "contract" }, { label: "Intern", value: "intern" }]} />
                         <FormSelect label="Office Location" value={formData.officeLocationId} onValueChange={(v) => handleSelectChange("officeLocationId", v)} options={officeLocationOptions} />
                     </div>
                 </TabsContent>
@@ -329,26 +441,26 @@ export default function EmployeeForm({
                                 <p className="text-[10px] text-muted-foreground font-medium">Define the salary structure and annual CTC for this individual.</p>
                             </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormSelect 
-                                label="Salary Structure" 
-                                value={formData.salaryStructureId} 
-                                onValueChange={(v) => handleSelectChange("salaryStructureId", v)} 
-                                options={salaryStructures.map((s: any) => ({ label: s.name, value: String(s.id) }))} 
+                            <FormSelect
+                                label="Salary Structure"
+                                value={formData.salaryStructureId}
+                                onValueChange={(v) => handleSelectChange("salaryStructureId", v)}
+                                options={salaryStructures.map((s: any) => ({ label: s.name, value: String(s.id) }))}
                             />
-                            <Input 
-                                label="Annual CTC (₹)" 
-                                name="annualCtc" 
-                                type="number" 
-                                value={formData.annualCtc} 
-                                onChange={handleChange} 
+                            <Input
+                                label="Annual CTC (₹)"
+                                name="annualCtc"
+                                type="number"
+                                value={formData.annualCtc}
+                                onChange={handleChange}
                                 hint="Total cost to company per year"
                             />
-                            <DatePickerSimple 
-                                label="Effective From" 
-                                value={formData.effectiveFrom} 
-                                onChange={(date) => handleDateChange("effectiveFrom", date)} 
+                            <DatePickerSimple
+                                label="Effective From"
+                                value={formData.effectiveFrom}
+                                onChange={(date) => handleDateChange("effectiveFrom", date)}
                             />
                         </div>
                     </div>

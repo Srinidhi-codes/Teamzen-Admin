@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import Link from "next/link";
 import { useStore } from "@/lib/store/useStore";
+import moment from "moment";
 
 export default function PayrollPage() {
     const { user } = useStore();
@@ -55,6 +56,12 @@ export default function PayrollPage() {
         isOpen: false,
         runId: ""
     });
+
+    const payrollTabs = [
+        { id: "runs", label: "Active Runs", icon: <Play className="w-5 h-5" />, color: "from-primary to-primary/80" },
+        { id: "components", label: "Component Vault", icon: <Settings className="w-5 h-5" />, color: "from-blue-500 to-blue-400" },
+        { id: "structures", label: "System Structures", icon: <Users className="w-5 h-5" />, color: "from-purple-500 to-purple-400" },
+    ];
 
     const handleCreateComponent = async () => {
         if (!compForm.name || !compForm.code) {
@@ -108,36 +115,42 @@ export default function PayrollPage() {
     };
 
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
-            <div className="flex justify-between items-end">
-                <div>
-                    <h1 className="text-premium-h1">Payroll Machine</h1>
-                    <p className="text-muted-foreground mt-2 font-medium">Architect your organizational compensation matrix.</p>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+                <div className="relative">
+                    <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                    <h2 className="text-premium-h2 leading-none">Payroll Machine</h2>
+                    <p className="text-premium-label mt-2 opacity-60">Architect your organizational compensation matrix.</p>
                 </div>
-                <div className="flex gap-4">
-                    <button className="btn-secondary px-6 group text-xs font-black uppercase tracking-widest">
-                        <FileText className="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+            </div>
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-10">
+                <div className="p-2 rounded-[1.5rem] border border-border inline-flex space-x-1 overflow-x-auto bg-muted/40 backdrop-blur-md mb-8">
+                    {payrollTabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`px-8 py-3.5 rounded-2xl text-premium-label transition-all duration-500 flex items-center space-x-3 whitespace-nowrap active:scale-95 ${activeTab === tab.id
+                                ? `bg-primary text-white shadow-2xl shadow-primary/20 -translate-y-1 font-bold`
+                                : "text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-lg hover:shadow-primary/5"
+                                }`}
+                        >
+                            <span className="group-hover:scale-110 transition-transform">{tab.icon}</span>
+                            <span className="tracking-widest uppercase">{tab.label}</span>
+                        </button>
+                    ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                    <button className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all font-bold text-xs uppercase tracking-widest flex items-center gap-2 group">
+                        <FileText className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                         Audit Records
                     </button>
                     <GeneratePayrollDialog onConfirm={handleRunPayroll} />
                 </div>
             </div>
 
-            <Tabs defaultValue="runs" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="bg-muted/30 p-1.5 rounded-2xl border border-border/50 mb-10 gap-2">
-                    <TabsTrigger value="runs" className="rounded-xl px-10 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg shadow-primary/20 transition-all font-bold">
-                        <Play className="w-4 h-4 mr-2" />
-                        Active Runs
-                    </TabsTrigger>
-                    <TabsTrigger value="components" className="rounded-xl px-10 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg shadow-primary/20 transition-all font-bold">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Component Vault
-                    </TabsTrigger>
-                    <TabsTrigger value="structures" className="rounded-xl px-10 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg shadow-primary/20 transition-all font-bold">
-                        <Users className="w-4 h-4 mr-2" />
-                        System Structures
-                    </TabsTrigger>
-                </TabsList>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                {/* We can hide the default TabsList since we are using our custom triggers */}
+                <TabsList className="hidden" />
 
                 {/* Runs Tab Content */}
                 <TabsContent value="runs" className="animate-slide-up">
@@ -151,7 +164,7 @@ export default function PayrollPage() {
                                     label: "Cycle Reference",
                                     render: (_val, row: any) => (
                                         <div className="font-black text-foreground">
-                                            {row.month}/{row.year}
+                                            {moment().month(row.month - 1).format("MMMM")}-{moment().year(row.year).format("YY")}
                                         </div>
                                     )
                                 },
@@ -160,8 +173,8 @@ export default function PayrollPage() {
                                     label: "Current State",
                                     render: (val: any) => (
                                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${val === 'completed'
-                                                ? 'bg-emerald-100/50 text-emerald-700 border-emerald-200'
-                                                : 'bg-amber-100/50 text-amber-700 border-amber-200'
+                                            ? 'bg-emerald-100/50 text-emerald-700 border-emerald-200'
+                                            : 'bg-amber-100/50 text-amber-700 border-amber-200'
                                             }`}>
                                             {val}
                                         </span>
@@ -183,7 +196,7 @@ export default function PayrollPage() {
                                     render: (_val: any, row: any) => (
                                         <div className="flex gap-2">
                                             <Link href={`/payroll/${row.id}`}>
-                                                <Button variant="ghost" size="sm" className="font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 hover:text-primary">
+                                                <Button variant="default" size="sm" className="font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 hover:text-primary">
                                                     Analyze Run
                                                 </Button>
                                             </Link>
@@ -209,8 +222,7 @@ export default function PayrollPage() {
                         <Card className="premium-card lg:col-span-1 border-primary/20 relative overflow-hidden">
                             <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
                             <h3 className="text-premium-h2 mb-6 flex items-center gap-2">
-                                <Sparkles className="w-5 h-5 text-primary" />
-                                Register Entry
+                                Structural Creation
                             </h3>
                             <div className="space-y-6">
                                 <div className="space-y-2">
@@ -263,7 +275,7 @@ export default function PayrollPage() {
                                     </label>
                                 </div>
                                 <button onClick={handleCreateComponent} className="btn-primary w-full mt-6 py-4 shadow-xl shadow-primary/20 italic font-black uppercase tracking-widest text-xs">
-                                    Inject into Matrix
+                                    Create Structural
                                 </button>
                             </div>
                         </Card>
@@ -334,7 +346,7 @@ export default function PayrollPage() {
                                     ))}
                                 </div>
                                 <div className="mt-10 pt-6 border-t border-border/30">
-                                    <Button variant="ghost" className="w-full font-black text-[10px] uppercase tracking-[0.3em] hover:bg-primary/5 hover:text-primary transition-all">
+                                    <Button variant="default" className="w-full font-black text-[10px] uppercase tracking-[0.3em] hover:bg-primary/5 hover:text-primary transition-all">
                                         Modify Configuration
                                     </Button>
                                 </div>
@@ -375,7 +387,7 @@ function GeneratePayrollDialog({ onConfirm }: { onConfirm: (month: number, year:
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <button className="btn-primary text-xs font-black uppercase tracking-widest">
+                <button className="btn-primary px-8 py-4 text-xs font-black uppercase tracking-widest flex items-center justify-center">
                     <Play className="w-4 h-4 mr-2 fill-current" />
                     Generate Payroll
                 </button>
@@ -488,7 +500,7 @@ function NewStructureDialog({ components, onSuccess }: { components: any[], onSu
             <DialogTrigger asChild>
                 <button className="btn-primary px-8 text-xs font-black uppercase tracking-widest">
                     <Plus className="w-4 h-4 mr-2" />
-                    Forge New Structure
+                    Create Structure
                 </button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto premium-card border-border/50">

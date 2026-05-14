@@ -7,10 +7,11 @@ import { toast } from "sonner";
 import { useStore } from "@/lib/store/useStore";
 
 
-export function useGraphQLOrganizations() {
+export function useGraphQLOrganizations(search?: string) {
     const { setOrganizations } = useStore();
     const { data, loading, error, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
         fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -52,10 +53,11 @@ export function useGraphQLOrganization(id: string) {
 }
 
 
-export function useGraphQLOfficeLocations() {
+export function useGraphQLOfficeLocations(search?: string) {
     const { setOfficeLocations } = useStore();
     const { data, loading, error, refetch } = useQuery<OfficeLocationResponse>(GET_OFFICE_LOCATIONS, {
         fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -72,10 +74,11 @@ export function useGraphQLOfficeLocations() {
     }
 }
 
-export function useGraphQLDepartments() {
+export function useGraphQLDepartments(search?: string) {
     const { setDepartments } = useStore();
     const { data, loading, error, refetch } = useQuery<DepartmentResponse>(GET_DEPARTMENTS, {
         fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -92,10 +95,11 @@ export function useGraphQLDepartments() {
     }
 }
 
-export function useGraphQLDesignations() {
+export function useGraphQLDesignations(search?: string) {
     const { setDesignations } = useStore();
     const { data, loading, error, refetch } = useQuery<DesignationResponse>(GET_DESIGNATIONS, {
         fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {

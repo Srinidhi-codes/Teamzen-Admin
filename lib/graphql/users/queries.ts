@@ -141,18 +141,37 @@ export const GET_ALL_USERS = gql`
 export const GET_LOGIN_HISTORY = gql`
   query GlobalLoginHistory($page: Int, $pageSize: Int) {
     globalLoginHistory(page: $page, pageSize: $pageSize) {
-      id
-      loginTime
-      ipAddress
-      userAgent
-      location
-      status
-      user {
+      results {
         id
-        firstName
-        lastName
-        email
-        profilePictureUrl
+        loginTime
+        ipAddress
+        userAgent
+        location
+        latitude
+        longitude
+        status
+        user {
+          id
+          firstName
+          lastName
+          email
+          profilePictureUrl
+        }
+      }
+      total
+      page
+      pageSize
+    }
+  }
+`;
+
+export const GET_MY_LOGIN_HISTORY = gql`
+  query GetMyLoginHistory($page: Int, $pageSize: Int) {
+    mySecurityLogs(page: $page, pageSize: $pageSize) {
+      results {
+        id
+        latitude
+        longitude
       }
     }
   }

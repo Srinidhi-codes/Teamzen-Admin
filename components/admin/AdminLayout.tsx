@@ -7,6 +7,7 @@ import { Navbar } from "../common/Navbar";
 import AssistantWidget from "../ai";
 import { OnboardingTour } from "../common/OnboardingTour";
 import { useStore } from "@/lib/store/useStore";
+import { LocationSyncBanner } from "../common/LocationSyncBanner";
 
 
 interface AdminLayoutProps {
@@ -24,6 +25,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground mt-20" style={{ scrollbarGutter: 'stable' }}>
+      <LocationSyncBanner />
 
       <AdminSidebar
         isCollapsed={isCollapsed}

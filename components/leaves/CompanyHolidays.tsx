@@ -8,12 +8,16 @@ import CompanyHolidayModal from './CompanyHolidayModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 import { useStore } from '@/lib/store/useStore'
 import { format } from 'date-fns'
+import { useDebounce } from '@/lib/hooks/useDebounce'
+import { SearchInput } from '../common/SearchInput'
 
 const CompanyHolidays = () => {
+    const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 500);
     const { user } = useStore();
-    const { companyHolidays, isLoading, error, refetch } = useGraphQLCompanyHolidays();
+    const { companyHolidays, isLoading, error, refetch } = useGraphQLCompanyHolidays(debouncedSearch);
     const { createCompanyHoliday, updateCompanyHoliday, deleteCompanyHoliday } = useGraphQLCompanyHolidayMutations();
-    
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingHoliday, setEditingHoliday] = useState<CompanyHoliday | null>(null);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -57,8 +61,8 @@ const CompanyHolidays = () => {
                 </div>
             ),
         },
-        { 
-            key: 'holidayDate', 
+        {
+            key: 'holidayDate',
             label: 'Date',
             render: (date: string) => (
                 <span className="font-bold text-sm text-foreground">
@@ -184,14 +188,8 @@ const CompanyHolidays = () => {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="premium-card flex flex-col lg:flex-row justify-between items-center gap-10">
-                <div className="relative">
-                    <div className="absolute -left-4 top-0 w-1 h-full bg-purple-500 rounded-full shadow-sm shadow-purple-500/20" />
-                    <h2 className="text-premium-h2 leading-none">Organizational Holidays</h2>
-                    <p className="text-premium-label mt-2 opacity-60">Manage corporate observances and festive shutdowns</p>
-                </div>
-
-                <div className="flex items-center gap-4 w-full lg:w-auto">
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-10">
+                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
                     <button
                         onClick={() => refetch()}
                         className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
@@ -199,6 +197,13 @@ const CompanyHolidays = () => {
                     >
                         <RotateCcw className="w-5 h-5" />
                     </button>
+                    <SearchInput
+                        placeholder="Search holidays..."
+                        value={search}
+                        onChange={setSearch}
+                        containerClassName="flex-1 lg:w-64 min-w-[200px]"
+                        className="h-12"
+                    />
                     <button
                         onClick={() => {
                             setEditingHoliday(null);
@@ -208,7 +213,7 @@ const CompanyHolidays = () => {
                         className="btn-primary flex-1 lg:flex-none"
                     >
                         <Plus className="w-5 h-5 mr-3" />
-                        <span>Add Holiday</span>
+                        <span>Create Holiday</span>
                     </button>
                 </div>
             </div>

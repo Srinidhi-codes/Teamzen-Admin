@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_LEAVES = gql`  
-    query LeaveTypes{
-    leaveTypes{
+    query LeaveTypes($search: String){
+    leaveTypes(search: $search){
     id
     name
     code
@@ -25,8 +25,8 @@ export const GET_LEAVES = gql`
 `;
 
 export const GET_LEAVE_BALANCE = gql`
-    query LeaveBalance($allOrg: Boolean) {
-    leaveBalance(allOrg: $allOrg){
+    query LeaveBalance($allOrg: Boolean, $search: String) {
+    leaveBalance(allOrg: $allOrg, search: $search){
     id
     user{
         id
@@ -53,8 +53,8 @@ export const GET_LEAVE_BALANCE = gql`
 `;
 
 export const GET_LEAVE_REQUESTS = gql`
-  query getLeaveRequests($approvalsOnly: Boolean){
-    getLeaveRequests(approvalsOnly: $approvalsOnly){
+  query getLeaveRequests($approvalsOnly: Boolean, $search: String){
+    getLeaveRequests(approvalsOnly: $approvalsOnly, search: $search){
       id
       user{
         id
@@ -81,8 +81,8 @@ export const GET_LEAVE_REQUESTS = gql`
 `
 
 export const GET_COMPANY_HOLIDAYS = gql`
-  query CompanyHolidays {
-    companyHolidays {
+  query CompanyHolidays($search: String) {
+    companyHolidays(search: $search) {
       id
       name
       holidayDate

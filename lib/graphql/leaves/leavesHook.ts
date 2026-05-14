@@ -91,9 +91,9 @@ export function useGraphQLLeaveMutations() {
     };
 }
 
-export function useGraphQLLeaveBalances() {
+export function useGraphQLLeaveBalances(search?: string) {
     const { data, loading, error, refetch } = useQuery<GetLeaveBalanceResponse>(GET_LEAVE_BALANCE, {
-        variables: { allOrg: true },
+        variables: { allOrg: true, search },
         fetchPolicy: 'network-only',
     })
 
@@ -105,8 +105,9 @@ export function useGraphQLLeaveBalances() {
     }
 }
 
-export function useGraphQLLeaveTypes() {
+export function useGraphQLLeaveTypes(search?: string) {
     const { data, loading, error, refetch } = useQuery<GetLeavesResponse>(GET_LEAVES, {
+        variables: { search },
         fetchPolicy: 'network-only',
     })
 
@@ -119,9 +120,9 @@ export function useGraphQLLeaveTypes() {
 }
 
 
-export function useGraphQLLeaveRequests(approvalsOnly: boolean = true) {
+export function useGraphQLLeaveRequests(approvalsOnly: boolean = true, search?: string) {
   const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
-    variables: { approvalsOnly },
+    variables: { approvalsOnly, search },
     fetchPolicy: 'network-only',
   })
 
@@ -157,8 +158,9 @@ export function useGraphQLLeaveRequestProcess() {
 
 }
 
-export function useGraphQLCompanyHolidays() {
+export function useGraphQLCompanyHolidays(search?: string) {
     const { data, loading, error, refetch } = useQuery<GetCompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS, {
+        variables: { search },
         fetchPolicy: 'network-only',
     })
 

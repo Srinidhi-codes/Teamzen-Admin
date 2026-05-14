@@ -3,8 +3,10 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useGraphQLLeaveBalances, useGraphQLLeaveMutations, useGraphQLLeaveTypes } from '@/lib/graphql/leaves/leavesHook'
 import { useUsers, useMe } from '@/lib/graphql/users/userHooks'
 import { LeaveBalance as LeaveBalanceType } from '@/lib/graphql/leaves/types'
-import { Plus, Edit, Trash2, Search, RotateCcw } from 'lucide-react'
+import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from "@/lib/utils"
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { SearchInput } from '../common/SearchInput'
 
 
 import { DataTable, Column } from '../common/DataTable'
@@ -13,8 +15,10 @@ import ConfirmationModal from '../common/ConfirmationModal'
 
 
 const LeaveBalance = () => {
+    const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearch = useDebounce(searchQuery, 500);
     const { me } = useMe();
-    const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances();
+    const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances(debouncedSearch);
     const { leaveTypes } = useGraphQLLeaveTypes();
     const { users } = useUsers();
     const { createLeaveBalance, updateLeaveBalance, deleteLeaveBalance } = useGraphQLLeaveMutations();
@@ -25,7 +29,6 @@ const LeaveBalance = () => {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBalance, setEditingBalance] = useState<LeaveBalanceType | null>(null);
-    const [searchQuery, setSearchQuery] = useState('');
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -51,6 +54,8 @@ const LeaveBalance = () => {
             id: user.id,
             user: user,
             employeeName: `${user.firstName} ${user.lastName}`,
+            departmentName: user.department?.name || '',
+            organizationName: user.organization?.name || '',
         };
 
         userBalances.forEach(b => {
@@ -65,11 +70,15 @@ const LeaveBalance = () => {
 
         return row;
     }).filter(row => {
-        // Filter rows based on role
+        // Only show rows that have at least one leave balance record
+        const hasBalances = Object.keys(row).some(key =>
+            !['id', 'user', 'employeeName', 'departmentName', 'organizationName'].includes(key)
+        );
+
         if (isManager) {
-            return row.user.manager?.id === me?.id;
+            return row.user.manager?.id === me?.id && hasBalances;
         }
-        return Object.keys(row).length > 3;
+        return hasBalances;
     });
 
     const dynamicColumns: Column<any>[] = [
@@ -132,10 +141,10 @@ const LeaveBalance = () => {
                             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
-                                    style={{ 
-                                        width: `${val.total > 0 
-                                            ? Math.min((val.available / val.total) * 100, 100) 
-                                            : (val.available > 0 ? 100 : 0)}%` 
+                                    style={{
+                                        width: `${val.total > 0
+                                            ? Math.min((val.available / val.total) * 100, 100)
+                                            : (val.available > 0 ? 100 : 0)}%`
                                     }}
                                 />
                             </div>
@@ -151,9 +160,7 @@ const LeaveBalance = () => {
 
     ];
 
-    const filteredAggregated = aggregatedData.filter(row =>
-        row.employeeName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredAggregated = aggregatedData;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -214,34 +221,15 @@ const LeaveBalance = () => {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="premium-card flex flex-col lg:flex-row justify-between items-center gap-10">
-                <div className="relative">
-                    <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-                    <h2 className="text-premium-h2 leading-none">Leave Balances</h2>
-                    <p className="text-premium-label mt-2 opacity-60">Unified synchronization of leave balances.</p>
-                </div>
-
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-10">
                 <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 w-full lg:w-auto">
-                    <button
-                        onClick={() => refetch()}
-                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
-                    >
-                        <RotateCcw className="w-5 h-5" />
-                    </button>
-                    <div className="relative flex-1 sm:w-80 group w-full">
-                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
-                            <Search className="w-5 h-5" />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Identify human asset..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="input pl-14"
-                        />
-
-                    </div>
+                    <SearchInput
+                        placeholder="Search by name, department, or company..."
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        containerClassName="flex-1 sm:w-80"
+                        className="h-12"
+                    />
                     <button
                         onClick={() => {
                             setEditingBalance(null);
@@ -251,7 +239,14 @@ const LeaveBalance = () => {
                         className="btn-primary w-full sm:w-auto"
                     >
                         <Plus className="w-5 h-5 mr-3" />
-                        <span>Allocate Quota</span>
+                        <span>Allocate Balance</span>
+                    </button>
+                    <button
+                        onClick={() => refetch()}
+                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-5 h-5" />
                     </button>
 
                 </div>

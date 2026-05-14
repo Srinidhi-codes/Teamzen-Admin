@@ -16,7 +16,11 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   onRowClick?: (item: T) => void;
   itemsPerPage?: number;
+  pageSize?: number;
   isLoading?: boolean;
+  page?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function DataTable<T>({
@@ -25,15 +29,30 @@ export function DataTable<T>({
   searchable = true,
   searchPlaceholder = "Search...",
   onRowClick,
-  itemsPerPage = 10,
+  itemsPerPage: itemsPerPageProp = 10,
+  pageSize: externalPageSize,
   isLoading = false,
+  page: externalPage,
+  totalCount: externalTotalCount,
+  onPageChange,
 }: DataTableProps<T>) {
+  const itemsPerPage = externalPageSize || itemsPerPageProp;
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [internalPage, setInternalPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
   } | null>(null);
+
+  const currentPage = externalPage || internalPage;
+  const setCurrentPage = (newPage: number | ((prev: number) => number)) => {
+    if (onPageChange) {
+      const next = typeof newPage === "function" ? newPage(currentPage) : newPage;
+      onPageChange(next);
+    } else {
+      setInternalPage(newPage);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -66,9 +85,10 @@ export function DataTable<T>({
     : filteredData;
 
   // Pagination
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const totalCount = externalTotalCount !== undefined ? externalTotalCount : sortedData.length;
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedData = sortedData.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedData = externalTotalCount !== undefined ? data : sortedData.slice(startIndex, startIndex + itemsPerPage);
 
   const handleSort = (key: string) => {
     setSortConfig((current) => {
@@ -189,9 +209,9 @@ export function DataTable<T>({
                   Showing <span className="text-foreground">{startIndex + 1}</span>{" "}
                   –{" "}
                   <span className="text-foreground">
-                    {Math.min(startIndex + itemsPerPage, sortedData.length)}
+                    {Math.min(startIndex + itemsPerPage, totalCount)}
                   </span>{" "}
-                  of <span className="text-foreground">{sortedData.length}</span>{" "}
+                  of <span className="text-foreground">{totalCount}</span>{" "}
                   data points
                 </p>
               </div>

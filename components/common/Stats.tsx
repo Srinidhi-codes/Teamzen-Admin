@@ -39,7 +39,6 @@ export function Stat({ icon: Icon, label, value, index, color = "text-primary", 
               </div>
             )}
           </div>
-          {index && <div className="text-premium-label opacity-40">Index {index}</div>}
         </div>
 
         {/* Bottom Section: Data */}
