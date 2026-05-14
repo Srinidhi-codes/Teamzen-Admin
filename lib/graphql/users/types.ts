@@ -73,3 +73,15 @@ export interface User {
 }
 
 export type UserResponse = User[];
+
+export interface SecurityLog {
+  id: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface SecurityLogResponse {
+  mySecurityLogs: {
+    results: SecurityLog[];
+  };
+}

@@ -64,37 +64,32 @@ const LeavesPage = () => {
     return (
         <div className="space-y-10">
             {/* Executive Header */}
-            <div>
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-                        <Calendar className="w-5 h-5" />
-                    </div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight">Time-Off Ecosystem</h1>
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5 pb-10 border-b-2">
+                <div className="relative">
+                    <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                    <h1 className="text-3xl font-black text-foreground tracking-tight">Leave Management</h1>
+                    <p className="text-premium-label mt-2 opacity-60">Regulate and synchronize the organizational flow of absence.</p>
                 </div>
-                <p className="text-muted-foreground font-medium pl-13">Regulate and synchronize the organizational flow of absence.</p>
-            </div>
 
-            {/* Local Tab Switcher - Sticky */}
-            <div className="sticky top-[80px] z-45 -mx-4 px-4 sm:-mx-8 sm:px-8 py-4 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm transition-all duration-300">
-                <div className="flex items-center bg-muted/40 p-1.5 rounded-2xl border border-border/50 backdrop-blur-md w-fit ml-auto">
+                <div className="p-2 rounded-[1.5rem] border border-border inline-flex space-x-1 overflow-x-auto bg-muted/40 backdrop-blur-md">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => handleActiveTab(tab.id)}
-                            className={`flex items-center space-x-2.5 px-6 py-2.5 rounded-xl transition-all duration-500 whitespace-nowrap ${activeTab === tab.id
-                                ? `bg-primary text-white shadow-lg shadow-primary/20 -translate-y-0.5 font-bold`
-                                : 'hover:bg-background/50 text-muted-foreground hover:text-foreground font-medium text-sm'
+                            className={`px-8 py-3.5 rounded-2xl text-premium-label transition-all duration-500 flex items-center space-x-3 whitespace-nowrap active:scale-95 ${activeTab === tab.id
+                                ? `bg-primary text-white shadow-2xl shadow-primary/20 -translate-y-1 font-bold`
+                                : "text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-lg hover:shadow-primary/5"
                                 }`}
                         >
-                            <span>{tab.iconElement}</span>
-                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">{tab.label}</span>
+                            <span className="group-hover:scale-110 transition-transform">{tab.iconElement}</span>
+                            <span className="hidden sm:inline tracking-widest uppercase">{tab.label}</span>
                         </button>
                     ))}
                 </div>
             </div>
 
             {/* Dynamic Content Repository */}
-            < div className="animate-in fade-in slide-in-from-bottom-6 duration-700" >
+            <div className="animate-in fade-in slide-in-from-bottom-6 duration-700" >
                 {activeTab === "types" && <LeaveTypes />}
                 {activeTab === "balance" && <LeaveBalance />}
                 {activeTab === "requests" && <LeaveRequests />}

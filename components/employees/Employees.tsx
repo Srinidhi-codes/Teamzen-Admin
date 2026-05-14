@@ -21,11 +21,12 @@ import {
 
 import { Stat } from "@/components/common/Stats";
 
-import { DataTable, Column } from "../common/DataTable";
 import { User } from "@/lib/graphql/users/types";
 import { useGraphQLUsers, useGraphQLUserStatusMutations } from "@/lib/graphql/users/userHook";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import EmployeeForm from "./EmployeeForm";
+import EmployeeCard from "./EmployeeCard";
+import { PaginationControls } from "../common/PaginationControls";
 import {
     Dialog,
     DialogContent,
@@ -34,7 +35,6 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { SearchInput } from "@/components/ui/search";
-import { Switch } from "../ui/switch";
 import Image from "next/image";
 
 export default function EmployeesPage() {
@@ -42,7 +42,7 @@ export default function EmployeesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const pageSize = 10;
+    const pageSize = 12; // Increased for better grid layout
     const [searchTerm, setSearchTerm] = useState("");
     const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -53,7 +53,7 @@ export default function EmployeesPage() {
             search: debouncedSearchTerm
         }
     });
-    const { updateUserStatus, isUpdatingUserStatus, updateUserStatusError } = useGraphQLUserStatusMutations();
+    const { updateUserStatus, isUpdatingUserStatus } = useGraphQLUserStatusMutations();
     const { exportData } = useCSVExport<User>();
 
     const handleStatusToggle = async (userId: string, newStatus: boolean) => {
@@ -66,7 +66,6 @@ export default function EmployeesPage() {
     };
 
     const isEditing = !!selectedEmployee;
-    // const totalPages = Math.ceil((total || 0) / pageSize);
 
     // Reset to first page when searching
     useEffect(() => {
@@ -141,7 +140,7 @@ export default function EmployeesPage() {
     const statsList = [
         {
             label: "Total Employees",
-            value: users?.length || 0,
+            value: total || 0,
             icon: Users,
             color: "text-blue-500",
             gradient: "bg-blue-500/10",
@@ -178,137 +177,16 @@ export default function EmployeesPage() {
         },
     ];
 
-
-
-
-    const columns: Column<User>[] = [
-        {
-            key: "firstName",
-            label: "Employee",
-            render: (val: any, user: User) => (
-                <div className="flex items-center gap-4 py-1">
-                    <div className="relative group">
-                        <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner">
-                            {user?.profilePictureUrl ? (
-                                <Image src={user?.profilePictureUrl} alt={user.firstName} fill className="rounded-2xl object-cover" />
-                            ) : (
-                                user.firstName.charAt(0)
-                            )}
-                        </div>
-                    </div>
-                    <div>
-                        <div className="font-bold text-foreground text-[0.95rem] leading-none mb-1 group-hover:text-primary transition-colors">
-                            {user.firstName} {user.lastName}
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">ID: {user.id.substring(0, 8).toUpperCase()}</span>
-                            <span className="w-1 h-1 rounded-full bg-border" />
-                            <span className="text-[10px] font-bold text-primary uppercase tracking-widest">{user.designation?.name || 'Talent'}</span>
-                        </div>
-                    </div>
-
-                </div>
-            ),
-        },
-        {
-            key: "email",
-            label: "CONNECTIVITY",
-            render: (val: any, user: User) => (
-                <div className="space-y-1.5 py-1">
-                    {user.email && <div className="flex items-center gap-2 group/link">
-                        <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover/link:bg-primary group-hover/link:text-primary-foreground transition-all">
-                            <Mail className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-xs font-semibold text-foreground/70 truncate max-w-[160px] tracking-tight">{user.email}</span>
-                    </div>}
-                    {user.phoneNumber && <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
-                            <Phone className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="text-xs font-bold text-muted-foreground/60 tracking-tighter">{user.phoneNumber}</span>
-                    </div>}
-
-                </div>
-            ),
-        },
-        {
-            key: "department",
-            label: "DEPARTMENT",
-            render: (val: any, user: User) => (
-                <div className="flex flex-col gap-1.5 py-1">
-                    <div className="flex items-center gap-2">
-                        <Building2 className="w-3.5 h-3.5 text-muted-foreground/60" />
-                        <span className="text-xs font-black uppercase tracking-widest text-foreground">{user.department?.name || 'General'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground/60" />
-                        <span className="text-[10px] font-bold py-0.5 px-2 bg-muted rounded-lg text-muted-foreground uppercase tracking-wider">
-                            {user.employmentType?.replace('_', ' ') || 'Part Time'}
-                        </span>
-                    </div>
-
-                </div>
-            ),
-        },
-        {
-            key: "isActive",
-            label: "STATUS",
-            render: (val: any, user: User) => (
-                <div className="py-1">
-                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${user.isActive
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                        : "bg-destructive/10 border-destructive/20 text-destructive"
-                        }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-destructive"} shadow-xs`} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                            {user.isActive ? "Active" : "Inactive"}
-                        </span>
-                    </div>
-                </div>
-
-            ),
-        },
-        {
-            key: "actions",
-            label: "",
-            render: (val: any, user: User) => (
-                user.role === 'admin' || user.role === 'hr' ? (
-                    <div className="flex items-center justify-end gap-2 pr-2" >
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(user);
-                            }}
-                            className="p-2.5 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all duration-300"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </button>
-                        <Switch
-                            checked={user.isActive}
-                            onCheckedChange={(checked) => {
-                                handleStatusToggle(user.id, checked);
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                    </div>
-                ) : null
-            ),
-        },
-    ];
-
-
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
             {/* Executive Summary */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 animate-bounce-slow">
-                            <Users className="w-5 h-5" />
-                        </div>
-                        <h1 className="text-3xl font-black text-foreground tracking-tight">Talent Ecosystem</h1>
+                <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">Employee Ecosystem</h1>
+                        <p className="text-premium-label mt-2 opacity-60">Powering the heartbeat of our organizational intelligence.</p>
                     </div>
-                    <p className="text-muted-foreground font-medium tracking-tight pl-13">Powering the heartbeat of our organizational intelligence.</p>
                 </div>
 
 
@@ -379,23 +257,46 @@ export default function EmployeesPage() {
 
             </div>
 
-            {/* Main Repository */}
-            <DataTable
-                data={users || []}
-                columns={columns}
-                isLoading={isUsersLoading}
-                onRowClick={(employee: User) => {
-                    if (employee.role !== 'manager') {
-                        handleEdit(employee);
-                    }
-                }}
-                // Pagination
-                total={total}
-                currentPage={currentPage}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                paginationLabel="talent"
-            />
+            {/* Main Repository - Card Grid */}
+            <div className="space-y-6">
+                {isUsersLoading ? (
+                    <div className="flex flex-col items-center justify-center py-32 space-y-6">
+                        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                        <p className="text-premium-label animate-pulse">Synchronizing Data Matrix...</p>
+                    </div>
+                ) : users && users.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {users.map((employee) => (
+                                <EmployeeCard
+                                    key={employee.id}
+                                    employee={employee}
+                                    onEdit={handleEdit}
+                                    onStatusToggle={handleStatusToggle}
+                                />
+                            ))}
+                        </div>
+
+                        <PaginationControls
+                            total={total || 0}
+                            currentPage={currentPage}
+                            pageSize={pageSize}
+                            onPageChange={setCurrentPage}
+                            paginationLabel="talent"
+                        />
+                    </>
+                ) : (
+                    <div className="premium-card text-center max-w-2xl mx-auto py-16 animate-in zoom-in-95 duration-500">
+                        <div className="w-24 h-24 bg-muted rounded-[3rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-border/50">
+                            <svg className="w-12 h-12 text-muted-foreground/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                            </svg>
+                        </div>
+                        <h3 className="text-premium-h2 mb-2">Zero Identifiers Detected</h3>
+                        <p className="text-muted-foreground font-medium leading-relaxed max-w-sm mx-auto">The requested data set is currently empty or doesn't match the current filters.</p>
+                    </div>
+                )}
+            </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="sm:max-w-3xl rounded-4xl p-0 overflow-hidden border-none shadow-3xl">

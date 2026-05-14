@@ -7,11 +7,15 @@ import { Plus, X, Edit, Trash2, AlertCircle, RotateCcw } from 'lucide-react'
 import LeaveTypeModal from './LeaveTypeModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 import { useStore } from '@/lib/store/useStore'
+import { useDebounce } from '@/lib/hooks/useDebounce'
+import { SearchInput } from '../common/SearchInput'
 
 
 const LeaveTypes = () => {
+    const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearch = useDebounce(searchTerm, 500);
     const { user } = useStore();
-    const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes();
+    const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes(debouncedSearch);
     const { createLeaveType, updateLeaveType, deleteLeaveType } = useGraphQLLeaveMutations();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<LeaveType | null>(null);
@@ -228,23 +232,23 @@ const LeaveTypes = () => {
     );
 
 
+    const filteredLeaveTypes = leaveTypes || [];
+
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="premium-card flex flex-col lg:flex-row justify-between items-center gap-10">
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <div className="flex flex-col lg:flex-row justify-between items-center gap-10">
                 <div className="relative">
                     <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-                    <h2 className="text-premium-h2 leading-none">Configured Leave Types</h2>
-                    <p className="text-premium-label mt-2 opacity-60">Manage leave policies and configurations</p>
                 </div>
 
-                <div className="flex items-center gap-4 w-full lg:w-auto">
-                    <button
-                        onClick={() => refetch()}
-                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
-                    >
-                        <RotateCcw className="w-5 h-5" />
-                    </button>
+                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                    <SearchInput
+                        placeholder="Search leave types..."
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        containerClassName="flex-1 lg:w-64 min-w-[200px]"
+                        className="h-12"
+                    />
                     <button
                         onClick={() => {
                             setEditingType(null);
@@ -254,14 +258,21 @@ const LeaveTypes = () => {
                         className="btn-primary flex-1 lg:flex-none"
                     >
                         <Plus className="w-5 h-5 mr-3" />
-                        <span>Initialize Protocol</span>
+                        <span>Create Leave Type</span>
+                    </button>
+                    <button
+                        onClick={() => refetch()}
+                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-5 h-5" />
                     </button>
                 </div>
 
             </div>
 
             <DataTable
-                data={leaveTypes}
+                data={filteredLeaveTypes}
                 columns={columns}
             />
 

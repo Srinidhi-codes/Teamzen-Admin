@@ -9,7 +9,9 @@ import {
     Moon,
     Sun,
     Layout,
-    Clock
+    Clock,
+    Zap,
+    Move
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -18,15 +20,17 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const accents: { name: ColorAccent; color: string; label: string }[] = [
-    { name: "indigo", color: "bg-indigo-600", label: "Indigo" },
-    { name: "blue", color: "bg-blue-600", label: "Blue" },
-    { name: "green", color: "bg-green-600", label: "Green" },
-    { name: "red", color: "bg-red-600", label: "Red" },
-    { name: "orange", color: "bg-orange-600", label: "Orange" },
-    { name: "purple", color: "bg-purple-600", label: "Purple" },
-    { name: "slate", color: "bg-slate-600", label: "Slate" },
+    { name: "indigo", color: "#480082", label: "Indigo" },
+    { name: "slate", color: "#64748B", label: "Slate" },
+    { name: "blue", color: "#0F766E", label: "Blue" },
+    { name: "green", color: "#16A34A", label: "Green" },
+    { name: "red", color: "#DC2626", label: "Red" },
+    { name: "orange", color: "#EA580C", label: "Orange" },
+    { name: "purple", color: "#7C3AED", label: "Purple" },
 ];
 
 export function ThemeSelector() {
@@ -34,6 +38,8 @@ export function ThemeSelector() {
     const { theme, setTheme } = useTheme();
     const { accent, setAccent } = useStore();
     const [isOpen, setIsOpen] = useState(false);
+    const [highContrast, setHighContrast] = useState(false);
+    const [reducedMotion, setReducedMotion] = useState(false);
 
     // Avoid hydration mismatch
     useEffect(() => {
@@ -50,85 +56,65 @@ export function ThemeSelector() {
                     title="Theme Settings"
                 >
                     <Palette className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                    <div className={cn("w-3 h-3 rounded-full", accents.find(a => a.name === accent)?.color)} />
+                    <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: accents.find(a => a.name === accent)?.color }} 
+                    />
                 </button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-72 glass-dark shadow-2xl rounded-2xl border border-border p-4 z-50 animate-fade-in origin-top-right">
-                <div className="space-y-6">
+            <DropdownMenuContent align="end" className="w-80 glass-dark shadow-2xl rounded-2xl border border-border p-5 z-50 animate-fade-in origin-top-right">
+                <div className="space-y-8">
                     {/* Appearance Section */}
                     <div>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
-                            <Layout className="w-3 h-3" /> Appearance
+                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                            <Layout className="w-3 h-3" /> Theme
                         </h4>
                         <div className="grid grid-cols-3 gap-2">
-                            <button
-                                onClick={() => {
-                                    setTheme("light");
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 cursor-pointer",
-                                    theme === "light" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
-                                )}
-                            >
-                                <Sun className="w-5 h-5" />
-                                <span className="text-[10px] font-medium">Light</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setTheme("dark");
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 cursor-pointer",
-                                    theme === "dark" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
-                                )}
-                            >
-                                <Moon className="w-5 h-5" />
-                                <span className="text-[10px] font-medium">Dark</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setTheme("system");
-                                    setIsOpen(false);
-                                }}
-                                className={cn(
-                                    "flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 cursor-pointer",
-                                    theme === "system" ? "border-primary bg-primary/10" : "border-transparent bg-secondary hover:bg-accent"
-                                )}
-                            >
-                                <Clock className="w-5 h-5" />
-                                <span className="text-[10px] font-medium">Auto</span>
-                            </button>
+                            {[
+                                { id: "light", icon: Sun, label: "Light" },
+                                { id: "dark", icon: Moon, label: "Dark" },
+                                { id: "system", icon: Clock, label: "Auto" }
+                            ].map((t) => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setTheme(t.id)}
+                                    className={cn(
+                                        "flex flex-col items-center gap-2 p-3 rounded-2xl transition-all border-2 cursor-pointer",
+                                        theme === t.id ? "border-primary bg-primary/10" : "border-transparent bg-muted/50 hover:bg-accent"
+                                    )}
+                                >
+                                    <t.icon className={cn("w-5 h-5", theme === t.id ? "text-primary" : "text-muted-foreground")} />
+                                    <span className="text-[10px] font-bold">{t.label}</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
 
                     {/* Accent Color Section */}
                     <div>
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <h4 className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4">
                             Accent Color
                         </h4>
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="flex flex-wrap gap-3">
                             {accents.map((item) => (
                                 <button
                                     key={item.name}
-                                    onClick={() => {
-                                        setAccent(item.name);
-                                        setIsOpen(false);
-                                    }}
+                                    onClick={() => setAccent(item.name)}
                                     className="flex flex-col items-center gap-1.5 group cursor-pointer"
                                 >
-                                    <div className={cn(
-                                        "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background",
-                                        item.color,
-                                        accent === item.name ? "ring-2 ring-primary scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
-                                    )}>
+                                    <div 
+                                        className={cn(
+                                            "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ring-offset-2 ring-offset-background",
+                                            accent === item.name ? "ring-2 ring-primary scale-110 shadow-lg shadow-black/20" : "hover:scale-105"
+                                        )}
+                                        style={{ backgroundColor: item.color }}
+                                    >
                                         {accent === item.name && <Check className="w-5 h-5 text-white" />}
                                     </div>
                                     <span className={cn(
-                                        "text-[10px] transition-colors",
-                                        accent === item.name ? "text-primary font-bold" : "text-muted-foreground"
+                                        "text-[10px] font-bold transition-colors",
+                                        accent === item.name ? "text-primary" : "text-muted-foreground"
                                     )}>
                                         {item.label}
                                     </span>
@@ -136,10 +122,34 @@ export function ThemeSelector() {
                             ))}
                         </div>
                     </div>
+
+                    {/* Additional Settings */}
+                    <div className="space-y-4 pt-2 border-t border-border/50">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-xs font-bold">High Contrast Mode</Label>
+                                <p className="text-[10px] text-muted-foreground font-medium">Have high contrast mode.</p>
+                            </div>
+                            <Switch 
+                                checked={highContrast} 
+                                onCheckedChange={setHighContrast}
+                            />
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-xs font-bold">Reduced Motion</Label>
+                                <p className="text-[10px] text-muted-foreground font-medium">Automatic, reduced motion settings.</p>
+                            </div>
+                            <Switch 
+                                checked={reducedMotion} 
+                                onCheckedChange={setReducedMotion}
+                            />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-border/50 text-center">
-                    <p className="text-[10px] text-muted-foreground italic">Customizations are saved automatically</p>
+                <div className="mt-8 pt-4 border-t border-border/50 text-center">
+                    <p className="text-[10px] text-muted-foreground font-medium italic opacity-60">Customizations are saved automatically</p>
                 </div>
             </DropdownMenuContent>
         </DropdownMenu>

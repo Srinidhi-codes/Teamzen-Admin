@@ -95,3 +95,9 @@ export const USER_STATUS = gql`
     }
   }
 `;
+
+export const UPDATE_LOGIN_LOCATION = gql`
+  mutation UpdateLoginLocation($latitude: Float!, $longitude: Float!) {
+    updateLoginLocation(latitude: $latitude, longitude: $longitude)
+  }
+`;

@@ -17,6 +17,12 @@ import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useStore } from "@/lib/store/useStore";
 import { Input } from "../common/Input";
+import dynamic from "next/dynamic";
+
+const MapPicker = dynamic(() => import("../common/MapPicker"), { 
+    ssr: false,
+    loading: () => <div className="h-[300px] w-full bg-muted animate-pulse rounded-2xl mt-4 flex items-center justify-center text-xs font-black uppercase tracking-widest text-muted-foreground">Initializing Cartography...</div>
+});
 
 
 interface BaseFormProps {
@@ -140,7 +146,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <Input name="name" label="Name" value={formData?.name} onChange={handleChange} required placeholder="e.g. Headquarters" />
+            <Input name="name" label="Name" value={formData?.name} onChange={handleChange} required placeholder="e.g. Headquarters" maxLength={255} />
 
             <div className="space-y-4">
                 {user?.role === "admin" && (
@@ -175,12 +181,12 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
                 />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <Input name="city" label="City" value={formData?.city} onChange={handleChange} />
-                <Input name="state" label="State" value={formData?.state} onChange={handleChange} />
+                <Input name="city" label="City" value={formData?.city} onChange={handleChange} maxLength={64} />
+                <Input name="state" label="State" value={formData?.state} onChange={handleChange} maxLength={64} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <Input name="country" label="Country" value={formData?.country} onChange={handleChange} />
-                <Input name="zipCode" label="Zip Code" value={formData?.zipCode} onChange={handleChange} />
+                <Input name="country" label="Country" value={formData?.country} onChange={handleChange} maxLength={64} />
+                <Input name="zipCode" label="Zip Code" value={formData?.zipCode} onChange={handleChange} maxLength={20} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <Input name="loginTime" label="Login Time" type="time" value={formData?.loginTime} onChange={handleChange} />
@@ -190,6 +196,24 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
                 <Input name="latitude" label="Latitude" type="number" step="any" value={formData?.latitude} onChange={handleChange} placeholder="0.000000" />
                 <Input name="longitude" label="Longitude" type="number" step="any" value={formData?.longitude} onChange={handleChange} placeholder="0.000000" />
                 <Input name="geoRadiusMeters" label="Geo Radius Meters" type="number" value={formData?.geoRadiusMeters} onChange={handleChange} />
+            </div>
+
+            <div className="space-y-3">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    Geospatial Selection
+                </label>
+                <MapPicker 
+                    lat={parseFloat(String(formData.latitude)) || 0} 
+                    lng={parseFloat(String(formData.longitude)) || 0} 
+                    onChange={(lat, lng) => {
+                        setFormData(prev => ({
+                            ...prev,
+                            latitude: String(lat),
+                            longitude: String(lng)
+                        }));
+                    }} 
+                />
+                <p className="text-[10px] text-muted-foreground italic px-1">Drop a pin or click on the map to automatically capture coordinates.</p>
             </div>
 
             <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
@@ -278,6 +302,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
                 placeholder="e.g. Engineering"
                 value={formData.name}
                 onChange={handleChange}
+                maxLength={255}
             />
 
             <div className="space-y-4">
@@ -398,6 +423,7 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
                 placeholder="e.g. Senior Developer"
                 value={formData.name}
                 onChange={handleChange}
+                maxLength={255}
             />
 
             <div className="space-y-4">

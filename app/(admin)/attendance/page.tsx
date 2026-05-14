@@ -261,16 +261,12 @@ export default function AttendancePage() {
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-                            <Clock className="w-5 h-5" />
-                        </div>
-                        <h1 className="text-3xl font-black text-foreground tracking-tight">Attendance Correction Records</h1>
+                <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">Regularization Requests</h1>
+                        <p className="text-premium-label mt-2 opacity-60">Review and process attendance regularization requests.</p>
                     </div>
-                    <p className="text-muted-foreground font-medium pl-13 flex items-center gap-2">
-                        Audit and synchronize global attendance precision.
-                    </p>
                 </div>
 
                 <div className="flex items-center gap-3 bg-muted/30 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-sm">
@@ -322,24 +318,24 @@ export default function AttendancePage() {
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto">
                             <button
-                                onClick={() => refetchAttendanceCorrections({ startDate, endDate })}
-                                className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                                title="Synchronize Data"
-                            >
-                                <RotateCcw className="w-5 h-5" />
-                            </button>
-                            <button
                                 onClick={() => loadAttendance(startDate, endDate)}
                                 className="btn-primary flex-1 md:flex-none"
                             >
                                 <Search className="w-5 h-5 mr-3" />
                                 Synchronize
                             </button>
+                            <button
+                                onClick={() => refetchAttendanceCorrections({ startDate, endDate })}
+                                className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                                title="Synchronize Data"
+                            >
+                                <RotateCcw className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
                     <div className="relative w-full md:max-w-lg group">
                         <SearchInput
-                            placeholder="Scan for identifiers, names or connectivity..."
+                            placeholder="Search for employee..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onSearch={() => { }}

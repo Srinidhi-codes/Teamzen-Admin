@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_ORGANIZATIONS = gql`
-    query organizations {
-        organizations {
+    query organizations($search: String) {
+        organizations(search: $search) {
             id
             name
             logo{
@@ -41,8 +41,8 @@ export const GET_ORGANIZATION = gql`
 `
 
 export const GET_OFFICE_LOCATIONS = gql`
-    query Officelocations {
-        officeLocations {
+    query Officelocations($search: String) {
+        officeLocations(search: $search) {
             id
             name
             address
@@ -62,8 +62,8 @@ export const GET_OFFICE_LOCATIONS = gql`
     }
 `
 export const GET_DEPARTMENTS = gql`
-    query departments {
-        departments {
+    query departments($search: String) {
+        departments(search: $search) {
             id
             name
             organization {
@@ -78,8 +78,8 @@ export const GET_DEPARTMENTS = gql`
 `
 
 export const GET_DESIGNATIONS = gql`
-    query designations {
-        designations {
+    query designations($search: String) {
+        designations(search: $search) {
             id
             name
             organization {

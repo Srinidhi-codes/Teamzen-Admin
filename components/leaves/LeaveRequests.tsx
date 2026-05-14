@@ -8,10 +8,14 @@ import moment from "moment";
 import { Textarea } from "../ui/textarea";
 import { Stat } from "../common/Stats";
 import { useNotifications } from "@/lib/hooks/useNotifications";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { SearchInput } from "../common/SearchInput";
 
 
 export default function LeaveRequests() {
-    const { leaveRequestData, isLoading, error, refetch } = useGraphQLLeaveRequests();
+    const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearch = useDebounce(searchTerm, 500);
+    const { leaveRequestData, isLoading, error, refetch } = useGraphQLLeaveRequests(true, debouncedSearch);
     const { leaveRequestProcess } = useGraphQLLeaveRequestProcess();
     const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
     const [comments, setComments] = useState("");
@@ -212,13 +216,8 @@ export default function LeaveRequests() {
 
 
             {/* Header / Table */}
-            <div className="premium-card flex flex-col lg:flex-row justify-between items-center gap-10">
-                <div className="relative">
-                    <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-                    <h2 className="text-premium-h2 leading-none">Leave Requests</h2>
-                    <p className="text-premium-label mt-2 opacity-60">Audit and resolve employee leave requests.</p>
-                </div>
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-10">
+                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
                     <button
                         onClick={() => refetch()}
                         className="p-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-xl transition-all active:rotate-180 duration-500"
@@ -226,7 +225,14 @@ export default function LeaveRequests() {
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
-                    <div className="px-8 py-4 bg-primary text-primary-foreground rounded-2xl text-premium-label flex items-center gap-3 shadow-xl shadow-primary/20">
+                    <SearchInput
+                        placeholder="Search requests..."
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                        containerClassName="flex-1 lg:w-64 min-w-[200px]"
+                        className="h-11"
+                    />
+                    <div className="px-8 py-3 bg-primary text-primary-foreground rounded-xl text-premium-label flex items-center gap-3 shadow-xl shadow-primary/20 whitespace-nowrap">
                         {pendingCount} Pending Requests
                     </div>
                 </div>

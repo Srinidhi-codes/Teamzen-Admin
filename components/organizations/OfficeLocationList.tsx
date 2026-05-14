@@ -147,7 +147,6 @@ export default function OfficeLocationList({
                                 onClick={() => onEdit(office)}
                                 className="w-full py-4.5 px-6 bg-primary text-white font-black text-[11px] uppercase tracking-[0.25em] rounded-2xl shadow-2xl shadow-primary/20 hover:opacity-95 hover:-translate-y-1 transition-all active:scale-95 flex items-center justify-center gap-3 group/btn"
                             >
-                                <MapPin className="w-4.5 h-4.5" />
                                 <span>View Location Details</span>
                                 <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1.5 transition-transform" />
                             </button>

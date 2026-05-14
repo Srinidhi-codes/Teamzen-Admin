@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Plus, Building, Globe, Layers, Shapes, Building2, MapPin, UserRoundCog, Briefcase, UserPlus } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDebounce } from "@/lib/hooks/useDebounce";
+import { SearchInput } from "@/components/common/SearchInput";
 import { OfficeLocation, Organization, Department, Designation } from "@/lib/graphql/organization/types";
 import OrganizationList from "./OrganizationList";
 import CreateOrganizationForm from "./CreateOrganizationForm";
@@ -45,6 +47,8 @@ export default function OrganizationsPage() {
     const [editingOffLoc, setEditingOffLoc] = useState<OfficeLocation | null>(null);
     const [editingDept, setEditingDept] = useState<Department | null>(null);
     const [editingDesig, setEditingDesig] = useState<Designation | null>(null);
+    const [search, setSearch] = useState("");
+    const debouncedSearch = useDebounce(search, 500);
     const router = useRouter();
 
     const openForm = (key: FormKey) => {
@@ -68,15 +72,16 @@ export default function OrganizationsPage() {
     const handleActiveTab = (tab: string) => {
         if (tab) {
             setActiveTab(tab);
+            setSearch("");
             router.push(`/organizations?tab=${tab}`, { scroll: false });
         }
     }
 
 
-    const { organizations, isOrganizationsLoading: orgsLoading } = useGraphQLOrganizations();
-    const { officeLocations, isOfficeLocationsLoading: officesLoading } = useGraphQLOfficeLocations();
-    const { departments, isDepartmentsLoading: deptsLoading } = useGraphQLDepartments();
-    const { designations, isDesignationsLoading: desigsLoading } = useGraphQLDesignations();
+    const { organizations, isOrganizationsLoading: orgsLoading } = useGraphQLOrganizations(activeTab === "organizations" ? debouncedSearch : "");
+    const { officeLocations, isOfficeLocationsLoading: officesLoading } = useGraphQLOfficeLocations(activeTab === "offices" ? debouncedSearch : "");
+    const { departments, isDepartmentsLoading: deptsLoading } = useGraphQLDepartments(activeTab === "departments" ? debouncedSearch : "");
+    const { designations, isDesignationsLoading: desigsLoading } = useGraphQLDesignations(activeTab === "designations" ? debouncedSearch : "");
 
     const handleViewEmployees = (org: Organization) => {
         router.push(`/employees`);
@@ -144,15 +149,11 @@ export default function OrganizationsPage() {
     return (
         <div className="space-y-10 pb-32 relative">
             <div className="animate-fade-in">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-                                <Building2 className="w-5 h-5" />
-                            </div>
-                            <h1 className="text-3xl font-black text-foreground tracking-tight">Organization Ecosystem</h1>
-                        </div>
-                        <p className="text-muted-foreground font-medium tracking-tight pl-13">Architecting the structural integrity of our global workspace.</p>
+                <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">Organization Ecosystem</h1>
+                        <p className="text-premium-label mt-2 opacity-60">Architect your organizational compensation matrix.</p>
                     </div>
                 </div>
             </div>
@@ -204,21 +205,29 @@ export default function OrganizationsPage() {
 
             {/* Smart Navigation */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6" >
-                {/* Tabs are now in Navbar, we only show action button here */}
+                <SearchInput
+                    placeholder={`Search ${activeTab === "offices" ? "Locations" : activeTab === "organizations" ? "Organizations" : activeTab}...`}
+                    value={search}
+                    onChange={setSearch}
+                    containerClassName="max-w-md"
+                />
+
                 <div className="flex-1" />
 
-                <button
-                    onClick={() => {
-                        if (activeTab === "organizations") openForm("organization");
-                        if (activeTab === "offices") openForm("office");
-                        if (activeTab === "departments") openForm("department");
-                        if (activeTab === "designations") openForm("designation");
-                    }}
-                    className={`flex items-center space-x-3 px-8 py-4 bg-linear-to-r from-primary to-primary text-white rounded-[1.5rem] hover:scale-105 transition-all shadow-2xl shadow-black/10 font-black text-[11px] uppercase tracking-[0.2em] active:scale-95`}
-                >
-                    <Plus className="w-5 h-5" />
-                    <span>Create {activeTab === "offices" ? "Location" : activeTab === "organizations" ? "Organization" : activeTab.slice(0, -1)}</span>
-                </button>
+                {!(activeTab === "organizations" && user.role !== "superadmin") && (
+                    <button
+                        onClick={() => {
+                            if (activeTab === "organizations") openForm("organization");
+                            if (activeTab === "offices") openForm("office");
+                            if (activeTab === "departments") openForm("department");
+                            if (activeTab === "designations") openForm("designation");
+                        }}
+                        className={`flex items-center space-x-3 px-8 py-4 bg-linear-to-r from-primary to-primary text-white rounded-[1.5rem] hover:scale-105 transition-all shadow-2xl shadow-black/10 font-black text-[11px] uppercase tracking-[0.2em] active:scale-95`}
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Create {activeTab === "offices" ? "Location" : activeTab === "organizations" ? "Organization" : activeTab.slice(0, -1)}</span>
+                    </button>
+                )}
             </div >
 
             {/* Dynamic Content Repository */}
@@ -255,7 +264,7 @@ export default function OrganizationsPage() {
 
             {/* Unified Form Dialog */}
             <Dialog open={activeForm !== null} onOpenChange={(open) => !open && closeForm()}>
-                <DialogContent className="sm:max-w-2xl rounded-4xl p-0 overflow-hidden border-none shadow-3xl">
+                <DialogContent className="sm:max-w-2xl rounded-4xl p-0 overflow-hidden border-none shadow-3xl h-[80dvh]">
                     <div className={`p-8 relative bg-linear-to-br from-primary/20 via-primary/5 to-background`}>
                         <div className="absolute top-0 right-0 p-8 opacity-10">
                             {activeForm === "organization" && <Building2 className="w-32 h-32 rotate-12" />}
