@@ -94,7 +94,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
         setLoading(true);
         try {
             const organizationId =
-                user?.role === "admin"
+                (user?.role === "admin" || user?.role === "superadmin")
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
@@ -149,7 +149,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
             <Input name="name" label="Name" value={formData?.name} onChange={handleChange} required placeholder="e.g. Headquarters" maxLength={255} />
 
             <div className="space-y-4">
-                {user?.role === "admin" && (
+                {(user?.role === "admin" || user?.role === "superadmin") && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Organization</label>
 
@@ -265,7 +265,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
 
         try {
             const organizationId =
-                user?.role === "admin"
+                (user?.role === "admin" || user?.role === "superadmin")
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
@@ -306,7 +306,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
             />
 
             <div className="space-y-4">
-                {user?.role === "admin" && (
+                {(user?.role === "admin" || user?.role === "superadmin") && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Organization</label>
 
@@ -386,7 +386,7 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
         setLoading(true);
         try {
             const organizationId =
-                user?.role === "admin"
+                (user?.role === "admin" || user?.role === "superadmin")
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
@@ -427,7 +427,7 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
             />
 
             <div className="space-y-4">
-                {user?.role === "admin" && (
+                {(user?.role === "admin" || user?.role === "superadmin") && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Organization</label>
                         <Select value={String(formData.organizationId)} onValueChange={handleOrgChange}>

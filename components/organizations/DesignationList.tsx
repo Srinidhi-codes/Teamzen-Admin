@@ -35,7 +35,7 @@ export default function DesignationList({ designations, onEdit }: DesignationLis
         }
     };
 
-    const isAuthorized = user?.role === "admin" || user?.role === "hr" || user?.role === "manager";
+    const isAuthorized = user?.role === "admin" || user?.role === "superadmin" || user?.role === "hr" || user?.role === "manager";
 
     if (!designations || designations.length === 0) {
         return (

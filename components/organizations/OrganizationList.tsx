@@ -134,7 +134,7 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                         <div className="mt-8 pt-8 border-t border-border/40">
                             <div className="flex items-center justify-between mb-6">
                                 <span className="text-xs font-black text-muted-foreground/60 uppercase tracking-[0.3em]">Ref: {org.id.substring(0, 8)}</span>
-                                {user?.role === "admin" && (
+                                {(user?.role === "admin" || user?.role === "superadmin") && (
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => onEdit(org)}

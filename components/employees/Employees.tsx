@@ -34,7 +34,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { SearchInput } from "@/components/ui/search";
+import { SearchInput } from "@/components/common/SearchInput";
 import Image from "next/image";
 
 export default function EmployeesPage() {
@@ -190,14 +190,7 @@ export default function EmployeesPage() {
                 </div>
 
 
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => refetchUsers()}
-                        className="p-3.5 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
-                    >
-                        <RotateCcw className="w-5 h-5" />
-                    </button>
+                <div className="flex flex-wrap items-center gap-4">
                     <button
                         onClick={handleExportCSV}
                         className="btn-secondary flex items-center gap-3"
@@ -211,6 +204,13 @@ export default function EmployeesPage() {
                     >
                         <UserPlus className="w-4 h-4" />
                         Add Employee
+                    </button>
+                    <button
+                        onClick={() => refetchUsers()}
+                        className="p-3.5 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                        title="Synchronize Data"
+                    >
+                        <RotateCcw className="w-5 h-5" />
                     </button>
                 </div>
 
@@ -242,8 +242,7 @@ export default function EmployeesPage() {
                     <SearchInput
                         placeholder="Scan for identifiers, names or connectivity..."
                         value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        onSearch={() => { }}
+                        onChange={setSearchTerm}
                     />
                 </div>
                 <div className="flex items-center gap-3">

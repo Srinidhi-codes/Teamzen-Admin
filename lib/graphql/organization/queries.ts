@@ -14,6 +14,7 @@ export const GET_ORGANIZATIONS = gql`
             headquartersAddress
             isActive
             registrationNumber
+            llmApiKey
             createdAt
             updatedAt
         }
@@ -34,6 +35,7 @@ export const GET_ORGANIZATION = gql`
             headquartersAddress
             isActive
             registrationNumber
+            llmApiKey
             createdAt
             updatedAt
         }

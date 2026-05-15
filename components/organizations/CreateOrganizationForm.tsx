@@ -30,6 +30,7 @@ export default function CreateOrganizationForm({
         headquartersAddress: "",
         logo: null as string | null,
         registrationNumber: "",
+        llmApiKey: "",
         isActive: true,
     });
 
@@ -42,6 +43,7 @@ export default function CreateOrganizationForm({
                 headquartersAddress: orgEditData.headquartersAddress || orgEditData.description || "",
                 logo: orgEditData.logo?.url || null,
                 registrationNumber: orgEditData.registrationNumber || "",
+                llmApiKey: orgEditData.llmApiKey || "",
                 isActive: orgEditData.isActive ?? true,
             })
         }
@@ -90,6 +92,7 @@ export default function CreateOrganizationForm({
                 headquartersAddress: "",
                 logo: null,
                 registrationNumber: "",
+                llmApiKey: "",
                 isActive: true,
             });
 
@@ -129,7 +132,7 @@ export default function CreateOrganizationForm({
     return (
         <form id="create-org-form" className="space-y-8" onSubmit={handleSubmit}>
             <div className="relative group/logo mx-auto w-fit">
-                <div 
+                <div
                     onClick={() => orgEditData && document.getElementById('logo-upload')?.click()}
                     className={`w-28 h-28 bg-linear-to-br from-primary to-primary/60 rounded-4xl flex items-center justify-center text-primary-foreground text-4xl font-black shadow-2xl shadow-primary/20 overflow-hidden ring-8 ring-background mb-10 group-hover:scale-105 transition-transform ${orgEditData ? 'cursor-pointer' : ''}`}
                 >
@@ -144,7 +147,7 @@ export default function CreateOrganizationForm({
                             {formData.name ? formData.name.charAt(0).toUpperCase() : "E"}
                         </span>
                     )}
-                    
+
                     {orgEditData && (
                         <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover/logo:opacity-100 transition-opacity">
                             {isUploading ? (
@@ -211,6 +214,16 @@ export default function CreateOrganizationForm({
                     hint={`${formData.registrationNumber.length}/100`}
                 />
 
+                <Input
+                    label="LLM API Key (OpenAI/Gemini)"
+                    name="llmApiKey"
+                    type="password"
+                    placeholder="Enter API key for organization-specific AI features"
+                    value={formData.llmApiKey || ""}
+                    onChange={handleChange}
+                    hint="This key will be used for AI insights specifically for this organization."
+                />
+
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
                         Operational Headquarters
@@ -245,7 +258,7 @@ export default function CreateOrganizationForm({
                     {isCreatingOrganizationLoading || isUpdatingOrganizationLoading ? (
                         <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     ) : (
-                        orgEditData ? "Update Entity" : "Scale Entity"
+                        orgEditData ? "Update Organization" : "Create Organization"
                     )}
                 </Button>
             </div>

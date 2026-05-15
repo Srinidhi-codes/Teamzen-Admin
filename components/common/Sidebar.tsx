@@ -16,11 +16,11 @@ const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: "📊" },
   { name: "Leaves", href: "/leaves", icon: "📅" },
   { name: "Attendance", href: "/attendance", icon: "📍" },
-  { name: "Payroll", href: "/payroll", icon: "💰", roles: ["admin"] },
+  { name: "Payroll", href: "/payroll", icon: "💰", roles: ["admin", "superadmin"] },
   { name: "Employees", href: "/employees", icon: "👥" },
   { name: "Notifications", href: "/notifications", icon: "🔔" },
   { name: "Analytics", href: "/analytics", icon: "📈" },
-  { name: "Admin", href: "/admin", icon: "⚙️", roles: ["admin", "hr"] },
+  { name: "Admin", href: "/admin", icon: "⚙️", roles: ["admin", "hr", "superadmin"] },
 ];
 
 export function Sidebar() {
