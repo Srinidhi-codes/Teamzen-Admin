@@ -24,7 +24,7 @@ interface EmployeeCardProps {
 
 export default function EmployeeCard({ employee, onEdit, onStatusToggle }: EmployeeCardProps) {
     const { user: currentUser } = useStore();
-    const isAdminOrHr = currentUser?.role === 'admin' || currentUser?.role === 'hr';
+    const isAdminOrHr = currentUser?.role === 'admin' || currentUser?.role === 'hr' || currentUser?.role === 'superadmin';
 
     return (
         <div className="group premium-card p-0 overflow-hidden hover:scale-102 flex flex-col border-border/50 transition-all duration-500">

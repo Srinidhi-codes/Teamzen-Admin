@@ -35,7 +35,7 @@ export default function DepartmentList({ departments, onEdit }: DepartmentListPr
         }
     };
 
-    const isAuthorized = user?.role === "admin" || user?.role === "hr" || user?.role === "manager";
+    const isAuthorized = user?.role === "admin" || user?.role === "superadmin" || user?.role === "hr" || user?.role === "manager";
 
     if (!departments || departments.length === 0) {
         return (

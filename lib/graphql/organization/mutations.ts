@@ -8,6 +8,7 @@ export const CREATE_ORGANIZATION = gql`
             gstNumber
             panNumber
             headquartersAddress
+            llmApiKey
             isActive
             createdAt
             updatedAt
@@ -23,6 +24,7 @@ export const UPDATE_ORGANIZATION = gql`
             gstNumber
             panNumber
             headquartersAddress
+            llmApiKey
             isActive
             createdAt
             updatedAt

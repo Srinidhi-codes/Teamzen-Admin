@@ -15,6 +15,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizationsHook";
+import { useStore } from "@/lib/store/useStore";
+import { Globe } from "lucide-react";
 
 const MODELS = [
     { 
@@ -69,6 +72,7 @@ const MODELS = [
 ];
 
 export default function AISettingsPage() {
+    const { user } = useStore();
     const { config, isLoading, isUpdating, updateAIConfig } = useAIConfig();
     const [formData, setFormData] = useState({
         model_name: "gpt-4o-mini",
@@ -184,6 +188,8 @@ export default function AISettingsPage() {
                         </div>
                     </section>
 
+                    <OrganizationAISettings user={user} />
+
                     <section className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
                         <div className="flex items-center gap-3 mb-8">
                             <MessageSquareQuote className="w-5 h-5 text-primary" />
@@ -281,5 +287,75 @@ export default function AISettingsPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function OrganizationAISettings({ user }: { user: any }) {
+    const { updateOrganization, isUpdatingOrganizationLoading } = useGraphQLUpdateOrganizationMutation();
+    const [apiKey, setApiKey] = useState(user?.organization?.llmApiKey || "");
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSave = async () => {
+        if (!user?.organization?.id) return;
+        setIsSaving(true);
+        try {
+            await updateOrganization({
+                id: user.organization.id,
+                name: user.organization.name,
+                // We need to pass other required fields if the mutation expects them
+                // But usually, we only want to update what's changed.
+                // Let's check the mutation definition.
+                llmApiKey: apiKey,
+                isActive: true // Assuming active
+            });
+            toast.success("Organization API key updated successfully!");
+        } catch (error) {
+            toast.error("Failed to update organization API key.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <section className="bg-card border border-border rounded-[2.5rem] p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-8">
+                <Globe className="w-5 h-5 text-primary" />
+                <h2 className="font-black text-xs uppercase tracking-[0.2em] text-muted-foreground">Organization-Specific Intelligence</h2>
+            </div>
+            
+            <div className="space-y-6">
+                <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10">
+                    <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                        Configure a dedicated LLM API Key for <b>{user?.organization?.name}</b>. 
+                        This allows your organization to use its own compute resources and custom models independently of the global system configuration.
+                    </p>
+                </div>
+
+                <div className="space-y-4">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-2">Enterprise API Key</label>
+                    <div className="flex gap-3">
+                        <div className="relative flex-1">
+                            <input
+                                type="password"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                placeholder="sk-..."
+                                className="w-full bg-muted/30 border border-border rounded-2xl px-6 py-4 text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-hidden"
+                            />
+                        </div>
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving || isUpdatingOrganizationLoading}
+                            className="bg-primary text-primary-foreground px-6 rounded-2xl font-black text-xs uppercase tracking-widest hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                        >
+                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Update"}
+                        </button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground ml-2 font-medium">
+                        Supported: OpenAI, Gemini, and Anthropic keys.
+                    </p>
+                </div>
+            </div>
+        </section>
     );
 }

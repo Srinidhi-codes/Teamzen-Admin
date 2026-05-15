@@ -35,7 +35,7 @@ export default function OfficeLocationList({
         }
     };
 
-    const isAuthorized = user?.role === "admin" || user?.role === "hr" || user?.role === "manager";
+    const isAuthorized = user?.role === "admin" || user?.role === "superadmin" || user?.role === "hr" || user?.role === "manager";
 
     if (!officeLocations || officeLocations.length === 0) {
         return (

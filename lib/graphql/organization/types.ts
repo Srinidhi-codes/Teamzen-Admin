@@ -12,6 +12,7 @@ export interface Organization {
     employeeCount: number;
     createdAt: string;
     updatedAt: string;
+    llmApiKey?: string;
 }
 
 export interface OfficeLocation {
@@ -51,23 +52,25 @@ export interface Designation {
 
 export interface CreateOrganizationInput {
     name: string;
-    logo: string;
-    gstNumber: string;
-    panNumber: string;
-    registrationNumber: string;
-    headquartersAddress: string;
+    logo?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    headquartersAddress?: string;
     isActive: boolean;
+    llmApiKey?: string;
 }
 
 export interface OrganizationInput {
     name: string;
-    logo: string;
-    gstNumber: string;
-    panNumber: string;
-    registrationNumber: string;
-    headquartersAddress: string;
+    logo?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    headquartersAddress?: string;
     isActive: boolean;
     id: string;
+    llmApiKey?: string;
 }
 
 export interface CreateOfficeLocationInput {

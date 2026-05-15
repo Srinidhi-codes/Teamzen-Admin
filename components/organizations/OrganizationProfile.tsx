@@ -44,7 +44,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
             registrationNumber: organization.registrationNumber || "",
             headquartersAddress: organization.headquartersAddress || "",
             isActive: organization.isActive,
-            logo: organization.logo?.url || ""
+            logo: organization.logo?.url || "",
+            llmApiKey: organization.llmApiKey || ""
         });
         setIsEditing(true);
     };
@@ -57,7 +58,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
             panNumber: "",
             registrationNumber: "",
             headquartersAddress: "",
-            logo: ""
+            logo: "",
+            llmApiKey: ""
         });
     };
 
@@ -345,6 +347,16 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                                             className="h-14"
                                         />
                                     </div>
+                                    <div className="md:col-span-2">
+                                        <Input
+                                            label="LLM API Key (OpenAI/Gemini)"
+                                            placeholder="Organization-specific API Key"
+                                            type="password"
+                                            value={formData.llmApiKey}
+                                            onChange={(e) => setFormData({ ...formData, llmApiKey: e.target.value })}
+                                            className="h-14"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="pt-10 flex gap-4 justify-end border-t border-border/40">
@@ -387,6 +399,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                                 <DataBox icon={Hash} label="Licence" value={organization.registrationNumber} color="primary" />
                                 <DataBox icon={FileText} label="GST Number" value={organization.gstNumber} color="blue" />
                                 <DataBox icon={CreditCard} label="PAN Number" value={organization.panNumber} color="emerald" />
+                                <DataBox icon={Calendar} label="LLM API KEY" value={organization.llmApiKey ? "••••••••••••••••" : "Not Set"} color="primary" />
                             </div>
 
                             {/* Navigation Shortcuts */}

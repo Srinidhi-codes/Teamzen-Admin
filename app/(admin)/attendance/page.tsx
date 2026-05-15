@@ -22,8 +22,8 @@ import {
 import { DatePickerSimple } from "@/components/ui/datePicker";
 import { Stat } from "@/components/common/Stats";
 import { useDebounce } from "@/lib/hooks/useDebounce";
-import { SearchInput } from "@/components/ui/search";
 import { Button } from "@/components/ui/button";
+import { SearchInput } from "@/components/common/SearchInput";
 
 
 export default function AttendancePage() {
@@ -337,8 +337,7 @@ export default function AttendancePage() {
                         <SearchInput
                             placeholder="Search for employee..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onSearch={() => { }}
+                            onChange={setSearchTerm}
                         />
                     </div>
                 </div>
