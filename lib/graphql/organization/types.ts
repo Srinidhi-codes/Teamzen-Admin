@@ -52,22 +52,22 @@ export interface Designation {
 
 export interface CreateOrganizationInput {
     name: string;
-    logo: string;
-    gstNumber: string;
-    panNumber: string;
-    registrationNumber: string;
-    headquartersAddress: string;
+    logo?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    headquartersAddress?: string;
     isActive: boolean;
     llmApiKey?: string;
 }
 
 export interface OrganizationInput {
     name: string;
-    logo: string;
-    gstNumber: string;
-    panNumber: string;
-    registrationNumber: string;
-    headquartersAddress: string;
+    logo?: string;
+    gstNumber?: string;
+    panNumber?: string;
+    registrationNumber?: string;
+    headquartersAddress?: string;
     isActive: boolean;
     id: string;
     llmApiKey?: string;
