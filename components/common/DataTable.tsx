@@ -1,15 +1,7 @@
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/common/Skeleton";
+import { Pagination } from "@/components/common/Pagination";
 
 
 export interface Column<T = any> {
@@ -168,75 +160,15 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {/* Pagination Footer */}
       {totalPages > 0 && currentPage && onPageChange && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-card/50 rounded-4xl border border-border backdrop-blur-sm shadow-sm ring-1 ring-border/50">
-          <div className="text-xs font-medium text-muted-foreground pl-2">
-            Showing {(currentPage - 1) * (pageSize || 0) + 1}–{Math.min(currentPage * (pageSize || 0), total || 0)} of {total} {paginationLabel}
-          </div>
-
-
-          <Pagination className="mx-0 w-auto">
-            <PaginationContent className="gap-1.5">
-              <PaginationItem>
-                <PaginationPrevious
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) onPageChange(currentPage - 1);
-                  }}
-                  className={`h-8 rounded-md border border-border text-xs font-medium text-muted-foreground hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage <= 1 ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
-                />
-
-              </PaginationItem>
-
-              {Array.from({ length: totalPages }).map((_, i) => {
-                const pageNumber = i + 1;
-                if (
-                  pageNumber === 1 ||
-                  pageNumber === totalPages ||
-                  (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-                ) {
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        href="#"
-                        isActive={currentPage === pageNumber}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          onPageChange(pageNumber);
-                        }}
-                        className={`h-8 w-8 rounded-md border text-xs font-medium transition-all duration-300 ${currentPage === pageNumber ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/20 hover:text-primary"}`}
-                      >
-
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                } else if (
-                  pageNumber === currentPage - 2 ||
-                  pageNumber === currentPage + 2
-                ) {
-                  return <PaginationEllipsis key={pageNumber} className="text-muted-foreground/30 scale-75" />;
-
-                }
-                return null;
-              })}
-
-              <PaginationItem>
-                <PaginationNext
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages) onPageChange(currentPage + 1);
-                  }}
-                  className={`h-8 rounded-md border border-border text-xs font-medium text-muted-foreground hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage >= totalPages ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
-                />
-
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          total={total}
+          pageSize={pageSize}
+          label={paginationLabel}
+        />
       )}
     </div>
   );
