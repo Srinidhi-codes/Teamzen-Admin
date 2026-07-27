@@ -16,9 +16,11 @@ import {
   ChevronRight,
   FileText,
   ShieldCheck,
+  X,
 } from "lucide-react";
-import { useState } from "react";
 import Image from "next/image";
+import { useStore } from "@/lib/store/useStore";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   name: string;
@@ -41,8 +43,6 @@ const navItems: NavItem[] = [
   { name: "Settings", href: "/settings", icon: Settings, roles: ["admin", "superadmin"] },
 ];
 
-import { useStore } from "@/lib/store/useStore";
-
 export interface AdminSidebarProps {
   isCollapsed: boolean;
   toggleCollapse: () => void;
@@ -59,82 +59,69 @@ export function AdminSidebar({
   const pathname = usePathname();
   const { user } = useStore();
 
-  const filteredNavItems = navItems.filter(item => {
+  const filteredNavItems = navItems.filter((item) => {
     if (!item.roles) return true;
     if (!user) return false;
     return item.roles.includes(user.role);
   });
 
-  const sidebarClasses = `
-    fixed inset-y-0 left-0 z-100
-    flex flex-col
-    bg-sidebar text-sidebar-foreground
-    transition-all duration-500 ease-in-out
-    ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
-    md:translate-x-0
-    ${isCollapsed ? "md:w-24" : "md:w-72"}
-    w-72
-    border-r border-sidebar-border
-    shadow-2xl md:shadow-none
-    overflow-x-hidden
-  `;
-
   return (
     <>
-      {/* Overlay Backdrop - High z-index behind sidebar */}
-      {(isMobileOpen || !isCollapsed) && (
+      {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-90 transition-opacity duration-500"
-          onClick={isMobileOpen ? closeMobile : toggleCollapse}
+          className="fixed inset-0 z-90 bg-foreground/20 md:hidden"
+          onClick={closeMobile}
+          aria-hidden
         />
       )}
 
-      <aside className={sidebarClasses}>
-        {/* Header */}
-        <div className="h-20 flex items-center justify-between px-6 border-b border-sidebar-border/50">
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-100 flex flex-col overflow-x-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-[width,transform] duration-200 ease-out",
+          isMobileOpen ? "translate-x-0" : "-translate-x-full",
+          "md:translate-x-0",
+          isCollapsed ? "md:w-16" : "md:w-60",
+          "w-60"
+        )}
+      >
+        <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border px-3">
           {(!isCollapsed || isMobileOpen) && (
-            <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-500">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0 overflow-hidden shadow-sm">
-                <Image 
-                  src={"/images/teamzen_zoomed.png"} 
-                  alt="Logo" 
-                  width={32} 
-                  height={32} 
-                  className="w-8 h-8 object-contain"
+            <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 px-1" onClick={() => isMobileOpen && closeMobile()}>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white ring-1 ring-border">
+                <Image
+                  src="/images/teamzen_zoomed.png"
+                  alt="Teamzen"
+                  width={28}
+                  height={28}
+                  className="h-7 w-7 object-contain"
                 />
               </div>
-              <h1 className="text-sm font-black text-foreground uppercase text-nowrap tracking-tight">
-                Teamzen <span className="text-primary">Admin</span>
-              </h1>
-            </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">Teamzen</p>
+                <p className="truncate text-xs text-muted-foreground">Admin</p>
+              </div>
+            </Link>
           )}
 
-          {/* Desktop Collapse Toggle */}
           <button
             onClick={toggleCollapse}
-            className="hidden md:flex p-2 hover:bg-primary/10 hover:text-primary rounded-xl transition-all active:scale-90"
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:flex"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? (
-              <ChevronRight className="w-5 h-5" />
-            ) : (
-              <ChevronLeft className="w-5 h-5" />
-            )}
+            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
 
-          {/* Mobile Close Button */}
           <button
             onClick={closeMobile}
-            className="md:hidden p-2 hover:bg-primary/10 hover:text-primary rounded-xl transition-all"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+            aria-label="Close menu"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-
-
-        {/* Navigation Items */}
-        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
-          {filteredNavItems.map((item, index) => {
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
+          {filteredNavItems.map((item) => {
             const isActive =
               pathname === item.href ||
               (pathname.startsWith(item.href + "/") &&
@@ -145,55 +132,39 @@ export function AdminSidebar({
                     other.href.length > item.href.length
                 ));
             const Icon = item.icon;
+            const showLabel = !isCollapsed || isMobileOpen;
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 id={`nav-${item.name.toLowerCase()}`}
-                onClick={() => isMobileOpen && closeMobile()} // Close sidebar on mobile nav click
-                className={`flex items-center ${isCollapsed ? "justify-center" : ""} space-x-4 px-4 py-3.5 rounded-2xl transition-all duration-300 relative group ${isActive
-                  ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02] "
-                  : "text-sidebar-foreground/60 hover:bg-primary/5 hover:text-primary"
-                  }`}
-                style={{
-                  animationDelay: `${index * 50}ms`,
-                }}
-                title={isCollapsed && !isMobileOpen ? item.name : ""}
+                onClick={() => isMobileOpen && closeMobile()}
+                title={!showLabel ? item.name : undefined}
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
+                  showLabel ? "" : "justify-center px-0",
+                  isActive
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
+                )}
               >
-                <Icon className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-110 ${isActive ? 'scale-110' : ''}`} />
-                {(!isCollapsed || isMobileOpen) && (
-                  <span className={`font-black text-[11px] uppercase tracking-wider truncate transition-all ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
-                    {item.name}
-                  </span>
-                )}
-               {isActive && !isCollapsed && (
-                  <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary-foreground animate-pulse" />
-                )}
+                <Icon className="h-4 w-4 shrink-0" />
+                {showLabel && <span className="truncate">{item.name}</span>}
               </Link>
             );
           })}
         </nav>
 
-
-        {/* Footer */}
-        <div className="p-6 border-t border-sidebar-border/50">
+        <div className="border-t border-sidebar-border px-3 py-3">
           {(!isCollapsed || isMobileOpen) ? (
-            <div className="animate-in fade-in duration-700">
-              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-relaxed">© 2025 Teamzen <span className="text-primary/50">Admin</span></p>
-              <div className="mt-3 flex items-center space-x-2 bg-muted/30 p-2 rounded-xl border border-border/50">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-[10px] font-bold text-muted-foreground uppercase truncate">System Active</p>
-              </div>
-            </div>
+            <p className="px-1 text-xs text-muted-foreground">© {new Date().getFullYear()} Teamzen</p>
           ) : (
             <div className="flex justify-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50" />
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
             </div>
           )}
         </div>
-
-
       </aside>
     </>
   );

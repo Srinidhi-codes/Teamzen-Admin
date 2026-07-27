@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { X, Calendar, Building2 } from "lucide-react";
+import { X, Calendar, Building2, Cpu } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
 import { InsightCard } from "./cards/InsightCard";
 import { PayrollCard } from "./cards/PayrollCard";
@@ -12,18 +12,129 @@ interface MessageRendererProps {
     handleSend?: (e?: React.FormEvent, customQuery?: string) => void;
     isLast?: boolean;
     isStreaming?: boolean;
+    activeTool?: { name: string; status: 'running' | 'completed' } | null;
 }
 
-export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming }: MessageRendererProps) => {
+const renderInlineFormatting = (text: string) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            const cleanBoldText = part.slice(2, -2);
+            return (
+                <span key={idx} className="font-extrabold text-foreground">
+                    {cleanBoldText}
+                </span>
+            );
+        }
+        return part;
+    });
+};
+
+const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode) => {
+    let lines = text.split('\n');
+    const processedLines: string[] = [];
+    for (const line of lines) {
+        if (line.includes(' - **') || line.includes(' - *')) {
+            const parts = line.split(/(?=\s-\s)/);
+            for (const part of parts) {
+                processedLines.push(part.replace(/^\s*-\s*/, '').trim());
+            }
+        } else {
+            processedLines.push(line);
+        }
+    }
+    lines = processedLines;
+
+    return (
+        <div className="space-y-2 w-full">
+            {lines.map((line, lineIdx) => {
+                const isLastLine = lineIdx === lines.length - 1;
+                let currentLine = line.trim();
+                
+                if (currentLine === '') {
+                    return <div key={lineIdx} className="h-1" />;
+                }
+
+                // A list item starts with a dash, asterisk, or bullet followed by space
+                const isOriginalListItem = /^[-*•]\s+/.test(line.trim());
+
+                // Safe bullet strip: only strip if followed by whitespace
+                currentLine = currentLine.replace(/^[-*•]\s+/, '');
+
+                // Check if it's a heading
+                const isHeading = line.trim().startsWith('###') || line.trim().startsWith('##') || line.trim().startsWith('#');
+                if (isHeading) {
+                    const cleanText = line.trim().replace(/^#+\s*/, '');
+                    return (
+                        <h4 
+                            key={lineIdx} 
+                            className="font-black text-sm uppercase tracking-widest text-primary border-b border-border pb-1.5 mb-2 mt-4 inline-block underline underline-offset-4 decoration-primary/40"
+                        >
+                            {renderInlineFormatting(cleanText)}
+                            {isLastLine && trailingCursor}
+                        </h4>
+                    );
+                }
+
+                // Check if it's a subheader (ends with a colon but isn't a list item)
+                const isSubHeaderOnly = currentLine.endsWith(':') && !isOriginalListItem;
+                if (isSubHeaderOnly) {
+                    return (
+                        <div 
+                            key={lineIdx} 
+                            className="font-extrabold text-sm text-foreground mt-3 mb-1 underline underline-offset-4 decoration-primary/30"
+                        >
+                            {renderInlineFormatting(currentLine)}
+                            {isLastLine && trailingCursor}
+                        </div>
+                    );
+                }
+                
+                // Render list item with bullet dot
+                if (isOriginalListItem) {
+                    return (
+                        <div 
+                            key={lineIdx} 
+                            className="flex items-start gap-2 text-sm leading-relaxed my-1 pl-2"
+                        >
+                            <span className="text-primary mt-1.5 shrink-0 block w-1.5 h-1.5 rounded-full bg-primary/60" />
+                            <span className="flex-1">
+                                {renderInlineFormatting(currentLine)}
+                                {isLastLine && trailingCursor}
+                            </span>
+                        </div>
+                    );
+                }
+                
+                return (
+                    <p key={lineIdx} className="text-sm leading-relaxed">
+                        {renderInlineFormatting(currentLine)}
+                        {isLastLine && trailingCursor}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
+
+export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming, activeTool }: MessageRendererProps) => {
     const parts = useMessageParser(content);
     const showDots = isLast && isStreaming && role === 'assistant' && (parts.length === 0 || (parts.length === 1 && !parts[0].value.trim()));
 
     if (showDots) {
         return (
-            <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex items-center gap-1.5 w-max">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+            <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex flex-col gap-2 w-max max-w-[85%] animate-in fade-in duration-300">
+                <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                </div>
+                {activeTool && activeTool.status === 'running' && (
+                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary/70 border-t border-border/50 pt-1.5 mt-0.5">
+                        <Cpu className="w-3.5 h-3.5 animate-pulse text-primary shrink-0" />
+                        <span>MCP: {activeTool.name.replace("teamzen__", "")}</span>
+                    </div>
+                )}
             </div>
         );
     }
@@ -37,23 +148,25 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     
                     if (!text) return null;
                     
+                    const cursor = isLast && isStreaming && isFinalPart ? (
+                        <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
+                    ) : undefined;
+                    
                     return (
                         <div key={idx} className={cn(
                             "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
                             role === 'user'
                                 ? "bg-primary text-primary-foreground rounded-tr-none ml-auto"
-                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90"
+                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90 w-full"
                         )}>
-                            {text}
-                            {isLast && isStreaming && isFinalPart && (
-                                <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
-                            )}
+                            {renderTextWithFormatting(text, cursor)}
                         </div>
                     );
                 } else if (part.type === 'balance') {
-                         const { name, total, used, available } = part.value;
+                         const { name, total, used, available, pending } = part.value;
                          const usedNum = parseFloat(used) || 0;
                          const totalNum = parseFloat(total) || 1;
+                         const pendingNum = parseFloat(pending) || 0;
                          const percent = Math.min((usedNum / totalNum) * 100, 100);
 
                          return (
@@ -77,6 +190,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                                  <div className="space-y-2">
                                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
                                          <span>Used: {used}</span>
+                                         {pendingNum > 0 && <span className="text-yellow-600 dark:text-yellow-500">Pending: {pending}</span>}
                                          <span>Total: {total}</span>
                                      </div>
                                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">

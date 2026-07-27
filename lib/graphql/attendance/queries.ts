@@ -44,6 +44,17 @@ export const GET_ATTENDANCE_CORRECTIONS = gql`
           correctionId
           correctionReason
           approvalComment
+          loginLatitude
+          loginLongitude
+          logoutLatitude
+          logoutLongitude
+          officeLocation {
+            id
+            name
+            latitude
+            longitude
+            geoRadiusMeters
+          }
         }
         correctedLoginTime
         correctedLogoutTime

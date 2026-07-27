@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, Mail, Lock, ArrowRight, UserPlus, FileText, Check, X } from "lucide-react";
+import { User, Mail, Lock, UserPlus, FileText, Check } from "lucide-react";
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -71,7 +71,7 @@ export default function RegisterForm() {
                     <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 mb-6 transform hover:rotate-6 transition-transform duration-300">
                         <UserPlus className="w-10 h-10 text-primary-foreground" />
                     </div>
-                    <h2 className="text-4xl font-black text-foreground tracking-tight">Create Account</h2>
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">Create account</h2>
                     <p className="mt-2 text-sm text-muted-foreground">Join our premium payroll management ecosystem</p>
                 </div>
 
@@ -185,7 +185,7 @@ export default function RegisterForm() {
 
                         {/* Password Validation Checklist */}
                         <div className="bg-muted/30 rounded-2xl p-4 space-y-3 border border-border">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Security Standards</p>
+                            <p className="text-sm text-muted-foreground mb-2">Password requirements</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                                 <div className={`flex items-center space-x-2.5 transition-colors duration-200 ${passwordCriteria.length ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"}`}>
                                     <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center border transition-all ${passwordCriteria.length ? "bg-emerald-500/10 border-emerald-500/20" : "bg-muted/50 border-border"}`}>
@@ -220,8 +220,8 @@ export default function RegisterForm() {
                             <div className="rounded-2xl bg-destructive/5 p-4 border border-destructive/10 animate-slide-up">
                                 <div className="flex">
                                     <div className="ml-3">
-                                        <h3 className="text-sm font-black text-destructive uppercase tracking-widest">
-                                            Submission Error
+                                        <h3 className="text-sm font-medium text-destructive">
+                                            Registration failed
                                         </h3>
                                         <div className="mt-2 text-sm text-destructive/80 font-medium">
                                             <ul className="list-disc pl-5 space-y-1">
@@ -240,23 +240,20 @@ export default function RegisterForm() {
                         <button
                             type="submit"
                             disabled={register.isPending}
-                            className="bg-primary text-primary-foreground w-full py-4 px-6 rounded-xl font-black text-sm uppercase tracking-widest flex justify-center items-center gap-2 group transform transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-primary/20 hover:shadow-primary/40 disabled:opacity-50"
+                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                            {register.isPending ? "Configuring Environment..." : "Execute Registration"}
-                            {!register.isPending && (
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                            )}
+                            {register.isPending ? "Creating account…" : "Create account"}
                         </button>
                     </form>
 
                     <div className="mt-8 pt-6 border-t border-border text-center">
                         <p className="text-sm text-muted-foreground font-medium">
-                            Already authenticated?{" "}
+                            Already have an account?{" "}
                             <Link
                                 href="/login"
-                                className="font-black text-primary hover:opacity-80 transition-opacity"
+                                className="font-medium text-primary hover:underline"
                             >
-                                Secure Login
+                                Sign in
                             </Link>
                         </p>
                     </div>

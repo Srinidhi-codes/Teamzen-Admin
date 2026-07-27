@@ -20,6 +20,18 @@ export interface AttendanceRecord {
   correctionId?: string;
   correctionReason?: string;
   approvalComment?: string;
+
+  loginLatitude?: number | null;
+  loginLongitude?: number | null;
+  logoutLatitude?: number | null;
+  logoutLongitude?: number | null;
+  officeLocation?: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    geoRadiusMeters: number;
+  } | null;
 }
 
 export interface AttendanceCorrection {

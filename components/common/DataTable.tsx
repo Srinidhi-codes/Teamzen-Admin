@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/pagination";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/common/Skeleton";
 
 
 export interface Column<T = any> {
@@ -60,9 +61,11 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-6">
-        <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p className="text-premium-label animate-pulse">Synchronizing Data Matrix...</p>
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4" aria-busy="true" aria-label="Loading table">
+        <Skeleton className="h-10 w-full" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-12 w-full" />
+        ))}
       </div>
     );
   }
@@ -109,7 +112,7 @@ export function DataTable<T>({
               {columns.map((col) => (
                 <th
                   key={col.key}
-                  className={`px-6 py-5 text-left text-premium-label ${col.sortable && onSortChange ? "cursor-pointer hover:text-primary transition-colors" : ""}`}
+                  className={`px-6 py-5 text-left text-xs font-medium text-muted-foreground ${col.sortable && onSortChange ? "cursor-pointer hover:text-primary transition-colors" : ""}`}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
 
@@ -151,7 +154,7 @@ export function DataTable<T>({
                   return (
                     <td
                       key={col.key}
-                      className={cn("px-6 py-5 whitespace-nowrap text-premium-data", col.className)}
+                      className={cn("px-6 py-5 whitespace-nowrap text-sm font-medium text-foreground/80", col.className)}
                     >
 
 
@@ -168,13 +171,8 @@ export function DataTable<T>({
       {/* Pagination Footer */}
       {totalPages > 0 && currentPage && onPageChange && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-card/50 rounded-4xl border border-border backdrop-blur-sm shadow-sm ring-1 ring-border/50">
-          <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-2">
-            Showing <span className="text-primary font-black">{(currentPage - 1) * (pageSize || 0) + 1}</span>
-            <span className="mx-1.5">—</span>
-            <span className="text-primary font-black">{Math.min(currentPage * (pageSize || 0), total || 0)}</span>
-            <span className="mx-2 text-muted-foreground/50">Of</span>
-            <span className="text-foreground font-black">{total}</span>
-            <span className="ml-2">{paginationLabel}</span>
+          <div className="text-xs font-medium text-muted-foreground pl-2">
+            Showing {(currentPage - 1) * (pageSize || 0) + 1}–{Math.min(currentPage * (pageSize || 0), total || 0)} of {total} {paginationLabel}
           </div>
 
 
@@ -187,7 +185,7 @@ export function DataTable<T>({
                     e.preventDefault();
                     if (currentPage > 1) onPageChange(currentPage - 1);
                   }}
-                  className={`rounded-xl border-border text-muted-foreground font-bold hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage <= 1 ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"}`}
+                  className={`h-8 rounded-md border border-border text-xs font-medium text-muted-foreground hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage <= 1 ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
                 />
 
               </PaginationItem>
@@ -208,7 +206,7 @@ export function DataTable<T>({
                           e.preventDefault();
                           onPageChange(pageNumber);
                         }}
-                        className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${currentPage === pageNumber ? "bg-primary text-primary-foreground border-transparent shadow-lg shadow-primary/20 scale-110" : "bg-card text-muted-foreground border-border hover:border-primary/20 hover:text-primary shadow-sm"}`}
+                        className={`h-8 w-8 rounded-md border text-xs font-medium transition-all duration-300 ${currentPage === pageNumber ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/20 hover:text-primary"}`}
                       >
 
                         {pageNumber}
@@ -232,7 +230,7 @@ export function DataTable<T>({
                     e.preventDefault();
                     if (currentPage < totalPages) onPageChange(currentPage + 1);
                   }}
-                  className={`rounded-xl border-border text-muted-foreground font-bold hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage >= totalPages ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"}`}
+                  className={`h-8 rounded-md border border-border text-xs font-medium text-muted-foreground hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${currentPage >= totalPages ? "pointer-events-none opacity-40" : "cursor-pointer"}`}
                 />
 
               </PaginationItem>

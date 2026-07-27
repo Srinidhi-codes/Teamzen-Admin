@@ -30,18 +30,14 @@ export function PaginationControls({
   if (!total || total === 0) return null;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-card/50 rounded-4xl border border-border backdrop-blur-sm shadow-sm ring-1 ring-border/50">
-      <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest pl-2">
-        Showing <span className="text-primary font-black">{(currentPage - 1) * pageSize + 1}</span>
-        <span className="mx-1.5">—</span>
-        <span className="text-primary font-black">{Math.min(currentPage * pageSize, total)}</span>
-        <span className="mx-2 text-muted-foreground/50">Of</span>
-        <span className="text-foreground font-black">{total}</span>
-        <span className="ml-2">{paginationLabel}</span>
-      </div>
+    <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 sm:flex-row">
+      <p className="text-sm text-muted-foreground">
+        {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, total)} of {total}{" "}
+        {paginationLabel}
+      </p>
 
       <Pagination className="mx-0 w-auto">
-        <PaginationContent className="gap-1.5">
+        <PaginationContent className="gap-1">
           <PaginationItem>
             <PaginationPrevious
               href="#"
@@ -49,9 +45,11 @@ export function PaginationControls({
                 e.preventDefault();
                 if (currentPage > 1) onPageChange(currentPage - 1);
               }}
-              className={`rounded-xl border-border text-muted-foreground font-bold hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${
-                currentPage <= 1 ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"
-              }`}
+              className={
+                currentPage <= 1
+                  ? "pointer-events-none opacity-40"
+                  : "cursor-pointer"
+              }
             />
           </PaginationItem>
 
@@ -71,18 +69,15 @@ export function PaginationControls({
                       e.preventDefault();
                       onPageChange(pageNumber);
                     }}
-                    className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${
-                      currentPage === pageNumber
-                        ? "bg-primary text-primary-foreground border-transparent shadow-lg shadow-primary/20 scale-110"
-                        : "bg-card text-muted-foreground border-border hover:border-primary/20 hover:text-primary shadow-sm"
-                    }`}
+                    className="cursor-pointer"
                   >
                     {pageNumber}
                   </PaginationLink>
                 </PaginationItem>
               );
-            } else if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
-              return <PaginationEllipsis key={pageNumber} className="text-muted-foreground/30 scale-75" />;
+            }
+            if (pageNumber === currentPage - 2 || pageNumber === currentPage + 2) {
+              return <PaginationEllipsis key={pageNumber} />;
             }
             return null;
           })}
@@ -94,9 +89,11 @@ export function PaginationControls({
                 e.preventDefault();
                 if (currentPage < totalPages) onPageChange(currentPage + 1);
               }}
-              className={`rounded-xl border-border text-muted-foreground font-bold hover:bg-card hover:text-primary hover:border-primary/20 transition-all ${
-                currentPage >= totalPages ? "pointer-events-none opacity-40 shadow-none border-dashed" : "cursor-pointer shadow-sm"
-              }`}
+              className={
+                currentPage >= totalPages
+                  ? "pointer-events-none opacity-40"
+                  : "cursor-pointer"
+              }
             />
           </PaginationItem>
         </PaginationContent>

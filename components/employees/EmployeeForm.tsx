@@ -14,12 +14,14 @@ import { DatePickerSimple } from "../ui/datePicker";
 import moment from "moment";
 import { Input } from "../ui/input";
 import ConfirmationModal from "../common/ConfirmationModal";
+import { FormSkeleton } from "../common/Skeleton";
 
 
 import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucide-react";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
+import { cn } from "@/lib/utils";
 
 interface EmployeeFormProps {
     initialData?: User | null;
@@ -107,7 +109,11 @@ export default function EmployeeForm({
     const [activeTab, setActiveTab] = useState("identity");
     const [profilePicture, setProfilePicture] = useState<File | null>(null);
     const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(initialData?.profilePictureUrl || null);
-    const isLoading = isCreatingUser || isUpdatingUser || isStructuresLoading;
+    const isSubmitting = isCreatingUser || isUpdatingUser;
+    const formMetaLoading =
+        (isDepartmentsLoading && !departments) ||
+        (isDesignationsLoading && !designations) ||
+        (isOfficeLocationsLoading && !officeLocations);
 
     // Get options helpers
     const getDepartmentOptions = () => {
@@ -336,52 +342,65 @@ export default function EmployeeForm({
         }
     };
 
-    if (isDepartmentsLoading || isDesignationsLoading || isOfficeLocationsLoading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-            </div>
-        );
+    if (formMetaLoading) {
+        return <FormSkeleton />;
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid grid-cols-4 bg-muted/30 p-1 rounded-2xl mb-8">
-                    <TabsTrigger value="identity" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                        <UserIcon className="w-3.5 h-3.5" /> Identity
+        <form onSubmit={handleSubmit} className="flex min-h-full flex-col">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
+                <TabsList className="mb-4 grid h-auto w-full shrink-0 grid-cols-4 gap-0 rounded-none border-b border-border bg-transparent p-0">
+                    <TabsTrigger
+                        value="identity"
+                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <UserIcon className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Identity</span>
                     </TabsTrigger>
-                    <TabsTrigger value="employment" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                        <Briefcase className="w-3.5 h-3.5" /> Work
+                    <TabsTrigger
+                        value="employment"
+                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <Briefcase className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Work</span>
                     </TabsTrigger>
-                    <TabsTrigger value="financials" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                        <Landmark className="w-3.5 h-3.5" /> Finance
+                    <TabsTrigger
+                        value="financials"
+                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <Landmark className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Finance</span>
                     </TabsTrigger>
-                    <TabsTrigger value="payroll" className="rounded-xl gap-2 font-black text-[10px] uppercase tracking-widest data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                        <Wallet className="w-3.5 h-3.5" /> Payroll
+                    <TabsTrigger
+                        value="payroll"
+                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                    >
+                        <Wallet className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Payroll</span>
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="identity" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="relative min-h-[360px] flex-1">
+                <TabsContent value="identity" forceMount className={cn("mt-0 space-y-6 data-[state=inactive]:hidden")}>
                     {/* Profile Picture Upload Section */}
-                    <div className="flex items-center gap-6 p-6 bg-muted/20 rounded-3xl border border-border/50">
-                        <div className="relative group">
-                            <div className="w-24 h-24 rounded-3xl bg-card border-4 border-background shadow-xl overflow-hidden flex items-center justify-center">
+                    <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-4">
+                        <div className="relative">
+                            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
                                 {profilePicturePreview ? (
-                                    <img src={profilePicturePreview} alt="Preview" className="w-full h-full object-cover" />
+                                    <img src={profilePicturePreview} alt="Preview" className="h-full w-full object-cover" />
                                 ) : (
-                                    <UserIcon className="w-10 h-10 text-muted-foreground/30" />
+                                    <UserIcon className="h-8 w-8 text-muted-foreground/40" />
                                 )}
                             </div>
-                            <label className="absolute -bottom-2 -right-2 p-2 bg-primary text-primary-foreground rounded-xl shadow-lg cursor-pointer hover:scale-110 transition-transform">
-                                <Plus className="w-4 h-4" />
+                            <label className="absolute -bottom-1.5 -right-1.5 cursor-pointer rounded-lg bg-primary p-1.5 text-primary-foreground hover:bg-primary/90">
+                                <Plus className="h-3.5 w-3.5" />
                                 <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                             </label>
                         </div>
                         <div className="flex-1">
-                            <h4 className="text-sm font-black uppercase tracking-widest mb-1">Profile Photo</h4>
-                            <p className="text-[10px] text-muted-foreground font-medium max-w-[200px]">
-                                Upload a professional photo. Supported formats: JPG, PNG. Max size: 2MB.
+                            <h4 className="text-sm font-medium">Profile photo</h4>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                JPG or PNG, max 2MB.
                             </p>
                         </div>
                     </div>
@@ -406,7 +425,7 @@ export default function EmployeeForm({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="employment" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <TabsContent value="employment" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
                     <div className="grid grid-cols-2 gap-4">
                         <DatePickerSimple label="Date of Joining" value={formData.dateOfJoining} onChange={(date) => handleDateChange("dateOfJoining", date)} />
                         <DatePickerSimple label="Date of Exit" value={formData.dateOfExit} onChange={(date) => handleDateChange("dateOfExit", date)} />
@@ -422,7 +441,7 @@ export default function EmployeeForm({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="financials" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <TabsContent value="financials" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
                     <div className="grid grid-cols-2 gap-4">
                         <Input label="Bank Account Number" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} />
                         <Input label="IFSC Code" name="bankIfscCode" value={formData.bankIfscCode} onChange={handleChange} />
@@ -432,17 +451,17 @@ export default function EmployeeForm({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="payroll" className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="p-6 border border-primary/20 bg-primary/5 rounded-3xl space-y-6">
+                <TabsContent value="payroll" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
+                    <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
                         <div className="flex items-center gap-3">
-                            <CreditCard className="w-5 h-5 text-primary" />
+                            <CreditCard className="h-5 w-5 text-primary" />
                             <div>
-                                <h3 className="text-sm font-black uppercase tracking-widest">Compensation Strategy</h3>
-                                <p className="text-[10px] text-muted-foreground font-medium">Define the salary structure and annual CTC for this individual.</p>
+                                <h3 className="text-sm font-medium">Compensation</h3>
+                                <p className="text-xs text-muted-foreground">Salary structure and annual CTC.</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormSelect
                                 label="Salary Structure"
                                 value={formData.salaryStructureId}
@@ -465,12 +484,13 @@ export default function EmployeeForm({
                         </div>
                     </div>
                 </TabsContent>
+                </div>
             </Tabs>
 
-            <div className="flex justify-end gap-3 pt-6 border-t border-border">
-                <button type="button" onClick={onCancel} className="px-8 py-4 text-muted-foreground text-[11px] font-black uppercase tracking-widest">Dismiss</button>
-                <button type="submit" className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-3" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (initialData ? "Apply Changes" : "Establish Profile")}
+            <div className="mt-6 flex shrink-0 justify-end gap-2 border-t border-border pt-4">
+                <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>
+                <button type="submit" className="btn-primary gap-2" disabled={isSubmitting || (activeTab === "payroll" && isStructuresLoading)}>
+                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (initialData ? "Save changes" : "Create employee")}
                 </button>
             </div>
         </form>

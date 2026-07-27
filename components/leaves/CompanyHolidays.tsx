@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useGraphQLCompanyHolidays, useGraphQLCompanyHolidayMutations } from '@/lib/graphql/leaves/leavesHook'
 import { DataTable, Column } from '../common/DataTable'
 import { CompanyHoliday } from '@/lib/graphql/leaves/types'
-import { Plus, Edit, Trash2, AlertCircle, RotateCcw, Calendar as CalendarIcon } from 'lucide-react'
+import { Plus, Edit, Trash2, RotateCcw, Calendar as CalendarIcon } from 'lucide-react'
 import CompanyHolidayModal from './CompanyHolidayModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 import { useStore } from '@/lib/store/useStore'
@@ -44,16 +44,16 @@ const CompanyHolidays = () => {
             key: 'name',
             label: 'Holiday Name',
             render: (name, row) => (
-                <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-purple-500/10 text-purple-600 flex items-center justify-center shadow-inner">
-                        <CalendarIcon className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                        <CalendarIcon className="w-4 h-4" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-black text-foreground tracking-tight">
+                        <span className="font-medium text-foreground text-sm">
                             {name}
                         </span>
                         {row.description && (
-                            <span className="text-[10px] text-muted-foreground font-medium line-clamp-1">
+                            <span className="text-xs text-muted-foreground line-clamp-1">
                                 {row.description}
                             </span>
                         )}
@@ -75,9 +75,9 @@ const CompanyHolidays = () => {
             label: 'Type',
             render: (isOptional: boolean) => (
                 <span
-                    className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${!isOptional
-                        ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
-                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                    className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize ${!isOptional
+                        ? "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400"
+                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                         }`}
                 >
                     {!isOptional ? 'Mandatory' : 'Optional'}
@@ -101,15 +101,15 @@ const CompanyHolidays = () => {
                             });
                             setIsModalOpen(true);
                         }}
-                        className="p-3 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/5 active:scale-90"
-                        title="Edit Holiday"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                        title="Edit"
                     >
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => handleDelete(holiday.id)}
-                        className="p-3 bg-destructive/10 text-destructive rounded-xl hover:bg-destructive hover:text-white transition-all duration-300 shadow-lg shadow-destructive/5 active:scale-90"
-                        title="Remove Holiday"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors"
+                        title="Delete"
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
@@ -170,39 +170,41 @@ const CompanyHolidays = () => {
     };
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center py-32 space-y-6">
-            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            <p className="text-premium-label animate-pulse">Syncing Festive Calendar...</p>
+        <div className="space-y-3" aria-busy="true" aria-label="Loading">
+            <div className="flex justify-end">
+                <div className="h-9 w-36 animate-pulse rounded-md bg-muted" />
+            </div>
+            <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+                ))}
+            </div>
         </div>
     );
 
     if (error) return (
-        <div className="p-12 text-center bg-destructive/10 rounded-4xl border border-destructive/20 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
-            <div className="w-16 h-16 bg-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-destructive" />
-            </div>
-            <h3 className="text-xl font-black text-foreground tracking-tight mb-2">Calendar Synchronization Failed</h3>
-            <p className="text-muted-foreground font-medium text-sm leading-relaxed">{error.message}</p>
+        <div className="mx-auto max-w-md rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-10 text-center">
+            <p className="text-sm text-destructive">{error.message}</p>
         </div>
     );
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col lg:flex-row justify-end items-center gap-10">
-                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+        <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     <button
                         onClick={() => refetch()}
-                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                        title="Sync Holidays"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        title="Refresh"
                     >
-                        <RotateCcw className="w-5 h-5" />
+                        <RotateCcw className="w-4 h-4" />
                     </button>
                     <SearchInput
                         placeholder="Search holidays..."
                         value={search}
                         onChange={setSearch}
                         containerClassName="flex-1 lg:w-64 min-w-[200px]"
-                        className="h-12"
+                        className="h-9"
                     />
                     <button
                         onClick={() => {
@@ -212,16 +214,18 @@ const CompanyHolidays = () => {
                         }}
                         className="btn-primary flex-1 lg:flex-none"
                     >
-                        <Plus className="w-5 h-5 mr-3" />
-                        <span>Create Holiday</span>
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        <span>Create holiday</span>
                     </button>
                 </div>
             </div>
 
-            <DataTable
-                data={companyHolidays}
-                columns={columns}
-            />
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <DataTable
+                    data={companyHolidays}
+                    columns={columns}
+                />
+            </div>
 
             <div ref={formRef}>
                 {isModalOpen && (

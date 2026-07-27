@@ -17,7 +17,7 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
 
     return (
         <div className={cn(
-            "relative overflow-hidden bg-card border border-border/50 rounded-4xl p-6 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full group/insight",
+            "relative overflow-hidden bg-card border border-border rounded-xl p-6 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full group/insight",
             "before:absolute before:inset-0 before:bg-linear-to-br before:opacity-[0.03] before:pointer-events-none",
             isWarning ? "before:from-amber-500 before:to-transparent border-amber-500/20" : "before:from-primary before:to-transparent"
         )}>
@@ -36,16 +36,16 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
                 </div>
                 <div className="space-y-0.5">
                     <h4 className={cn(
-                        "font-black text-[10px] uppercase tracking-[0.2em]",
-                        isWarning ? "text-amber-600" : "text-primary/70"
-                    )}>{title || "AI INTELLIGENCE"}</h4>
+                        "text-xs font-medium",
+                        isWarning ? "text-amber-600" : "text-muted-foreground"
+                    )}>{title || "Insight"}</h4>
                 </div>
             </div>
 
             {topic && (
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted/50 border border-border/40 w-fit">
                     <div className={cn("w-1.5 h-1.5 rounded-full", isWarning ? "bg-amber-500" : "bg-primary")} />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/80">{topic}</span>
+                    <span className="text-xs font-medium text-muted-foreground">{topic}</span>
                 </div>
             )}
 
@@ -64,8 +64,8 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
                         if (!k) return null;
                         return (
                             <div key={i} className="group/stat transition-transform duration-300 hover:translate-x-1">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 mb-1">{k}</p>
-                                <p className="text-sm font-bold text-foreground tracking-tight">{v}</p>
+                                <p className="text-xs font-medium text-muted-foreground mb-1">{k}</p>
+                                <p className="text-sm font-semibold text-foreground">{v}</p>
                             </div>
                         );
                     })}

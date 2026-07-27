@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react";
-import { Check, X, Calendar, Clock, AlertCircle, FileText, User, ArrowRight, MessageSquare, XCircle, CheckCircle, CheckCircle2, RotateCcw } from "lucide-react";
+import { Check, X, Calendar, Clock, FileText, User, ArrowRight, MessageSquare, XCircle, CheckCircle2, RotateCcw } from "lucide-react";
 import { LeaveRequest } from "@/lib/graphql/leaves/types";
 import { DataTable, Column } from "../common/DataTable";
 import { useGraphQLLeaveRequests, useGraphQLLeaveRequestProcess } from "@/lib/graphql/leaves/leavesHook";
@@ -28,20 +28,27 @@ export default function LeaveRequests() {
     }, { silent: true });
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center py-32 space-y-6">
-            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest animate-pulse">Syncing Applications...</p>
+        <div className="space-y-3" aria-busy="true" aria-label="Loading">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="rounded-xl border border-border bg-card p-5">
+                        <div className="mb-3 h-4 w-24 animate-pulse rounded-md bg-muted" />
+                        <div className="h-8 w-16 animate-pulse rounded-md bg-muted" />
+                    </div>
+                ))}
+            </div>
+            <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
+                ))}
+            </div>
         </div>
     );
 
 
     if (error) return (
-        <div className="p-12 text-center bg-destructive/10 rounded-4xl border border-destructive/20 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
-            <div className="w-16 h-16 bg-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-destructive" />
-            </div>
-            <h3 className="text-xl font-black text-foreground tracking-tight mb-2">Protocol Breach</h3>
-            <p className="text-muted-foreground font-medium text-sm leading-relaxed">{error.message}</p>
+        <div className="mx-auto max-w-md rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-10 text-center">
+            <p className="text-sm text-destructive">{error.message}</p>
         </div>
     );
 
@@ -82,13 +89,13 @@ export default function LeaveRequests() {
             key: "employeeName",
             label: "Employee",
             render: (name: string, request: any) => (
-                <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-medium text-xs">
                         {name.charAt(0)}
                     </div>
                     <div>
-                        <div className="font-black text-foreground tracking-tight">{name}</div>
-                        <div className="text-[9px] text-muted-foreground font-black tracking-widest mt-0.5 opacity-60">{moment(request.createdAt).fromNow()}</div>
+                        <div className="font-medium text-foreground text-sm">{name}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{moment(request.createdAt).fromNow()}</div>
                     </div>
                 </div>
             )
@@ -99,7 +106,7 @@ export default function LeaveRequests() {
             key: "leaveTypeName",
             label: "Leave Type",
             render: (val: any) => (
-                <span className="px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full bg-primary/10 text-primary border border-primary/20">
+                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
                     {val}
                 </span>
             ),
@@ -109,12 +116,12 @@ export default function LeaveRequests() {
             key: "fromDate",
             label: "Duration",
             render: (_: any, request: any) => (
-                <div className="flex items-center gap-4 text-foreground">
-                    <div className="flex flex-col items-center gap-1.5 text-muted-foreground border-border font-black text-sm bg-muted px-3 py-1.5 rounded-xl border shadow-sm shadow-muted/5">
-                        <div className="text-[11px] font-black tracking-tight flex items-center gap-2">
-                            {moment(request.fromDate).format("DD MMM")} <ArrowRight className="w-3 h-3 text-muted-foreground/40" /> {moment(request.toDate).format("DD MMM")}
+                <div className="flex items-center gap-2 text-sm text-foreground">
+                    <div className="flex flex-col bg-muted/50 px-3 py-1.5 rounded-xl border border-border">
+                        <div className="font-medium flex items-center gap-2">
+                            {moment(request.fromDate).format("DD MMM")} <ArrowRight className="w-3 h-3 text-muted-foreground" /> {moment(request.toDate).format("DD MMM")}
                         </div>
-                        <div className="text-[9px] text-muted-foreground font-black uppercase tracking-widest mt-0.5 opacity-60">{request.durationDays} Full Cycle(s)</div>
+                        <div className="text-xs text-muted-foreground">{request.durationDays} days</div>
                     </div>
                 </div>
             ),
@@ -138,13 +145,13 @@ export default function LeaveRequests() {
             label: "Status",
             render: (status: string) => (
                 <span
-                    className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${status === "approved"
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5"
+                    className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize ${status === "approved"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                         : status === "rejected"
-                            ? "bg-destructive/10 text-destructive border border-destructive/20 shadow-destructive/5"
+                            ? "bg-destructive/10 text-destructive"
                             : status === "pending"
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-amber-500/5"
-                                : "bg-muted text-muted-foreground border border-border"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                : "bg-muted text-muted-foreground"
                         }`}
                 >
                     {status}
@@ -162,16 +169,13 @@ export default function LeaveRequests() {
                             e.stopPropagation();
                             setSelectedRequest(request);
                         }}
-                        className="btn-primary"
+                        className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                     >
-                        Review Logic
+                        Review
                     </button>
 
                 ) : (
-                    <div className="flex items-center gap-2 px-2 py-2 border border-border bg-muted/30 rounded-xl">
-                        <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                        <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Processed</span>
-                    </div>
+                    <span className="text-xs text-muted-foreground">Processed</span>
                 ),
         },
 
@@ -189,14 +193,14 @@ export default function LeaveRequests() {
     }));
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="space-y-6">
             {/* Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Pending Review', count: pendingCount, icon: Clock, color: 'text-amber-500', gradient: 'bg-amber-500/10', index: '01' },
-                    { label: 'Authorized', count: approvedCount, icon: Check, color: 'text-emerald-500', gradient: 'bg-emerald-500/10', index: '02' },
-                    { label: 'Deprioritized', count: rejectedCount, icon: X, color: 'text-destructive', gradient: 'bg-destructive/10', index: '03' },
-                    { label: 'Global Total', count: leaveRequestData.length, icon: FileText, color: 'text-primary', gradient: 'bg-primary/10', index: '04' },
+                    { label: 'Pending', count: pendingCount, icon: Clock, color: 'text-amber-500', gradient: 'bg-amber-500/10' },
+                    { label: 'Approved', count: approvedCount, icon: Check, color: 'text-emerald-500', gradient: 'bg-emerald-500/10' },
+                    { label: 'Rejected', count: rejectedCount, icon: X, color: 'text-destructive', gradient: 'bg-destructive/10' },
+                    { label: 'Total', count: leaveRequestData.length, icon: FileText, color: 'text-primary', gradient: 'bg-primary/10' },
                 ].map((stat, i) => (
                     <Stat
                         key={i}
@@ -205,23 +209,17 @@ export default function LeaveRequests() {
                         value={stat.count}
                         color={stat.color}
                         gradient={stat.gradient}
-                        index={stat.index}
                     />
                 ))}
             </div>
 
-
-
-
-
-
             {/* Header / Table */}
-            <div className="flex flex-col lg:flex-row justify-end items-center gap-10">
-                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     <button
                         onClick={() => refetch()}
-                        className="p-3 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        title="Refresh"
                     >
                         <RotateCcw className="w-4 h-4" />
                     </button>
@@ -230,18 +228,17 @@ export default function LeaveRequests() {
                         value={searchTerm}
                         onChange={setSearchTerm}
                         containerClassName="flex-1 lg:w-64 min-w-[200px]"
-                        className="h-11"
+                        className="h-9"
                     />
-                    <div className="px-8 py-3 bg-primary text-primary-foreground rounded-xl text-premium-label flex items-center gap-3 shadow-xl shadow-primary/20 whitespace-nowrap">
-                        {pendingCount} Pending Requests
-                    </div>
+                    {pendingCount > 0 && (
+                        <div className="rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground whitespace-nowrap">
+                            {pendingCount} pending
+                        </div>
+                    )}
                 </div>
             </div>
 
-
-
-
-            <div className="bg-card rounded-4xl border border-border shadow-xl overflow-hidden p-2">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <DataTable
                     data={flattenedData}
                     columns={columns}
@@ -252,134 +249,110 @@ export default function LeaveRequests() {
 
             {/* Review Modal */}
             {selectedRequest && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-                    <div className="bg-card rounded-[3rem] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-                        {/* Header */}
-                        <div className="relative p-10 pb-8 bg-linear-to-br from-primary/20 via-primary/5 to-background text-black">
-                            <div className="absolute top-0 right-0 p-10 opacity-10">
-                                <FileText className="w-32 h-32 rotate-12" />
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-card rounded-xl w-full max-w-2xl border border-border overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                            <div>
+                                <h2 className="text-base font-semibold text-foreground">Review leave request</h2>
+                                <p className="text-xs text-muted-foreground mt-0.5">#{selectedRequest.id.slice(-8)}</p>
                             </div>
-                            <div className="relative z-10 flex justify-between items-start">
-                                <div>
-                                    <h2 className="text-4xl text-black font-black tracking-tight leading-none mb-3">
-                                        Leave Request Review
-                                    </h2>
-                                    <div className="flex items-center gap-3 text-black/60 ">
-                                        <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-sm border border-white/10">
-                                            #{selectedRequest.id.slice(-8)}
-                                        </span>
-                                        <p className="text-black/60 text-[10px] font-black uppercase tracking-widest">Review Leave Request</p>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        setSelectedRequest(null);
-                                        setComments("");
-                                    }}
-                                    className="w-12 h-12 rounded-2xl bg-white/10 hover:bg-white/20 text-black hover:text-red-500 transition-all duration-300 flex items-center justify-center active:scale-90"
-                                >
-                                    <X className="w-6 h-6" />
-                                </button>
-                            </div>
-                        </div>
-
-
-                        {/* Content */}
-                        <div className="p-10 space-y-10 overflow-y-auto max-h-[60vh] custom-scrollbar">
-                            {/* Detailed Info Grid */}
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <User className="w-3 h-3 text-primary" /> Employee
-                                    </label>
-                                    <p className="text-lg font-black text-foreground tracking-tight leading-tight">
-                                        {selectedRequest.user.firstName} {selectedRequest.user.lastName}
-                                    </p>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <FileText className="w-3 h-3 text-primary" /> Leave Type
-                                    </label>
-                                    <p className="text-lg font-black text-black/60 tracking-tight leading-tight">
-                                        {selectedRequest.leaveType.name}
-                                    </p>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Clock className="w-3 h-3 text-primary" /> Duration
-                                    </label>
-                                    <p className="text-lg font-black text-foreground tracking-tight leading-tight tabular-nums">
-                                        {selectedRequest.durationDays} Day(s)
-                                    </p>
-                                </div>
-                                <div className="space-y-2 col-span-full bg-muted/30 p-4 rounded-2xl border border-border/50">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2 mb-3">
-                                        <Calendar className="w-3 h-3 text-primary" /> Date Range
-                                    </label>
-                                    <p className="text-sm font-black text-foreground tracking-widest uppercase flex items-center gap-3">
-                                        {moment(selectedRequest.fromDate).format("MMMM DD")}
-                                        <ArrowRight className="w-4 h-4 text-primary animate-pulse" />
-                                        {moment(selectedRequest.toDate).format("MMMM DD, YYYY")}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Reason Card */}
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <FileText className="w-3 h-3 text-primary" /> Reason
-                                </label>
-                                <div className="bg-card p-3 relative overflow-hidden group">
-                                    <p className="text-foreground/80 leading-relaxed text-sm font-medium italic border-l-3 border-primary pl-4 py-2">
-                                        "{selectedRequest.reason}"
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Admin Action Section */}
-                            <div className="space-y-4">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
-                                    <Check className="w-3 h-3 text-primary" /> Feedback
-                                </label>
-                                <Textarea
-                                    value={comments}
-                                    onChange={(e) => setComments(e.target.value)}
-                                    rows={4}
-                                    className="bg-muted/30 rounded-3xl border-border/50 focus:ring-4 focus:ring-primary/10 focus:bg-background transition-all resize-none p-6 font-medium text-sm"
-                                    placeholder="Enter feedback for the leave request..."
-                                />
-                            </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="p-10 border-t border-border bg-muted/10 flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4">
                             <button
                                 onClick={() => {
                                     setSelectedRequest(null);
                                     setComments("");
                                 }}
-                                className="px-10 py-5 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-muted rounded-2xl active:scale-95"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                             >
-                                Close
+                                <X className="w-4 h-4" />
                             </button>
-                            <div className="flex gap-4 flex-1 sm:flex-initial">
-                                <button
-                                    onClick={() => handleReject(selectedRequest.id)}
-                                    className="flex-1 sm:flex-none px-10 py-5 bg-destructive/10 text-destructive border border-destructive/20 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:bg-destructive hover:text-white transition-all active:scale-95 flex items-center justify-center gap-3 shadow-xl shadow-destructive/5"
-                                >
-                                    <XCircle className="w-5 h-5" />
-                                    Reject
-                                </button>
-                                <button
-                                    onClick={() => handleApprove(selectedRequest.id)}
-                                    className="flex-1 sm:flex-none px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-primary/20"
-                                >
-                                    <CheckCircle2 className="w-5 h-5" />
-                                    Authorize
-                                </button>
+                        </div>
+
+                        <div className="p-6 space-y-6 overflow-y-auto max-h-[60vh] custom-scrollbar">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="space-y-1">
+                                    <label className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+                                        <User className="w-3.5 h-3.5" /> Employee
+                                    </label>
+                                    <p className="text-sm font-medium text-foreground">
+                                        {selectedRequest.user.firstName} {selectedRequest.user.lastName}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+                                        <FileText className="w-3.5 h-3.5" /> Leave type
+                                    </label>
+                                    <p className="text-sm font-medium text-foreground">
+                                        {selectedRequest.leaveType.name}
+                                    </p>
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+                                        <Clock className="w-3.5 h-3.5" /> Duration
+                                    </label>
+                                    <p className="text-sm font-medium text-foreground tabular-nums">
+                                        {selectedRequest.durationDays} days
+                                    </p>
+                                </div>
+                                <div className="space-y-1 col-span-full bg-muted/30 p-4 rounded-xl border border-border">
+                                    <label className="text-sm text-muted-foreground font-medium flex items-center gap-1.5 mb-2">
+                                        <Calendar className="w-3.5 h-3.5" /> Date range
+                                    </label>
+                                    <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                        {moment(selectedRequest.fromDate).format("MMMM DD")}
+                                        <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                        {moment(selectedRequest.toDate).format("MMMM DD, YYYY")}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+                                    <FileText className="w-3.5 h-3.5" /> Reason
+                                </label>
+                                <p className="text-sm text-foreground/80 leading-relaxed border-l-2 border-primary pl-3 py-1">
+                                    {selectedRequest.reason || "No reason provided"}
+                                </p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm text-muted-foreground font-medium flex items-center gap-1.5">
+                                    <MessageSquare className="w-3.5 h-3.5" /> Feedback
+                                </label>
+                                <Textarea
+                                    value={comments}
+                                    onChange={(e) => setComments(e.target.value)}
+                                    rows={4}
+                                    className="rounded-xl border-border focus:ring-2 focus:ring-primary/10 transition-all resize-none text-sm"
+                                    placeholder="Add feedback for this request…"
+                                />
                             </div>
                         </div>
 
+                        <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2 border-t border-border px-6 py-4">
+                            <button
+                                onClick={() => {
+                                    setSelectedRequest(null);
+                                    setComments("");
+                                }}
+                                className="btn-ghost"
+                            >
+                                Close
+                            </button>
+                            <button
+                                onClick={() => handleReject(selectedRequest.id)}
+                                className="btn-destructive"
+                            >
+                                <XCircle className="w-4 h-4 mr-1.5" />
+                                Reject
+                            </button>
+                            <button
+                                onClick={() => handleApprove(selectedRequest.id)}
+                                className="btn-primary"
+                            >
+                                <CheckCircle2 className="w-4 h-4 mr-1.5" />
+                                Approve
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

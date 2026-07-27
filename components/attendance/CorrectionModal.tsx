@@ -6,13 +6,11 @@ import {
     Clock,
     Calendar,
     MessageSquare,
-    AlertCircle,
-    CheckCircle2,
     ArrowRight,
     Send,
-    ShieldAlert
 } from "lucide-react";
 import moment from "moment";
+import { Button } from "../ui/button";
 
 export type AttendanceRow = {
     id: string;
@@ -82,134 +80,124 @@ export function CorrectionModal({ record, onClose, onSubmit }: Props) {
     };
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-            <div className="bg-card rounded-[2.5rem] w-full max-w-xl shadow-3xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4">
+            <div className="w-full max-w-xl overflow-hidden rounded-xl border border-border bg-card shadow-lg">
                 {/* Header */}
-                <div className="p-8 border-b border-border flex justify-between items-center bg-muted/20 backdrop-blur-sm">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                            <Clock className="w-7 h-7 text-primary-foreground" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-foreground tracking-tight leading-none mb-2">Correction Request</h2>
-                            <p className="text-muted-foreground text-sm font-bold flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-primary" />
-                                {moment(record.attendanceDate).format("dddd, MMMM DD, YYYY")}
-                            </p>
-                        </div>
+                <div className="flex items-start justify-between gap-4 border-b border-border px-6 py-4">
+                    <div>
+                        <h2 className="text-base font-semibold text-foreground">Request correction</h2>
+                        <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            {moment(record.attendanceDate).format("dddd, MMMM DD, YYYY")}
+                        </p>
                     </div>
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="p-3 rounded-2xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all active:scale-90"
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label="Close"
                     >
-                        <X className="w-6 h-6" />
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-
                 {/* Body */}
-                <div className="p-8 space-y-8">
+                <div className="space-y-6 px-6 py-5">
                     {/* Comparison Banner */}
-                    <div className="bg-muted p-4 rounded-2xl border border-border flex items-center justify-between text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                         <span>Original: {record.loginTime || "--:--"}</span>
-                        <ArrowRight className="w-4 h-4 text-muted-foreground/30" />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
                         <span>{record.logoutTime || "--:--"}</span>
                     </div>
 
-
                     {/* Inputs */}
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Proposed Login</label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none">
-                                    <Clock className="w-5 h-5" />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-foreground">Corrected check in</label>
+                            <div className="relative">
+                                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
                                 </div>
                                 <input
                                     type="time"
                                     step="1"
                                     value={form.correctedLoginTime}
                                     onChange={(e) => update("correctedLoginTime", e.target.value)}
-                                    className={`w-full bg-background border border-border rounded-2xl py-4 pl-12 pr-6 text-foreground font-bold focus:ring-2 transition-all ${errors.correctedLoginTime ? "focus:ring-destructive/20 border-destructive/50" : "focus:ring-primary/20 focus:border-primary"
-                                        }`}
+                                    className={`h-9 w-full rounded-md border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 ${
+                                        errors.correctedLoginTime
+                                            ? "border-destructive/50 focus:ring-destructive/20"
+                                            : "border-border focus:ring-primary/20 focus:border-primary"
+                                    }`}
                                 />
                             </div>
                             {errors.correctedLoginTime && (
-                                <p className="text-[10px] text-destructive font-bold uppercase tracking-wider ml-2">{errors.correctedLoginTime}</p>
+                                <p className="text-xs text-destructive">{errors.correctedLoginTime}</p>
                             )}
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Proposed Logout</label>
-                            <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none">
-                                    <Clock className="w-5 h-5" />
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-foreground">Corrected check out</label>
+                            <div className="relative">
+                                <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
                                 </div>
                                 <input
                                     type="time"
                                     step="1"
                                     value={form.correctedLogoutTime}
                                     onChange={(e) => update("correctedLogoutTime", e.target.value)}
-                                    className={`w-full bg-background border border-border rounded-2xl py-4 pl-12 pr-6 text-foreground font-bold focus:ring-2 transition-all ${errors.correctedLogoutTime ? "focus:ring-destructive/20 border-destructive/50" : "focus:ring-primary/20 focus:border-primary"
-                                        }`}
+                                    className={`h-9 w-full rounded-md border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 ${
+                                        errors.correctedLogoutTime
+                                            ? "border-destructive/50 focus:ring-destructive/20"
+                                            : "border-border focus:ring-primary/20 focus:border-primary"
+                                    }`}
                                 />
                             </div>
                             {errors.correctedLogoutTime && (
-                                <p className="text-[10px] text-destructive font-bold uppercase tracking-wider ml-2">{errors.correctedLogoutTime}</p>
+                                <p className="text-xs text-destructive">{errors.correctedLogoutTime}</p>
                             )}
                         </div>
                     </div>
 
-
                     {/* Reason */}
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                            Justification
-                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
-                        </label>
-                        <div className="relative group">
-                            <div className="absolute left-4 top-5 text-muted-foreground group-focus-within:text-primary transition-colors pointer-events-none">
-                                <MessageSquare className="w-5 h-5" />
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-foreground">Reason</label>
+                        <div className="relative">
+                            <div className="pointer-events-none absolute left-3 top-3 text-muted-foreground">
+                                <MessageSquare className="h-4 w-4" />
                             </div>
                             <textarea
                                 rows={3}
                                 value={form.reason}
                                 onChange={(e) => update("reason", e.target.value)}
-                                className={`w-full bg-background border border-border rounded-3xl py-4 pl-12 pr-6 text-sm font-medium text-foreground focus:ring-2 transition-all outline-none placeholder:text-muted-foreground resize-none ${errors.reason ? "focus:ring-destructive/20 border-destructive/50" : "focus:ring-primary/20 focus:border-primary"
-                                    }`}
-                                placeholder="State clearly why this correction is required..."
+                                className={`w-full resize-none rounded-md border bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 ${
+                                    errors.reason
+                                        ? "border-destructive/50 focus:ring-destructive/20"
+                                        : "border-border focus:ring-primary/20 focus:border-primary"
+                                }`}
+                                placeholder="Explain why this correction is needed…"
                             />
                         </div>
                         {errors.reason && (
-                            <p className="text-[10px] text-destructive font-bold uppercase tracking-wider ml-2">{errors.reason}</p>
+                            <p className="text-xs text-destructive">{errors.reason}</p>
                         )}
                     </div>
-
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-8 border-t border-border flex flex-col sm:flex-row justify-end gap-3 bg-muted/20 backdrop-blur-sm">
-                    <button
-                        onClick={onClose}
-                        className="px-8 py-4 text-muted-foreground hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
-                        disabled={loading}
-                    >
-                        Dismiss
-                    </button>
-                    <button
-                        onClick={submit}
-                        disabled={loading}
-                        className="px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all active:scale-95 shadow-xl shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-50"
-                    >
+                <div className="flex flex-col justify-end gap-2 border-t border-border bg-muted/30 px-6 py-3 sm:flex-row">
+                    <Button variant="outline" onClick={onClose} disabled={loading}>
+                        Cancel
+                    </Button>
+                    <Button onClick={submit} disabled={loading}>
                         {loading ? (
-                            <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
                         ) : (
-                            <Send className="w-5 h-5" />
+                            <Send className="h-4 w-4" />
                         )}
-                        {loading ? "Processing..." : "Submit Correction"}
-                    </button>
+                        {loading ? "Submitting…" : "Submit correction"}
+                    </Button>
                 </div>
-
             </div>
         </div>
     );

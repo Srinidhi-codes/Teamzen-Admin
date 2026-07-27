@@ -56,9 +56,11 @@ export function DataTable<T>({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Synchronizing Ledger...</p>
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4" aria-busy="true">
+        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-12 w-full animate-pulse rounded-md bg-muted" />
+        ))}
       </div>
     );
   }
@@ -132,7 +134,7 @@ export function DataTable<T>({
                   <th
                     key={column.key}
                     onClick={() => column.sortable && handleSort(column.key)}
-                    className={`px-6 py-4 text-left text-[11px] font-black text-muted-foreground uppercase tracking-widest ${column.sortable ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""
+                    className={`px-6 py-4 text-left text-xs font-medium text-muted-foreground ${column.sortable ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""
                       }`}
                   >
                     <div className="flex items-center space-x-2">
@@ -189,7 +191,7 @@ export function DataTable<T>({
               <button
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-border text-xs font-black uppercase tracking-widest rounded-xl text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
+                className="relative inline-flex items-center h-8 px-4 rounded-md border border-border text-xs font-medium text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
               >
                 Previous
               </button>
@@ -198,29 +200,23 @@ export function DataTable<T>({
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-xs font-black uppercase tracking-widest rounded-xl text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
+                className="ml-3 relative inline-flex items-center h-8 px-4 rounded-md border border-border text-xs font-medium text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
               >
                 Next
               </button>
             </div>
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Showing <span className="text-foreground">{startIndex + 1}</span>{" "}
-                  –{" "}
-                  <span className="text-foreground">
-                    {Math.min(startIndex + itemsPerPage, totalCount)}
-                  </span>{" "}
-                  of <span className="text-foreground">{totalCount}</span>{" "}
-                  data points
+                <p className="text-xs font-medium text-muted-foreground">
+                  Showing {startIndex + 1}–{Math.min(startIndex + itemsPerPage, totalCount)} of {totalCount} items
                 </p>
               </div>
               <div>
-                <nav className="relative z-0 inline-flex rounded-2xl shadow-sm -space-x-px border border-border overflow-hidden">
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px border border-border overflow-hidden">
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-3 py-2 bg-card text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+                    className="relative inline-flex items-center h-8 px-3 rounded-md border border-border bg-card text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -240,9 +236,9 @@ export function DataTable<T>({
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 text-xs font-black transition-all ${currentPage === pageNum
-                          ? "z-10 bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:bg-muted"
+                        className={`relative inline-flex items-center h-8 px-4 rounded-md border text-xs font-medium transition-all ${currentPage === pageNum
+                          ? "z-10 bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-muted-foreground border-border hover:bg-muted"
                           }`}
                       >
                         {pageNum}
@@ -254,7 +250,7 @@ export function DataTable<T>({
                       setCurrentPage((p) => Math.min(totalPages, p + 1))
                     }
                     disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-3 py-2 bg-card text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+                    className="relative inline-flex items-center h-8 px-3 rounded-md border border-border bg-card text-xs font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
