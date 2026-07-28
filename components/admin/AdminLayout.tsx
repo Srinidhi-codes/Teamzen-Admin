@@ -2,6 +2,7 @@
 
 import { AdminSidebar } from "./AdminSidebar";
 import { Navbar } from "../common/Navbar";
+import { PlanExpiryBanner } from "../common/PlanExpiryBanner";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
@@ -42,6 +43,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           isCollapsed ? "md:ml-16" : "md:ml-60"
         )}
       >
+        <PlanExpiryBanner />
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>

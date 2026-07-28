@@ -1,7 +1,6 @@
 
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InsightCardProps {
@@ -32,7 +31,6 @@ export const InsightCard = ({ title, message, type, stats, topic }: InsightCardP
                     "w-10 h-10 rounded-2xl flex items-center justify-center border",
                     isWarning ? "bg-amber-500/10 border-amber-500/20 text-amber-600" : "bg-primary/10 border-primary/20 text-primary"
                 )}>
-                    <Sparkles className="w-5 h-5 animate-pulse" />
                 </div>
                 <div className="space-y-0.5">
                     <h4 className={cn(

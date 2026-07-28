@@ -61,6 +61,8 @@ import Link from "next/link";
 import { useStore } from "@/lib/store/useStore";
 import moment from "moment";
 import { cn } from "@/lib/utils";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
+import { PlanGate } from "@/components/common/PlanGate";
 
 function statusChipClass(status: string) {
   switch (status) {
@@ -79,6 +81,9 @@ function statusChipClass(status: string) {
 
 export default function PayrollPage() {
   const { user } = useStore();
+  const { can, requiredPlan } = useOrgPlan();
+  const canAdvances = can("salary_advances");
+  const canAutoRun = can("payroll_auto_run");
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("runs");
 
@@ -109,7 +114,7 @@ export default function PayrollPage() {
     loading: advancesLoading,
     refetch: refetchAdvances,
   } = useQuery(GET_SALARY_ADVANCES, {
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin") || !canAdvances,
   }) as any;
   const {
     data: settingsData,
@@ -170,7 +175,13 @@ export default function PayrollPage() {
   const checklist = checklistData?.payrollSetupChecklist;
   const payrollTabs = [
     { id: "runs", label: "Runs", icon: Play, domId: "payroll-tab-runs" },
-    { id: "advances", label: "Advances", icon: Wallet, domId: "payroll-tab-advances" },
+    {
+      id: "advances",
+      label: "Advances",
+      icon: Wallet,
+      domId: "payroll-tab-advances",
+      locked: !canAdvances,
+    },
     { id: "components", label: "Components", icon: Settings, domId: "payroll-tab-components" },
     { id: "structures", label: "Structures", icon: Users, domId: "payroll-tab-structures" },
     { id: "settings", label: "Settings", icon: Banknote, domId: undefined as string | undefined },
@@ -408,6 +419,7 @@ export default function PayrollPage() {
         {payrollTabs.map((tab) => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
+          const locked = Boolean((tab as { locked?: boolean }).locked);
           return (
             <button
               key={tab.id}
@@ -425,6 +437,11 @@ export default function PayrollPage() {
             >
               <Icon className="h-4 w-4" />
               {tab.label}
+              {locked ? (
+                <span className="rounded bg-muted px-1 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                  Pro
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -532,6 +549,13 @@ export default function PayrollPage() {
         </TabsContent>
 
         <TabsContent value="advances" className="mt-0">
+          <PlanGate
+            allowed={canAdvances}
+            requiredPlan={requiredPlan("salary_advances")}
+            title="Salary advances are a Pro feature"
+            description="Grant advances and auto-recover installments on payroll. Upgrade to Pro or Elite to unlock."
+            hideWhenLocked
+          >
           <div className="mb-4 flex justify-end">
             <GrantAdvanceDialog
               users={usersData?.allUsers?.results || []}
@@ -625,6 +649,7 @@ export default function PayrollPage() {
               ]}
             />
           </Card>
+          </PlanGate>
         </TabsContent>
 
         <TabsContent value="components" className="mt-0">
@@ -811,6 +836,13 @@ export default function PayrollPage() {
         </TabsContent>
 
         <TabsContent value="settings" className="mt-0">
+          <PlanGate
+            allowed={canAutoRun}
+            requiredPlan={requiredPlan("payroll_auto_run")}
+            title="Payroll auto-run needs Pro"
+            description="Schedule monthly draft calculation automatically. Free plans process runs manually."
+            hideWhenLocked
+          >
           <Card id="payroll-settings-auto" className="max-w-lg">
             <h3 className="mb-1 text-sm font-semibold text-foreground">Auto-run settings</h3>
             <p className="mb-4 text-xs text-muted-foreground">
@@ -861,6 +893,7 @@ export default function PayrollPage() {
               </div>
             )}
           </Card>
+          </PlanGate>
         </TabsContent>
       </Tabs>
 

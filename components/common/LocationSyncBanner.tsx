@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import { UPDATE_LOGIN_LOCATION } from "@/lib/graphql/users/mutations";
 import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
 import { SecurityLogResponse } from "@/lib/graphql/users/types";
-import { Globe, ShieldAlert, Sparkles, Loader2, X } from "lucide-react";
+import { Globe, ShieldAlert, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function LocationSyncBanner() {

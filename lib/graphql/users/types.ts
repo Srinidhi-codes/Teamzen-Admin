@@ -26,6 +26,8 @@ export interface User {
     id: string;
     name: string;
     plan?: "free" | "pro" | "elite" | string;
+    planExpiresAt?: string | null;
+    daysUntilPlanExpiry?: number | null;
     logo?: {
       url: string;
     } | null;

@@ -21,12 +21,15 @@ import {
 import Image from "next/image";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import { hasPlanFeature } from "@/lib/plans";
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   roles?: string[];
+  /** Plan feature required to see this nav item */
+  feature?: "advanced_analytics" | "policies";
 }
 
 const navItems: NavItem[] = [
@@ -36,9 +39,25 @@ const navItems: NavItem[] = [
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Payroll", href: "/payroll", icon: DollarSign, roles: ["admin", "superadmin"] },
-  { name: "Performance", href: "/performance", icon: TrendingUp },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Policies", href: "/policies", icon: FileText, roles: ["admin", "superadmin"] },
+  {
+    name: "Performance",
+    href: "/performance",
+    icon: TrendingUp,
+    feature: "advanced_analytics",
+  },
+  {
+    name: "Reports",
+    href: "/reports",
+    icon: BarChart3,
+    feature: "advanced_analytics",
+  },
+  {
+    name: "Policies",
+    href: "/policies",
+    icon: FileText,
+    roles: ["admin", "superadmin"],
+    feature: "policies",
+  },
   { name: "Security", href: "/settings/security", icon: ShieldCheck, roles: ["admin", "superadmin"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["admin", "superadmin"] },
 ];
@@ -60,9 +79,15 @@ export function AdminSidebar({
   const { user } = useStore();
 
   const filteredNavItems = navItems.filter((item) => {
-    if (!item.roles) return true;
     if (!user) return false;
-    return item.roles.includes(user.role);
+    if (item.roles && !item.roles.includes(user.role)) return false;
+    if (
+      item.feature &&
+      !hasPlanFeature(user.organization?.plan, user.organization?.planExpiresAt, item.feature)
+    ) {
+      return false;
+    }
+    return true;
   });
 
   return (

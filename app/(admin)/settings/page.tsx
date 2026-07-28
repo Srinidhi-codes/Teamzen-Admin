@@ -18,6 +18,11 @@ import { toast } from "sonner";
 import { useGraphQLUpdateOrganizationMutation } from "@/lib/graphql/organization/organizationsHook";
 import { useStore } from "@/lib/store/useStore";
 import { PageHeader } from "@/components/common/PageHeader";
+import { PlanBillingSection } from "@/components/settings/PlanBillingSection";
+import { PlanGate } from "@/components/common/PlanGate";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 const MODELS = [
   {
@@ -71,8 +76,27 @@ const MODELS = [
   },
 ];
 
-export default function AISettingsPage() {
+export default function SettingsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading settings…</p>
+        </div>
+      }
+    >
+      <SettingsPageContent />
+    </Suspense>
+  );
+}
+
+function SettingsPageContent() {
   const { user } = useStore();
+  const { can, requiredPlan } = useOrgPlan();
+  const searchParams = useSearchParams();
+  const section = searchParams.get("section");
+  const highlightPlan = section === "plan";
   const { config, isLoading, isUpdating, updateAIConfig } = useAIConfig();
   const [formData, setFormData] = useState({
     model_name: "gpt-4o-mini",
@@ -91,6 +115,17 @@ export default function AISettingsPage() {
       });
     }
   }, [config]);
+
+  useEffect(() => {
+    if (section !== "plan") return;
+    const t = window.setTimeout(() => {
+      document.getElementById("plan-billing")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 150);
+    return () => window.clearTimeout(t);
+  }, [section]);
 
   const handleSave = async () => {
     try {
@@ -111,10 +146,11 @@ export default function AISettingsPage() {
   }
 
   return (
-    <div className="page-shell mx-auto max-w-5xl">
+    <div className="page-shell mx-auto max-w-5xl space-y-4">
       <PageHeader
-        title="AI settings"
-        description="Configure the workplace assistant model and behavior."
+        eyebrow="Workspace"
+        title="Settings"
+        description="Manage your plan, AI assistant, and organization credentials."
         actions={
           <button
             onClick={handleSave}
@@ -123,13 +159,12 @@ export default function AISettingsPage() {
           >
             {isUpdating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            Save changes
+              ) : ("Save AI changes")}
           </button>
         }
       />
+
+      <PlanBillingSection highlight={highlightPlan} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -188,7 +223,15 @@ export default function AISettingsPage() {
             </div>
           </section>
 
-          <OrganizationAISettings user={user} />
+          <PlanGate
+            allowed={can("org_llm_key")}
+            requiredPlan={requiredPlan("org_llm_key")}
+            title="Organization API keys need Elite"
+            description="Bring your own OpenAI, Gemini, or Anthropic key. Available on Elite."
+            hideWhenLocked
+          >
+            <OrganizationAISettings user={user} />
+          </PlanGate>
 
           <section className="rounded-xl border border-border bg-card p-5">
             <div className="mb-4 flex items-center gap-2">

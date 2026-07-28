@@ -47,6 +47,8 @@ export const GET_ME = gql`
         id
         name
         plan
+        planExpiresAt
+        daysUntilPlanExpiry
         logo {
           url
         }

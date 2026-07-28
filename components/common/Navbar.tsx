@@ -29,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
+import { canUpgradePlan, nextPlan, planBadgeClass, planLabel } from "@/lib/plans";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -46,20 +47,6 @@ function roleLabel(role?: string) {
   if (role === "superadmin") return "Super admin";
   if (role === "admin") return "Admin";
   return role.charAt(0).toUpperCase() + role.slice(1);
-}
-
-function planLabel(plan?: string) {
-  const p = (plan || "free").toLowerCase();
-  if (p === "pro") return "Pro";
-  if (p === "elite") return "Elite";
-  return "Free";
-}
-
-function planBadgeClass(plan?: string) {
-  const p = (plan || "free").toLowerCase();
-  if (p === "elite") return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
-  if (p === "pro") return "bg-sky-500/15 text-sky-700 dark:text-sky-300";
-  return "bg-muted text-muted-foreground";
 }
 
 export function Navbar({ onMenuClick }: NavbarProps) {
@@ -173,6 +160,16 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1">
+          {user &&
+            (user.role === "admin" || user.role === "superadmin") &&
+            canUpgradePlan(user.organization?.plan) && (
+              <Link
+                href="/settings?section=plan"
+                className="mr-1 hidden items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15 sm:inline-flex"
+              >
+                Upgrade to {planLabel(nextPlan(user.organization?.plan) || "pro")}
+              </Link>
+            )}
           <NotificationBell />
           <ThemeSelector />
 
@@ -243,6 +240,15 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                     Employee portal
                   </a>
                 </DropdownMenuItem>
+                {(user.role === "admin" || user.role === "superadmin") && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings?section=plan" className="cursor-pointer">
+                      {canUpgradePlan(user.organization?.plan)
+                        ? `Upgrade to ${planLabel(nextPlan(user.organization?.plan) || "pro")}`
+                        : "Manage plan"}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {(user.role === "admin" || user.role === "superadmin") && (
                   <DropdownMenuItem asChild>
                     <Link href="/settings" className="cursor-pointer">

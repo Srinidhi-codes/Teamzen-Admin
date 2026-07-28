@@ -21,11 +21,15 @@ export const mapBackendUserToFrontendUser = (backendUser: any): User => {
       id: backendUser.organization.id,
       name: backendUser.organization.name || backendUser.organization_name,
       plan: backendUser.organization.plan,
+      planExpiresAt: backendUser.organization.planExpiresAt || backendUser.organization.plan_expires_at || null,
+      daysUntilPlanExpiry: backendUser.organization.daysUntilPlanExpiry ?? backendUser.organization.days_until_plan_expiry ?? null,
       logo: backendUser.organization.logo
     } : {
       id: backendUser.organization,
       name: backendUser.organization_name || "Unknown Organization",
       plan: undefined,
+      planExpiresAt: null,
+      daysUntilPlanExpiry: null,
       logo: null
     }) : null,
     hasSeenOnboarding: backendUser.has_seen_onboarding || backendUser.hasSeenOnboarding || false,

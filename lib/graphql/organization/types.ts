@@ -14,6 +14,9 @@ export interface Organization {
     updatedAt: string;
     llmApiKey?: string;
     accent?: string;
+    plan?: string;
+    planExpiresAt?: string | null;
+    daysUntilPlanExpiry?: number | null;
 }
 
 export interface OfficeLocation {

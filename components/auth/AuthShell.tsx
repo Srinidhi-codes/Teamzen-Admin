@@ -7,6 +7,38 @@ interface AuthShellProps {
   description?: string;
 }
 
+function BrandMark({ dark = false }: { dark?: boolean }) {
+  return (
+    <Link href="/login" className="inline-flex items-center gap-2.5">
+      <div
+        className={
+          dark
+            ? "flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white"
+            : "flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-card ring-1 ring-border"
+        }
+      >
+        <Image
+          src="/images/teamzen_zoomed.png"
+          alt="Teamzen"
+          width={36}
+          height={36}
+          className="h-8 w-8 object-contain"
+          priority
+        />
+      </div>
+      <span
+        className={
+          dark
+            ? "text-lg font-semibold tracking-tight text-white"
+            : "text-base font-semibold text-foreground"
+        }
+      >
+        Teamzen
+      </span>
+    </Link>
+  );
+}
+
 export function AuthShell({ children, title, description }: AuthShellProps) {
   return (
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-2">
@@ -28,18 +60,7 @@ export function AuthShell({ children, title, description }: AuthShellProps) {
         />
 
         <div className="relative z-10">
-          <Link href="/login" className="inline-flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-white">
-              <Image
-                src="/icons/teamzen_zoomed.svg"
-                alt="Teamzen"
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
-              />
-            </div>
-            <span className="text-lg font-semibold tracking-tight">Teamzen</span>
-          </Link>
+          <BrandMark dark />
         </div>
 
         <div className="relative z-10 max-w-md space-y-4">
@@ -59,18 +80,7 @@ export function AuthShell({ children, title, description }: AuthShellProps) {
       <div className="flex min-h-screen flex-col justify-center px-4 py-12 sm:px-6 lg:px-12">
         <div className="mx-auto w-full max-w-100">
           <div className="mb-8 lg:hidden">
-            <Link href="/login" className="inline-flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-card ring-1 ring-border">
-                <Image
-                  src="/icons/teamzen_zoomed.svg"
-                  alt="Teamzen"
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 object-contain"
-                />
-              </div>
-              <span className="text-base font-semibold text-foreground">Teamzen</span>
-            </Link>
+            <BrandMark />
           </div>
 
           <div className="mb-8 space-y-1.5">
