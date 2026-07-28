@@ -21,12 +21,14 @@ export const useAssistant = () => {
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
-            const response = await client.get<{ 
+            const response = await client.get<{
                 history: ChatMessage[],
-                config: { model_name: string } 
+                config: { model_name: string }
             }>(`${API_ENDPOINTS.SMART_CHAT}?context=admin`);
             return response.data;
         },
+        retry: 1,
+        refetchOnWindowFocus: false,
     });
 
     const [history, setHistory] = useState<ChatMessage[]>([]);
@@ -38,9 +40,11 @@ export const useAssistant = () => {
     }, [data]);
 
     const [isStreaming, setIsStreaming] = useState(false);
+    const [activeTool, setActiveTool] = useState<{ name: string; status: 'running' | 'completed' } | null>(null);
 
     const sendMessage = async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
         setIsStreaming(true);
+        setActiveTool(null);
 
         try {
             // 2. Prepare streaming message
@@ -87,6 +91,10 @@ export const useAssistant = () => {
                                     }
                                     return newHistory;
                                 });
+                            } else if (data.tool_start) {
+                                setActiveTool({ name: data.tool_start, status: 'running' });
+                            } else if (data.tool_end) {
+                                setActiveTool({ name: data.tool_end, status: 'completed' });
                             } else if (data.error) {
                                 // Handle backend errors gracefully
                                 const errorMsg = `[ERROR_CARD] title: Assistant Error | message: ${data.error} [/ERROR_CARD]`;
@@ -113,6 +121,7 @@ export const useAssistant = () => {
             console.error("Streaming error", error);
         } finally {
             setIsStreaming(false);
+            setActiveTool(null);
             queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         }
     };
@@ -134,6 +143,7 @@ export const useAssistant = () => {
         isLoading: isStreaming || isHistoryLoading,
         isHistoryLoading,
         isStreaming,
+        activeTool,
         clearHistory,
         config: data?.config
     };

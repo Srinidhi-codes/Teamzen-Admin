@@ -1,32 +1,34 @@
-"use client"
-import { useState } from "react";
-import { AdminSidebar } from "./AdminSidebar";
-import { Menu } from "lucide-react";
-import { useTokenRefresh } from "@/lib/api/hooks";
-import { Navbar } from "../common/Navbar";
-import AssistantWidget from "../ai";
-import { OnboardingTour } from "../common/OnboardingTour";
-import { useStore } from "@/lib/store/useStore";
-import { LocationSyncBanner } from "../common/LocationSyncBanner";
+"use client";
 
+import { AdminSidebar } from "./AdminSidebar";
+import { Navbar } from "../common/Navbar";
+import { useStore } from "@/lib/store/useStore";
+import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const AssistantWidget = dynamic(() => import("../ai"), {
+  ssr: false,
+  loading: () => null,
+});
+const OnboardingTour = dynamic(
+  () => import("../common/OnboardingTour").then((mod) => mod.OnboardingTour),
+  { ssr: false, loading: () => null }
+);
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { 
-    sidebarCollapsed: isCollapsed, 
-    setSidebarCollapsed: setIsCollapsed, 
-    sidebarMobileOpen: isMobileOpen, 
-    setSidebarMobileOpen: setIsMobileOpen 
+  const {
+    sidebarCollapsed: isCollapsed,
+    setSidebarCollapsed: setIsCollapsed,
+    sidebarMobileOpen: isMobileOpen,
+    setSidebarMobileOpen: setIsMobileOpen,
   } = useStore();
-  useTokenRefresh();
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground mt-20" style={{ scrollbarGutter: 'stable' }}>
-      <LocationSyncBanner />
-
+    <div className="min-h-screen bg-background text-foreground" style={{ scrollbarGutter: "stable" }}>
       <AdminSidebar
         isCollapsed={isCollapsed}
         toggleCollapse={() => setIsCollapsed(!isCollapsed)}
@@ -34,12 +36,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         closeMobile={() => setIsMobileOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full md:ml-24">
+      <div
+        className={cn(
+          "flex min-h-screen flex-col transition-[margin] duration-200 ease-out",
+          isCollapsed ? "md:ml-16" : "md:ml-60"
+        )}
+      >
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
-        <main className="flex-1 p-4 sm:p-8 pt-24 sm:pt-24 bg-background">
-          {children}
-        </main>
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
+
       <AssistantWidget />
       <OnboardingTour />
     </div>

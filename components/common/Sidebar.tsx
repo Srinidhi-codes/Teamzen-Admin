@@ -14,13 +14,15 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: "📊" },
+  { name: "Organizations", href: "/organizations", icon: "🏢", roles: ["admin", "superadmin"] },
+  { name: "Employees", href: "/employees", icon: "👥" },
   { name: "Leaves", href: "/leaves", icon: "📅" },
   { name: "Attendance", href: "/attendance", icon: "📍" },
   { name: "Payroll", href: "/payroll", icon: "💰", roles: ["admin", "superadmin"] },
-  { name: "Employees", href: "/employees", icon: "👥" },
+  { name: "Performance", href: "/performance", icon: "🎯" },
+  { name: "Reports", href: "/reports", icon: "📈", roles: ["admin", "hr", "superadmin"] },
   { name: "Notifications", href: "/notifications", icon: "🔔" },
-  { name: "Analytics", href: "/analytics", icon: "📈" },
-  { name: "Admin", href: "/admin", icon: "⚙️", roles: ["admin", "hr", "superadmin"] },
+  { name: "Settings", href: "/settings", icon: "⚙️", roles: ["admin", "hr", "superadmin"] },
 ];
 
 export function Sidebar() {

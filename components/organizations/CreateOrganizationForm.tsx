@@ -10,6 +10,7 @@ import { Input } from "../common/Input";
 import { Camera, Loader2 } from "lucide-react";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { AccentPicker } from "./AccentPicker";
 
 interface CreateOrganizationFormProps {
     orgEditData?: any;
@@ -31,6 +32,7 @@ export default function CreateOrganizationForm({
         logo: null as string | null,
         registrationNumber: "",
         llmApiKey: "",
+        accent: "teal",
         isActive: true,
     });
 
@@ -44,6 +46,7 @@ export default function CreateOrganizationForm({
                 logo: orgEditData.logo?.url || null,
                 registrationNumber: orgEditData.registrationNumber || "",
                 llmApiKey: orgEditData.llmApiKey || "",
+                accent: orgEditData.accent || "teal",
                 isActive: orgEditData.isActive ?? true,
             })
         }
@@ -93,6 +96,7 @@ export default function CreateOrganizationForm({
                 logo: null,
                 registrationNumber: "",
                 llmApiKey: "",
+                accent: "teal",
                 isActive: true,
             });
 
@@ -155,7 +159,7 @@ export default function CreateOrganizationForm({
                             ) : (
                                 <>
                                     <Camera className="w-6 h-6 mb-1" />
-                                    <span className="text-[8px] font-black uppercase tracking-tighter">Change</span>
+                                    <span className="text-[10px] font-medium">Change</span>
                                 </>
                             )}
                         </div>
@@ -224,8 +228,13 @@ export default function CreateOrganizationForm({
                     hint="This key will be used for AI insights specifically for this organization."
                 />
 
+                <AccentPicker
+                    value={formData.accent}
+                    onChange={(accent) => setFormData((prev) => ({ ...prev, accent }))}
+                />
+
                 <div className="space-y-3">
-                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
+                    <label className="text-sm font-medium text-muted-foreground ml-1">
                         Operational Headquarters
                     </label>
                     <Textarea
@@ -240,25 +249,23 @@ export default function CreateOrganizationForm({
                 </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+            <div className="flex justify-end gap-2 pt-6 mt-4 border-t border-border">
                 <Button
                     variant="outline"
                     type="button"
                     onClick={onCancel}
-                    className="px-8 h-12"
                     disabled={isCreatingOrganizationLoading}
                 >
-                    Dismiss
+                    Cancel
                 </Button>
                 <Button
                     type="submit"
-                    className="px-10 h-12 min-w-[160px]"
                     disabled={isCreatingOrganizationLoading || isUpdatingOrganizationLoading}
                 >
                     {isCreatingOrganizationLoading || isUpdatingOrganizationLoading ? (
-                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                        <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                        orgEditData ? "Update Organization" : "Create Organization"
+                        orgEditData ? "Save changes" : "Create organization"
                     )}
                 </Button>
             </div>

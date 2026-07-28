@@ -8,16 +8,23 @@ import {
     X,
     CheckCircle2,
     XCircle,
-    Clock,
-    AlertCircle,
     MessageSquare,
     ArrowRight,
-    Search,
-    ShieldAlert,
-    Calendar,
     User
 } from "lucide-react";
 import { FormTextarea } from "../common/FormTextArea";
+import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
+
+const AttendanceMap = dynamic(() => import("./AttendanceMap"), {
+    ssr: false,
+    loading: () => (
+        <div className="flex h-[300px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 text-sm text-muted-foreground">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            Loading map…
+        </div>
+    )
+});
 
 
 type Props = {
@@ -29,6 +36,7 @@ type Props = {
 export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
     const [comments, setComments] = useState("");
     const [loading, setLoading] = useState(false);
+    const [mapTab, setMapTab] = useState<"checkin" | "checkout">("checkin");
 
     const handleSubmit = async (status: "approved" | "rejected") => {
         setLoading(true);
@@ -44,142 +52,191 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
     const formatTime = (timeStr?: string | null) => timeStr ? moment(timeStr, "HH:mm:ss").format("hh:mm A") : "--:--";
 
     return (
-        <div className="fixed inset-0 bg-background/60 flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-            <div className="bg-card rounded-[2.5rem] w-full max-w-2xl shadow-3xl border border-border overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4">
+            <div className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg">
                 {/* Header */}
-                <div className="bg-linear-to-br from-primary/20 via-primary/5 to-background p-8 text-primary-foreground relative">
-                    <div className="absolute top-0 right-0 p-8 opacity-10">
-                        <Calendar className="w-32 h-32 rotate-12" />
-                    </div>
-                    <div className="flex items-center gap-5 relative z-10">
-                        <div className="w-16 h-16 rounded-2xl bg-primary-foreground/10 flex items-center justify-center text-primary shadow-inner border border-primary backdrop-blur-sm">
-                            <span className="text-2xl font-black">
-                                {correction.requestedBy?.firstName?.charAt(0) || <User className="w-8 h-8" />}
-                            </span>
+                <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-4">
+                    <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-sm font-semibold text-foreground">
+                            {correction.requestedBy?.firstName?.charAt(0) || <User className="h-5 w-5" />}
                         </div>
                         <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <h2 className="text-3xl font-black text-primary tracking-tight leading-none">
-                                    {correction.requestedBy?.firstName} {correction.requestedBy?.lastName}
-                                </h2>
-                                <span className="px-2.5 py-1 bg-primary/20 text-primary text-[8px] font-black uppercase tracking-widest rounded-full border border-primary/10 backdrop-blur-md">
-                                    {correction.requestedBy?.designation?.name || "Member"}
-                                </span>
-                            </div>
-                            <p className="text-gray-500/70 text-xs font-bold flex items-center gap-2 tracking-wide">
-                                Reviewing correction for {formatDate(correction.attendanceRecord.attendanceDate)}
+                            <h2 className="text-base font-semibold text-foreground">
+                                Review correction
+                            </h2>
+                            <p className="mt-0.5 text-sm text-muted-foreground">
+                                {correction.requestedBy?.firstName} {correction.requestedBy?.lastName}
+                                {correction.requestedBy?.designation?.name && (
+                                    <span className="text-muted-foreground/70"> · {correction.requestedBy.designation.name}</span>
+                                )}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                {formatDate(correction.attendanceRecord.attendanceDate)}
                             </p>
                         </div>
                     </div>
-
                     <button
+                        type="button"
                         onClick={onClose}
-                        className="absolute top-4 right-4 text-black hover:text-red-500 transition-all active:scale-90"
+                        className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        aria-label="Close"
                     >
-                        <X className="w-6 h-6" />
+                        <X className="h-4 w-4" />
                     </button>
                 </div>
 
-
                 {/* Body */}
-                <div className="p-8 space-y-8">
-                    {/* Comparison Engine */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-                        {/* Connecting Arrow */}
-                        <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-card border border-border shadow-sm items-center justify-center z-10 text-muted-foreground/60">
-                            <ArrowRight className="w-5 h-5" />
+                <div className="grow space-y-6 overflow-y-auto px-6 py-5">
+                    {/* Comparison */}
+                    <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div className="hidden md:flex absolute left-1/2 top-1/2 z-10 h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground">
+                            <ArrowRight className="h-4 w-4" />
                         </div>
 
-                        <div className="bg-red-300/5 p-6 rounded-4xl border border-red-500/30 shadow-sm group hover:scale-105 transition-all duration-300">
-
-                            <h3 className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-4 ml-1">Original Records</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-red-500 uppercase">Check In</span>
-                                    <span className="text-sm font-black text-red-500">{formatTime(correction.attendanceRecord.loginTime)}</span>
+                        <div className="rounded-lg border border-border bg-muted/30 p-4">
+                            <h3 className="mb-3 text-sm font-medium text-foreground">Original records</h3>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Check in</span>
+                                    <span className="font-medium text-foreground">{formatTime(correction.attendanceRecord.loginTime)}</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-red-500 uppercase">Check Out</span>
-                                    <span className="text-sm font-black text-red-500">{formatTime(correction.attendanceRecord.logoutTime)}</span>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Check out</span>
+                                    <span className="font-medium text-foreground">{formatTime(correction.attendanceRecord.logoutTime)}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-green-300/5 p-6 rounded-4xl border border-green-500/30 group shadow-sm hover:scale-105 transition-all duration-300">
-
-                            <h3 className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-4 ml-1">Proposed Correction</h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-green-500/60 uppercase">Check In</span>
-                                    <span className="text-sm font-black text-green-500">{formatTime(correction.correctedLoginTime)}</span>
+                        <div className="rounded-lg border border-border bg-muted/30 p-4">
+                            <h3 className="mb-3 text-sm font-medium text-foreground">Proposed correction</h3>
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Check in</span>
+                                    <span className="font-medium text-foreground">{formatTime(correction.correctedLoginTime)}</span>
                                 </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-bold text-green-500/60 uppercase">Check Out</span>
-                                    <span className="text-sm font-black text-green-500">{formatTime(correction.correctedLogoutTime)}</span>
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-muted-foreground">Check out</span>
+                                    <span className="font-medium text-foreground">{formatTime(correction.correctedLogoutTime)}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {/* Geolocation Verification Map */}
+                    {(() => {
+                        const record = correction.attendanceRecord;
+                        const hasCheckInGeo = !!(record?.loginLatitude && record?.loginLongitude && record?.officeLocation?.latitude && record?.officeLocation?.longitude);
+                        const hasCheckOutGeo = !!(record?.logoutLatitude && record?.logoutLongitude && record?.officeLocation?.latitude && record?.officeLocation?.longitude);
+                        const hasGeoData = hasCheckInGeo || hasCheckOutGeo;
+
+                        if (!hasGeoData) return null;
+
+                        const activeTab = mapTab === "checkin" && hasCheckInGeo ? "checkin" : (hasCheckOutGeo ? "checkout" : "checkin");
+                        const activeLat = activeTab === "checkin" ? record.loginLatitude : record.logoutLatitude;
+                        const activeLng = activeTab === "checkin" ? record.loginLongitude : record.logoutLongitude;
+                        const activeDistance = activeTab === "checkin" ? record.loginDistance : record.logoutDistance;
+                        const radius = record.officeLocation?.geoRadiusMeters || 200;
+                        const isWithin = activeDistance !== null && activeDistance !== undefined ? activeDistance <= radius : false;
+
+                        return (
+                            <div className="space-y-3">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                    {hasCheckInGeo && hasCheckOutGeo && (
+                                        <div className="flex rounded-md border border-border bg-muted/50 p-0.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => setMapTab("checkin")}
+                                                className={cn(
+                                                    "rounded px-3 py-1 text-sm font-medium transition-colors",
+                                                    mapTab === "checkin" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                            >
+                                                Check in
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setMapTab("checkout")}
+                                                className={cn(
+                                                    "rounded px-3 py-1 text-sm font-medium transition-colors",
+                                                    mapTab === "checkout" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                )}
+                                            >
+                                                Check out
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {activeDistance !== null && activeDistance !== undefined && (
+                                        <span className={cn(
+                                            "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium",
+                                            isWithin
+                                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                                                : "border-rose-500/30 bg-rose-500/10 text-rose-700"
+                                        )}>
+                                            {(Number(activeDistance) / 1000).toFixed(2)} km — {isWithin ? "Within geofence" : "Outside geofence"}
+                                        </span>
+                                    )}
+                                </div>
+
+                                <AttendanceMap
+                                    employeeLat={Number(activeLat)}
+                                    employeeLng={Number(activeLng)}
+                                    officeLat={Number(record.officeLocation?.latitude)}
+                                    officeLng={Number(record.officeLocation?.longitude)}
+                                    radiusMeters={Number(radius)}
+                                    employeeName={`${correction.requestedBy?.firstName} ${correction.requestedBy?.lastName}`}
+                                    officeName={record.officeLocation?.name || "Office"}
+                                />
+                            </div>
+                        );
+                    })()}
 
                     {/* Reason Section */}
-                    <div className="bg-muted/50 p-6 rounded-3xl border border-border relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <ShieldAlert className="w-20 h-20 text-foreground" />
+                    <div className="rounded-lg border border-border bg-muted/30 p-4">
+                        <div className="mb-2 flex items-center gap-2">
+                            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                            <p className="text-sm font-medium text-foreground">Employee reason</p>
                         </div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <MessageSquare className="w-5 h-5 text-primary" />
-                            <p className="text-[10px] font-black text-foreground tracking-tight uppercase">Employee Justification</p>
-                        </div>
-                        <p className="text-foreground/70 font-medium italic leading-relaxed text-sm">
-                            "{correction.reason || "No formal justification provided for this request."}"
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            {correction.reason || "No reason provided."}
                         </p>
                     </div>
 
                     {/* Decision Comments */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         <FormTextarea
                             label="Feedback"
                             rows={3}
                             value={comments}
                             onChange={(e) => setComments(e.target.value)}
-                            placeholder="Provide constructive feedback for your decision..."
+                            placeholder="Add feedback for your decision (optional)…"
                         />
-
                     </div>
-
                 </div>
 
                 {/* Footer Controls */}
-                <div className="p-8 border-t border-border flex flex-col sm:flex-row justify-end gap-4 bg-muted/20 backdrop-blur-sm">
-                    <button
-                        onClick={onClose}
-                        className="btn-ghost"
-                        disabled={loading}
-                    >
-                        Dismiss
-                    </button>
-                    <div className="flex gap-4">
-                        <button
+                <div className="flex shrink-0 flex-col justify-end gap-2 border-t border-border bg-muted/30 px-6 py-3 sm:flex-row">
+                    <Button variant="outline" onClick={onClose} disabled={loading}>
+                        Cancel
+                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="destructive"
                             onClick={() => handleSubmit("rejected")}
                             disabled={loading}
-                            className="btn-destructive px-10 gap-3"
                         >
-                            <XCircle className="w-5 h-5" />
+                            <XCircle className="h-4 w-4" />
                             Reject
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             onClick={() => handleSubmit("approved")}
                             disabled={loading}
-                            className="btn-primary px-12 gap-3"
                         >
-                            <CheckCircle2 className="w-5 h-5" />
+                            <CheckCircle2 className="h-4 w-4" />
                             Approve
-                        </button>
+                        </Button>
                     </div>
                 </div>
-
-
             </div>
         </div>
     );

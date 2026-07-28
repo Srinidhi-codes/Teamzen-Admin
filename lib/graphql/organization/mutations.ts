@@ -9,6 +9,7 @@ export const CREATE_ORGANIZATION = gql`
             panNumber
             headquartersAddress
             llmApiKey
+            accent
             isActive
             createdAt
             updatedAt
@@ -25,6 +26,7 @@ export const UPDATE_ORGANIZATION = gql`
             panNumber
             headquartersAddress
             llmApiKey
+            accent
             isActive
             createdAt
             updatedAt

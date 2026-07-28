@@ -9,7 +9,15 @@ import { Toaster } from "sonner";
 import { ThemeProvider, useTheme } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      gcTime: 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function ThemeInitializer({ children }: { children: ReactNode }) {
   const accent = useStore((state) => state.accent);

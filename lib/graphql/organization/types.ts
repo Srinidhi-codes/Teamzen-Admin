@@ -13,6 +13,7 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     llmApiKey?: string;
+    accent?: string;
 }
 
 export interface OfficeLocation {
@@ -59,6 +60,7 @@ export interface CreateOrganizationInput {
     headquartersAddress?: string;
     isActive: boolean;
     llmApiKey?: string;
+    accent?: string;
 }
 
 export interface OrganizationInput {
@@ -71,6 +73,7 @@ export interface OrganizationInput {
     isActive: boolean;
     id: string;
     llmApiKey?: string;
+    accent?: string;
 }
 
 export interface CreateOfficeLocationInput {

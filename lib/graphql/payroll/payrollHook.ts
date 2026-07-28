@@ -9,10 +9,10 @@ export const usePayrollQueries = () => {
 
     return {
         salaryStructures: structuresData?.salaryStructures || [],
-        isStructuresLoading,
+        isStructuresLoading: isStructuresLoading && !structuresData,
         refetchStructures,
         salaryComponents: componentsData?.salaryComponents || [],
-        isComponentsLoading,
+        isComponentsLoading: isComponentsLoading && !componentsData,
         refetchComponents,
     };
 };

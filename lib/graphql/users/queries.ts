@@ -51,6 +51,7 @@ export const GET_ME = gql`
           url
         }
         llmApiKey
+        accent
       }
       salaryDetails {
         id

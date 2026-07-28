@@ -334,6 +334,7 @@ export default function PayrollPage() {
   return (
     <div className="page-shell">
       <PageHeader
+        eyebrow="Compensation"
         title="Payroll"
         description="Run payroll, manage salary components, and salary structures."
         actions={

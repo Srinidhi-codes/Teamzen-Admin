@@ -197,6 +197,7 @@ export default function PayrollRunDetailsPage({
             Back to payroll
           </Link>
           <PageHeader
+            eyebrow="Payroll run"
             title={`${monthNames[run.month - 1]} ${run.year}`}
             description="Follow the steps: process → review → publish → payout."
           />

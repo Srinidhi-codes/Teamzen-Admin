@@ -57,7 +57,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
 
             {/* Custom Premium Date Picker for Desktop */}
             <div className="hidden sm:block">
-                <Popover open={open} onOpenChange={setOpen}>
+                <Popover open={open} onOpenChange={setOpen} modal={false}>
                     <PopoverTrigger asChild>
                         <Button
                             variant="outline"
@@ -75,7 +75,33 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                             <CalendarIcon className={cn("ml-auto h-5 w-5 opacity-40 transition-colors", open && "text-primary opacity-100")} />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300" align="start">
+                    <PopoverContent
+                        className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300"
+                        align="start"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                        onFocusOutside={(e) => e.preventDefault()}
+                        onPointerDownOutside={(e) => {
+                            const target = e.target as HTMLElement | null
+                            if (
+                                target?.closest?.("[data-slot=calendar]") ||
+                                target?.tagName === "SELECT" ||
+                                target?.tagName === "OPTION"
+                            ) {
+                                e.preventDefault()
+                            }
+                        }}
+                        onInteractOutside={(e) => {
+                            const target = e.target as HTMLElement | null
+                            if (
+                                target?.closest?.("[data-slot=calendar]") ||
+                                target?.tagName === "SELECT" ||
+                                target?.tagName === "OPTION"
+                            ) {
+                                e.preventDefault()
+                            }
+                        }}
+                    >
                         <Calendar
                             mode="single"
                             selected={displayDate}
@@ -86,7 +112,6 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                             disabled={(date) =>
                                 date > new Date() || date < new Date("1900-01-01")
                             }
-                            initialFocus
                             captionLayout="dropdown"
                             fromYear={1960}
                             toYear={new Date().getFullYear()}
