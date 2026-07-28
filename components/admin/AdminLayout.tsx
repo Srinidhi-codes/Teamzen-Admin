@@ -1,12 +1,19 @@
 "use client";
 
 import { AdminSidebar } from "./AdminSidebar";
-import { useTokenRefresh } from "@/lib/api/hooks";
 import { Navbar } from "../common/Navbar";
-import AssistantWidget from "../ai";
-import { OnboardingTour } from "../common/OnboardingTour";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const AssistantWidget = dynamic(() => import("../ai"), {
+  ssr: false,
+  loading: () => null,
+});
+const OnboardingTour = dynamic(
+  () => import("../common/OnboardingTour").then((mod) => mod.OnboardingTour),
+  { ssr: false, loading: () => null }
+);
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -19,7 +26,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     sidebarMobileOpen: isMobileOpen,
     setSidebarMobileOpen: setIsMobileOpen,
   } = useStore();
-  useTokenRefresh();
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={{ scrollbarGutter: "stable" }}>

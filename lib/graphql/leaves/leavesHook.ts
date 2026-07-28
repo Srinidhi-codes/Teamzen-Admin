@@ -94,12 +94,12 @@ export function useGraphQLLeaveMutations() {
 export function useGraphQLLeaveBalances(search?: string) {
     const { data, loading, error, refetch } = useQuery<GetLeaveBalanceResponse>(GET_LEAVE_BALANCE, {
         variables: { allOrg: true, search },
-        fetchPolicy: 'network-only',
     })
 
     return {
         leaveBalanceData: data?.leaveBalance ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
@@ -108,12 +108,12 @@ export function useGraphQLLeaveBalances(search?: string) {
 export function useGraphQLLeaveTypes(search?: string) {
     const { data, loading, error, refetch } = useQuery<GetLeavesResponse>(GET_LEAVES, {
         variables: { search },
-        fetchPolicy: 'network-only',
     })
 
     return {
         leaveTypes: data?.leaveTypes ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
@@ -123,12 +123,12 @@ export function useGraphQLLeaveTypes(search?: string) {
 export function useGraphQLLeaveRequests(approvalsOnly: boolean = true, search?: string) {
   const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
     variables: { approvalsOnly, search },
-    fetchPolicy: 'network-only',
   })
 
     return {
         leaveRequestData: data?.getLeaveRequests ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
@@ -161,12 +161,12 @@ export function useGraphQLLeaveRequestProcess() {
 export function useGraphQLCompanyHolidays(search?: string) {
     const { data, loading, error, refetch } = useQuery<GetCompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS, {
         variables: { search },
-        fetchPolicy: 'network-only',
     })
 
     return {
         companyHolidays: data?.companyHolidays ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }

@@ -10,6 +10,7 @@ import { Input } from "../common/Input";
 import { Camera, Loader2 } from "lucide-react";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { AccentPicker } from "./AccentPicker";
 
 interface CreateOrganizationFormProps {
     orgEditData?: any;
@@ -31,6 +32,7 @@ export default function CreateOrganizationForm({
         logo: null as string | null,
         registrationNumber: "",
         llmApiKey: "",
+        accent: "teal",
         isActive: true,
     });
 
@@ -44,6 +46,7 @@ export default function CreateOrganizationForm({
                 logo: orgEditData.logo?.url || null,
                 registrationNumber: orgEditData.registrationNumber || "",
                 llmApiKey: orgEditData.llmApiKey || "",
+                accent: orgEditData.accent || "teal",
                 isActive: orgEditData.isActive ?? true,
             })
         }
@@ -93,6 +96,7 @@ export default function CreateOrganizationForm({
                 logo: null,
                 registrationNumber: "",
                 llmApiKey: "",
+                accent: "teal",
                 isActive: true,
             });
 
@@ -222,6 +226,11 @@ export default function CreateOrganizationForm({
                     value={formData.llmApiKey || ""}
                     onChange={handleChange}
                     hint="This key will be used for AI insights specifically for this organization."
+                />
+
+                <AccentPicker
+                    value={formData.accent}
+                    onChange={(accent) => setFormData((prev) => ({ ...prev, accent }))}
                 />
 
                 <div className="space-y-3">

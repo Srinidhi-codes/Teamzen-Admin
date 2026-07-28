@@ -28,6 +28,7 @@ import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import moment from "moment";
 import { cn } from "@/lib/utils";
+import { AccentPicker, COMPANY_ACCENTS } from "./AccentPicker";
 
 interface OrganizationProfileProps {
   id: string;
@@ -68,6 +69,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       isActive: organization.isActive,
       logo: organization.logo?.url || "",
       llmApiKey: organization.llmApiKey || "",
+      accent: organization.accent || "teal",
     });
     setIsEditing(true);
   };
@@ -82,6 +84,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       headquartersAddress: "",
       logo: "",
       llmApiKey: "",
+      accent: "teal",
     });
   };
 
@@ -368,6 +371,12 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       onChange={(e) => setFormData({ ...formData, llmApiKey: e.target.value })}
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <AccentPicker
+                      value={formData.accent || "teal"}
+                      onChange={(accent) => setFormData({ ...formData, accent })}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex justify-end gap-2 border-t border-border pt-4">
@@ -414,6 +423,14 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                   icon={Hash}
                   label="LLM API key"
                   value={organization.llmApiKey ? "••••••••••••••••" : "Not set"}
+                />
+                <DataBox
+                  icon={Hash}
+                  label="Color theme"
+                  value={
+                    COMPANY_ACCENTS.find((a) => a.name === (organization.accent || "teal"))
+                      ?.label || "Teal"
+                  }
                 />
               </div>
 

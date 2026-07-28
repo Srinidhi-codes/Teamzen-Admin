@@ -9,7 +9,31 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-export function PageSkeleton({ cards = 4 }: { cards?: number }) {
+export function PageSkeleton({
+  cards = 4,
+  variant = "default",
+}: {
+  cards?: number;
+  variant?: "default" | "split";
+}) {
+  if (variant === "split") {
+    return (
+      <div className="page-shell animate-pulse" aria-busy="true" aria-label="Loading">
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-4 w-64 max-w-full" />
+        </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="space-y-4 lg:col-span-8">
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-80 rounded-xl border border-border" />
+          </div>
+          <Skeleton className="h-72 rounded-xl border border-border lg:col-span-4" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page-shell" aria-busy="true" aria-label="Loading">
       <div className="space-y-2">

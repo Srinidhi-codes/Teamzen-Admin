@@ -15,6 +15,7 @@ export const GET_ORGANIZATIONS = gql`
             isActive
             registrationNumber
             llmApiKey
+            accent
             createdAt
             updatedAt
         }
@@ -36,6 +37,7 @@ export const GET_ORGANIZATION = gql`
             isActive
             registrationNumber
             llmApiKey
+            accent
             createdAt
             updatedAt
         }

@@ -15,20 +15,7 @@ import {
   Banknote,
   Award,
 } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-} from "recharts";
 import { StatsCard } from "../admin/StatsCard";
-import { PageHeader } from "../common/PageHeader";
 import { PageSkeleton } from "../common/Skeleton";
 import { useQuery } from "@apollo/client/react";
 import { GET_ADMIN_DASHBOARD_STATS } from "@/lib/graphql/dashboard/queries";
@@ -37,6 +24,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const AdminDashboardCharts = dynamic(
+  () =>
+    import("@/components/dashboard/AdminDashboardCharts").then((m) => m.AdminDashboardCharts),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
+        <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
+      </div>
+    ),
+  }
+);
 
 function profileSrc(url?: string | null) {
   if (!url) return null;
@@ -117,15 +119,6 @@ function Avatar({
   );
 }
 
-const chartTooltipStyle = {
-  backgroundColor: "var(--card)",
-  borderColor: "var(--border)",
-  borderRadius: "8px",
-  fontSize: "12px",
-  color: "var(--foreground)",
-  boxShadow: "none",
-};
-
 const quickActions = [
   { href: "/employees", label: "Add employee", icon: UserPlus2 },
   { href: "/leaves", label: "Approve leaves", icon: Calendar },
@@ -133,15 +126,21 @@ const quickActions = [
   { href: "/reports", label: "View reports", icon: TrendingUp },
 ];
 
+function greetingForHour(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function AdminDashboard() {
   const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
   const { user } = useStore();
 
-  if (loading) {
+  if (loading && !data) {
     return <PageSkeleton cards={4} />;
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center">
         <p className="text-sm text-destructive">
@@ -158,30 +157,78 @@ export default function AdminDashboard() {
   const upcomingEvents = stats.upcomingEvents || [];
   const wishMessage = stats.wishMessage;
   const firstName = user?.firstName || "there";
+  const now = moment();
 
   return (
     <div className="page-shell">
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description={`Overview for ${user?.organization?.name || "your organization"}`}
-        actions={
-          <p className="text-xs text-muted-foreground">
-            Updated {new Date().toLocaleString()}
-          </p>
-        }
-      />
+      <section className="relative overflow-hidden rounded-2xl border border-border bg-[oklch(0.28_0.04_200)] text-white">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-50"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle at 12% 20%, oklch(0.55 0.09 200 / 0.5), transparent 42%), radial-gradient(circle at 88% 80%, oklch(0.4 0.06 220 / 0.35), transparent 40%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        />
 
-      {wishMessage && (
-        <div className="flex items-start gap-3 rounded-xl border border-border bg-card px-4 py-3.5">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Cake className="h-4 w-4" />
+        <div className="relative z-10 flex flex-col gap-8 p-6 sm:p-8 lg:flex-row lg:items-end lg:justify-between lg:p-10">
+          <div className="max-w-2xl space-y-5">
+            <div className="space-y-2">
+              <p className="text-sm font-medium tracking-wide text-teal-200/80">
+                {now.format("dddd, MMM D")}
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">
+                {greetingForHour(now.hour())},{" "}
+                <span className="text-teal-200">{firstName}</span>
+              </h1>
+              <p className="text-sm text-white/65 sm:text-base">
+              {[
+                user?.designation?.name,
+                user?.department?.name,
+                user?.organization?.name,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "Admin operations home"}
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 backdrop-blur-sm">
+              <Clock className="h-3.5 w-3.5 text-white/80" />
+              <span className="text-sm font-medium">Today · Admin overview</span>
+            </div>
+
+            {wishMessage && (
+              <div className="rounded-xl border border-white/10 bg-white/8 px-3.5 py-3">
+                <p className="text-sm leading-relaxed text-white/80">{wishMessage}</p>
+              </div>
+            )}
           </div>
-          <div className="min-w-0 pt-0.5">
-            <p className="text-sm font-medium text-foreground">Team update</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{wishMessage}</p>
+
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row">
+            <Link
+              href="/employees"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[oklch(0.28_0.04_200)] transition-opacity hover:opacity-95"
+            >
+              <UserPlus2 className="h-4 w-4" />
+              Add employee
+            </Link>
+            <Link
+              href="/leaves"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/25 bg-white/5 px-5 text-sm font-medium text-white transition-colors hover:bg-white/10"
+            >
+              <Calendar className="h-4 w-4" />
+              View Leave Requests
+            </Link>
           </div>
         </div>
-      )}
+      </section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatsCard title="Total employees" value={stats.totalEmployees ?? 0} icon={Users} color="blue" />
@@ -193,91 +240,10 @@ export default function AdminDashboard() {
       </div>
 
       {user?.role !== "manager" && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Panel title="Employee growth">
-            <div className="h-[260px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={employeeGrowthData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.18} />
-                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} stroke="var(--border)" strokeDasharray="4 4" />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                    dy={8}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
-                  />
-                  <Tooltip contentStyle={chartTooltipStyle} />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--primary)"
-                    strokeWidth={2}
-                    fill="url(#colorGrowth)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Panel>
-
-          <Panel title="Departments">
-            <div className="h-[260px] w-full">
-              {departmentData.length > 0 ? (
-                <div className="flex h-full flex-col gap-4 sm:flex-row sm:items-center">
-                  <div className="h-[200px] w-full sm:h-full sm:w-1/2">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={departmentData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={52}
-                          outerRadius={80}
-                          paddingAngle={3}
-                          dataKey="value"
-                        >
-                          {departmentData.map((entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                          ))}
-                        </Pie>
-                        <Tooltip contentStyle={chartTooltipStyle} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <ul className="max-h-[220px] w-full space-y-2 overflow-y-auto sm:w-1/2">
-                    {departmentData.map((entry: any, index: number) => (
-                      <li key={`${entry.name}-${index}`} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: entry.color }}
-                          />
-                          <span className="truncate text-muted-foreground">{entry.name}</span>
-                        </span>
-                        <span className="shrink-0 tabular-nums text-foreground">{entry.value}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : (
-                <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-                  <Users className="h-8 w-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">No department data yet</p>
-                </div>
-              )}
-            </div>
-          </Panel>
-        </div>
+        <AdminDashboardCharts
+          employeeGrowthData={employeeGrowthData}
+          departmentData={departmentData}
+        />
       )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
