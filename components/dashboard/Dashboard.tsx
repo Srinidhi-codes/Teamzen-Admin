@@ -7,7 +7,6 @@ import {
   Clock,
   DollarSign,
   TrendingUp,
-  Cake,
   Gift,
   UserPlus,
   ArrowRight,
@@ -33,12 +32,67 @@ const AdminDashboardCharts = dynamic(
     ssr: false,
     loading: () => (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
-        <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
+        <div className="h-80 animate-pulse rounded-xl border border-border bg-muted/40" />
+        <div className="h-80 animate-pulse rounded-xl border border-border bg-muted/40" />
       </div>
     ),
   }
 );
+
+type DashboardStatPoint = {
+  month: string;
+  value: number;
+};
+
+type DepartmentDistributionPoint = {
+  name: string;
+  value: number;
+  color: string;
+};
+
+type RecentActivity = {
+  id: string;
+  user: string;
+  action: string;
+  time: string;
+};
+
+type UpcomingEvent = {
+  id: string;
+  user: string;
+  type: string;
+  date: string;
+  profilePicture?: string | null;
+  daysUntil: number;
+};
+
+type UpcomingLeave = {
+  id: string;
+  user: string;
+  profilePicture?: string | null;
+  leaveType: string;
+  fromDate: string;
+  toDate: string;
+  duration: number;
+  status: string;
+};
+
+type AdminDashboardStats = {
+  totalEmployees: number;
+  activeEmployees: number;
+  pendingLeaveApprovals: number;
+  todayAttendanceRate: number;
+  employeeGrowth: DashboardStatPoint[];
+  departmentDistribution: DepartmentDistributionPoint[];
+  recentActivities: RecentActivity[];
+  upcomingEvents: UpcomingEvent[];
+  upcomingLeaves: UpcomingLeave[];
+  wishMessage?: string | null;
+};
+
+type AdminDashboardQuery = {
+  adminDashboardStats: AdminDashboardStats;
+};
 
 function profileSrc(url?: string | null) {
   if (!url) return null;
@@ -133,7 +187,7 @@ function greetingForHour(hour: number) {
 }
 
 export default function AdminDashboard() {
-  const { data, loading, error } = useQuery(GET_ADMIN_DASHBOARD_STATS);
+  const { data, loading, error } = useQuery<AdminDashboardQuery>(GET_ADMIN_DASHBOARD_STATS);
   const { user } = useStore();
 
   if (loading && !data) {
@@ -150,12 +204,12 @@ export default function AdminDashboard() {
     );
   }
 
-  const stats = (data as any)?.adminDashboardStats || {};
-  const employeeGrowthData = stats.employeeGrowth || [];
-  const departmentData = stats.departmentDistribution || [];
-  const recentActivities = stats.recentActivities || [];
-  const upcomingEvents = stats.upcomingEvents || [];
-  const wishMessage = stats.wishMessage;
+  const stats = data?.adminDashboardStats;
+  const employeeGrowthData = stats?.employeeGrowth ?? [];
+  const departmentData = stats?.departmentDistribution ?? [];
+  const recentActivities = stats?.recentActivities ?? [];
+  const upcomingEvents = stats?.upcomingEvents ?? [];
+  const wishMessage = stats?.wishMessage;
   const firstName = user?.firstName || "there";
   const now = moment();
 
@@ -231,10 +285,10 @@ export default function AdminDashboard() {
       </section>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <StatsCard title="Total employees" value={stats.totalEmployees ?? 0} icon={Users} color="blue" />
-        <StatsCard title="Active employees" value={stats.activeEmployees ?? 0} icon={UserCheck} color="green" />
-        <StatsCard title="Pending leave approvals" value={stats.pendingLeaveApprovals ?? 0} icon={Calendar} color="yellow" />
-        <StatsCard title="Attendance rate today" value={`${stats.todayAttendanceRate ?? 0}%`} icon={Clock} color="blue" />
+        <StatsCard title="Total employees" value={stats?.totalEmployees ?? 0} icon={Users} color="blue" />
+        <StatsCard title="Active employees" value={stats?.activeEmployees ?? 0} icon={UserCheck} color="green" />
+        <StatsCard title="Pending leave approvals" value={stats?.pendingLeaveApprovals ?? 0} icon={Calendar} color="yellow" />
+        <StatsCard title="Attendance rate today" value={`${stats?.todayAttendanceRate ?? 0}%`} icon={Clock} color="blue" />
         <StatsCard title="Pending payroll" value={0} icon={DollarSign} color="purple" />
         <StatsCard title="Pending reviews" value={0} icon={TrendingUp} color="red" />
       </div>
@@ -250,7 +304,7 @@ export default function AdminDashboard() {
         <Panel title="Recent activity">
           {recentActivities.length > 0 ? (
             <ul className="divide-y divide-border">
-              {recentActivities.map((activity: any) => {
+              {recentActivities.map((activity) => {
                 const isJoin = activity.action?.includes("joined");
                 const isCelebrate = activity.action?.includes("celebrates");
                 const isLeave = activity.action?.includes("leave");
@@ -285,7 +339,7 @@ export default function AdminDashboard() {
         <Panel title="Upcoming events">
           {upcomingEvents.length > 0 ? (
             <ul className="divide-y divide-border">
-              {upcomingEvents.slice(0, 5).map((event: any) => (
+              {upcomingEvents.slice(0, 5).map((event) => (
                 <li key={event.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                   <Avatar
                     name={event.user}
@@ -325,9 +379,9 @@ export default function AdminDashboard() {
         title="Upcoming absences"
         action={<span className="text-xs text-muted-foreground">Next 14 days</span>}
       >
-        {stats.upcomingLeaves?.length > 0 ? (
+        {stats?.upcomingLeaves?.length ? (
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {stats.upcomingLeaves.map((leave: any) => (
+            {stats.upcomingLeaves.map((leave) => (
               <div
                 key={leave.id}
                 className="rounded-lg border border-border bg-background p-4"
