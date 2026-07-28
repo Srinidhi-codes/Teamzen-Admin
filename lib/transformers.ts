@@ -20,10 +20,12 @@ export const mapBackendUserToFrontendUser = (backendUser: any): User => {
     organization: backendUser.organization ? (typeof backendUser.organization === 'object' ? {
       id: backendUser.organization.id,
       name: backendUser.organization.name || backendUser.organization_name,
+      plan: backendUser.organization.plan,
       logo: backendUser.organization.logo
     } : {
       id: backendUser.organization,
       name: backendUser.organization_name || "Unknown Organization",
+      plan: undefined,
       logo: null
     }) : null,
     hasSeenOnboarding: backendUser.has_seen_onboarding || backendUser.hasSeenOnboarding || false,
