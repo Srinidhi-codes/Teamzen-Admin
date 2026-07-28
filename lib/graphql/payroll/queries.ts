@@ -51,6 +51,10 @@ export const GET_PAYROLL_RUNS = gql`
       totalDeduction
       totalNetPay
       createdAt
+      hasLockedPayslips
+      draftCount
+      publishedCount
+      paidCount
     }
   }
 `;
@@ -66,6 +70,10 @@ export const GET_PAYROLL_RUN_DETAILS = gql`
       totalDeduction
       totalNetPay
       createdAt
+      hasLockedPayslips
+      draftCount
+      publishedCount
+      paidCount
       payslips {
         id
         user {
@@ -86,6 +94,63 @@ export const GET_PAYROLL_RUN_DETAILS = gql`
           url
         }
       }
+    }
+  }
+`;
+
+export const GET_SALARY_ADVANCES = gql`
+  query GetSalaryAdvances($status: String) {
+    salaryAdvances(status: $status) {
+      id
+      amount
+      reason
+      grantedOn
+      installmentsTotal
+      installmentAmount
+      remainingBalance
+      recoveredSoFar
+      status
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+    }
+  }
+`;
+
+export const GET_PAYROLL_SETTINGS = gql`
+  query GetPayrollSettings {
+    payrollSettings {
+      plan
+      payrollCycleDay
+      payrollAutoEnabled
+      canEnablePayrollAuto
+    }
+  }
+`;
+
+export const GET_PAYROLL_SETUP_CHECKLIST = gql`
+  query GetPayrollSetupChecklist {
+    payrollSetupChecklist {
+      components
+      structures
+      employeesWithCtc
+      activeAdvances
+      ready
+    }
+  }
+`;
+
+export const GET_ADVANCE_RECOVERY_PREVIEW = gql`
+  query GetAdvanceRecoveryPreview {
+    advanceRecoveryPreview {
+      advanceId
+      userId
+      userName
+      deduct
+      remainingAfter
     }
   }
 `;

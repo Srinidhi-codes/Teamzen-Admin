@@ -25,6 +25,7 @@ export interface User {
   organization?: {
     id: string;
     name: string;
+    plan?: "free" | "pro" | "elite" | string;
     logo?: {
       url: string;
     } | null;

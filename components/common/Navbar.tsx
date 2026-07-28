@@ -38,6 +38,20 @@ const IMPORTANT_ROUTES = [
   { name: "Payroll", href: "/payroll", icon: CircleDollarSign, roles: ["admin", "superadmin"] },
 ];
 
+function planLabel(plan?: string) {
+  const p = (plan || "free").toLowerCase();
+  if (p === "pro") return "Pro";
+  if (p === "elite") return "Elite";
+  return "Free";
+}
+
+function planBadgeClass(plan?: string) {
+  const p = (plan || "free").toLowerCase();
+  if (p === "elite") return "bg-violet-500/15 text-violet-700 dark:text-violet-300";
+  if (p === "pro") return "bg-sky-500/15 text-sky-700 dark:text-sky-300";
+  return "bg-muted text-muted-foreground";
+}
+
 export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps) {
   const { logoutUser, user: storeUser, setAuthenticatedUser } = useStore();
   const { user: graphqlUser, isLoading: isUserLoading } = useGraphQLUser(); // Sync with DB
@@ -165,9 +179,19 @@ export function Navbar({ onMenuClick, isSidebarCollapsed = false }: NavbarProps)
                 <span className="font-black text-sm text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors">
                   {user?.organization?.name || 'Teamzen'}
                 </span>
-                <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none mt-1">
-                  {user?.role === 'admin' || user?.role === 'superadmin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
-                </span>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider leading-none",
+                      planBadgeClass(user?.organization?.plan)
+                    )}
+                  >
+                    {planLabel(user?.organization?.plan)}
+                  </span>
+                  <span className="text-[8px] font-black text-muted-foreground uppercase tracking-[0.2em] leading-none">
+                    {user?.role === 'admin' || user?.role === 'superadmin' ? 'Strategic Intelligence' : 'Workforce Cluster'}
+                  </span>
+                </div>
               </div>
             </Link>
           </div>

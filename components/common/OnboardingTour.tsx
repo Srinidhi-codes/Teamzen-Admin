@@ -61,6 +61,15 @@ export function useOnboardingTour() {
                     }
                 },
                 {
+                    element: '#nav-payroll',
+                    popover: {
+                        title: 'Payroll',
+                        description: 'Run monthly payroll, advances, publish payslips, and payouts. Open Payroll and use “Take payroll tour” for a guided walkthrough.',
+                        side: "right",
+                        align: 'start'
+                    }
+                },
+                {
                     element: '#ai-assistant-trigger',
                     popover: {
                         title: 'Administrative AI',

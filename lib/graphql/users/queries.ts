@@ -46,6 +46,7 @@ export const GET_ME = gql`
       organization {
         id
         name
+        plan
         logo {
           url
         }

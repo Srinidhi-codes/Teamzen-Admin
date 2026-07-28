@@ -23,9 +23,46 @@ export const INITIATE_PAYROLL_RUN = gql`
   }
 `;
 
+export const CREATE_PAYROLL_RUN = gql`
+  mutation CreatePayrollRun($month: Int!, $year: Int!) {
+    createPayrollRun(month: $month, year: $year) {
+      id
+      month
+      year
+      status
+    }
+  }
+`;
+
+export const PROCESS_PAYROLL_RUN = gql`
+  mutation ProcessPayrollRun($payrollRunId: ID!) {
+    processPayrollRun(payrollRunId: $payrollRunId) {
+      id
+      status
+      totalGross
+      totalDeduction
+      totalNetPay
+    }
+  }
+`;
+
 export const CREATE_PAYROLL_ADJUSTMENT = gql`
-  mutation CreatePayrollAdjustment($userId: ID!, $month: Int!, $year: Int!, $amount: Decimal!, $reason: String!, $adjustmentType: String!) {
-    createPayrollAdjustment(userId: $userId, month: $month, year: $year, amount: $amount, reason: $reason, adjustmentType: $adjustmentType) {
+  mutation CreatePayrollAdjustment(
+    $userId: ID!
+    $month: Int!
+    $year: Int!
+    $amount: Decimal!
+    $reason: String!
+    $adjustmentType: String!
+  ) {
+    createPayrollAdjustment(
+      userId: $userId
+      month: $month
+      year: $year
+      amount: $amount
+      reason: $reason
+      adjustmentType: $adjustmentType
+    ) {
       id
       reason
       amount
@@ -51,8 +88,16 @@ export const CREATE_SALARY_COMPONENT = gql`
 `;
 
 export const CREATE_SALARY_STRUCTURE = gql`
-  mutation CreateSalaryStructure($name: String!, $description: String!, $components: [SalaryStructureComponentInput!]!) {
-    createSalaryStructure(name: $name, description: $description, components: $components) {
+  mutation CreateSalaryStructure(
+    $name: String!
+    $description: String!
+    $components: [SalaryStructureComponentInput!]!
+  ) {
+    createSalaryStructure(
+      name: $name
+      description: $description
+      components: $components
+    ) {
       id
       name
     }
@@ -60,7 +105,66 @@ export const CREATE_SALARY_STRUCTURE = gql`
 `;
 
 export const ASSIGN_SALARY_TO_EMPLOYEE = gql`
-  mutation AssignSalaryToEmployee($userId: ID!, $structureId: ID!, $annualCtc: Decimal!, $effectiveFrom: String!) {
-    assignSalaryToEmployee(userId: $userId, structureId: $structureId, annualCtc: $annualCtc, effectiveFrom: $effectiveFrom)
+  mutation AssignSalaryToEmployee(
+    $userId: ID!
+    $structureId: ID!
+    $annualCtc: Decimal!
+    $effectiveFrom: String!
+  ) {
+    assignSalaryToEmployee(
+      userId: $userId
+      structureId: $structureId
+      annualCtc: $annualCtc
+      effectiveFrom: $effectiveFrom
+    )
+  }
+`;
+
+export const CREATE_SALARY_ADVANCE = gql`
+  mutation CreateSalaryAdvance(
+    $userId: ID!
+    $amount: Decimal!
+    $installments: Int!
+    $reason: String
+    $grantedOn: String
+  ) {
+    createSalaryAdvance(
+      userId: $userId
+      amount: $amount
+      installments: $installments
+      reason: $reason
+      grantedOn: $grantedOn
+    ) {
+      id
+      amount
+      remainingBalance
+      status
+    }
+  }
+`;
+
+export const CANCEL_SALARY_ADVANCE = gql`
+  mutation CancelSalaryAdvance($advanceId: ID!) {
+    cancelSalaryAdvance(advanceId: $advanceId) {
+      id
+      status
+    }
+  }
+`;
+
+export const UPDATE_PAYROLL_SETTINGS = gql`
+  mutation UpdatePayrollSettings(
+    $payrollCycleDay: Int!
+    $payrollAutoEnabled: Boolean!
+  ) {
+    updatePayrollSettings(
+      payrollCycleDay: $payrollCycleDay
+      payrollAutoEnabled: $payrollAutoEnabled
+    ) {
+      plan
+      payrollCycleDay
+      payrollAutoEnabled
+      canEnablePayrollAuto
+    }
   }
 `;

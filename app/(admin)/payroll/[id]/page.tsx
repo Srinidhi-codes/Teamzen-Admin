@@ -2,231 +2,427 @@
 
 import React, { use } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { GET_PAYROLL_RUN_DETAILS } from "@/lib/graphql/payroll/queries";
-import { ArrowLeft, CheckCircle, Clock, Download, DollarSign, Settings2, RefreshCcw } from "lucide-react";
+import {
+  GET_PAYROLL_RUN_DETAILS,
+  GET_ADVANCE_RECOVERY_PREVIEW,
+} from "@/lib/graphql/payroll/queries";
+import {
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  Download,
+  DollarSign,
+  Settings2,
+  RefreshCcw,
+  Play,
+} from "lucide-react";
 import Link from "next/link";
 import { PayrollAdjustmentModal } from "@/components/payroll/PayrollAdjustmentModal";
-import { INITIATE_PAYROLL_RUN, PUBLISH_PAYSLIPS, EXECUTE_PAYROLL_PAYOUT } from "@/lib/graphql/payroll/mutations";
+import { PayrollTourButton } from "@/components/payroll/PayrollTour";
+import {
+  PROCESS_PAYROLL_RUN,
+  PUBLISH_PAYSLIPS,
+  EXECUTE_PAYROLL_PAYOUT,
+} from "@/lib/graphql/payroll/mutations";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Card } from "@/components/common/Card";
+import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { useStore } from "@/lib/store/useStore";
+import { cn } from "@/lib/utils";
 
-const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const monthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
-export default function PayrollRunDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
-    const { user } = useStore();
-    
-    if (user && user.role !== 'admin') {
-        return (
-            <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in flex flex-col items-center justify-center min-h-[60vh]">
-                 <h1 className="text-premium-h1 text-rose-500">Access Restricted</h1>
-                 <p className="text-muted-foreground font-medium italic text-center">You do not have administrative privileges to access the Payroll Machine.<br/>This module is restricted to the Admin role.</p>
-                 <Link href="/dashboard">
-                    <Button className="btn-primary mt-6 rounded-2xl px-8 font-black uppercase tracking-widest text-[10px]">Return to Dashboard</Button>
-                 </Link>
-            </div>
-        );
-    }
+function statusChip(status: string) {
+  const map: Record<string, string> = {
+    draft: "bg-muted text-muted-foreground",
+    processing: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+    completed: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    failed: "bg-destructive/10 text-destructive",
+    published: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+    paid: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  };
+  return map[status] || "bg-muted text-muted-foreground";
+}
 
-    const { data, loading, error, refetch } = useQuery(GET_PAYROLL_RUN_DETAILS, {
-        variables: { id },
-        fetchPolicy: "network-only"
-    }) as any;
+export default function PayrollRunDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { user } = useStore();
 
-    const [publishPayslips, { loading: publishing }] = useMutation(PUBLISH_PAYSLIPS);
-    const [executePayout, { loading: paying }] = useMutation<{ executePayrollPayout: number }>(EXECUTE_PAYROLL_PAYOUT);
-    const [recalculatePayroll, { loading: recalculating }] = useMutation(INITIATE_PAYROLL_RUN);
+  const { data, loading, error, refetch } = useQuery(GET_PAYROLL_RUN_DETAILS, {
+    variables: { id },
+    fetchPolicy: "network-only",
+    skip: !!(user && user.role !== "admin"),
+  }) as any;
 
-    const [selectedUser, setSelectedUser] = React.useState<any>(null);
+  const { data: advancePreview } = useQuery(GET_ADVANCE_RECOVERY_PREVIEW, {
+    skip: !!(user && user.role !== "admin"),
+  }) as any;
 
-    const run = data?.payrollRun;
+  const [publishPayslips, { loading: publishing }] = useMutation(PUBLISH_PAYSLIPS);
+  const [executePayout, { loading: paying }] = useMutation<{
+    executePayrollPayout: number;
+  }>(EXECUTE_PAYROLL_PAYOUT);
+  const [processRun, { loading: processing }] = useMutation(PROCESS_PAYROLL_RUN);
 
-    if (loading) return <div className="p-8 text-center text-muted-foreground animate-pulse font-black uppercase tracking-[0.2em]">Synthesizing Ledger Data...</div>;
-    if (error) return <div className="p-8 text-center text-destructive bg-destructive/10 rounded-2xl m-8 border border-destructive/20 font-bold">Error: {error.message}</div>;
-    if (!run) return (
-        <div className="p-12 text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-destructive/10 text-destructive mb-4">
-                <Clock className="w-10 h-10" />
-            </div>
-            <h2 className="text-2xl font-black italic">Payroll Run Not Found</h2>
-            <p className="text-muted-foreground max-w-md mx-auto">The requested computational cycle (ID: {id}) could not be located in the neural matrix.</p>
-            <Link href="/payroll">
-                <Button variant="outline" className="mt-4 font-black uppercase tracking-widest text-xs">Return to Runs</Button>
-            </Link>
-        </div>
-    );
+  const [selectedUser, setSelectedUser] = React.useState<any>(null);
+  const run = data?.payrollRun;
 
-
-
-    const handlePublish = async () => {
-        try {
-            await publishPayslips({ variables: { payrollRunId: id } });
-            toast.success("Payslips published successfully");
-            refetch();
-        } catch (error: any) {
-            toast.error(error.message);
-        }
-    };
-
-    const handleRecalculate = async () => {
-        try {
-            await recalculatePayroll({ variables: { month: run.month, year: run.year } });
-            toast.success("Payroll values recalculated with adjustments");
-            refetch();
-        } catch (error: any) {
-            toast.error(error.message);
-        }
-    };
-
-    const handleProcessPayouts = async () => {
-        try {
-            const res = await executePayout({ variables: { payrollRunId: id } });
-            toast.success(`Processed payouts for ${res.data?.executePayrollPayout ?? 0} employees via Razorpay.`);
-            refetch();
-        } catch (error: any) {
-            toast.error(error.message);
-        }
-    };
-
+  if (user && user.role !== "admin") {
     return (
-        <div className="p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
-            <div className="flex items-center gap-4">
-                <Link href="/payroll">
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Button>
-                </Link>
-                <div>
-                    <h1 className="text-premium-h1">Payroll Run - {monthNames[run.month - 1]} {run.year}</h1>
-                    <p className="text-muted-foreground mt-1 font-medium">Detailed breakdown of disbursements and deductions.</p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <Card className="premium-card p-6 bg-card">
-                    <p className="text-premium-label mb-2">Total Liquidity Required</p>
-                    <p className="text-3xl font-black italic text-primary">₹{Number(run.totalNetPay).toLocaleString()}</p>
-                </Card>
-                <Card className="premium-card p-6 bg-card">
-                    <p className="text-premium-label mb-2">Gross Aggregate</p>
-                    <p className="text-2xl font-black italic">₹{Number(run.totalGross).toLocaleString()}</p>
-                </Card>
-                <Card className="premium-card p-6 bg-card">
-                    <p className="text-premium-label mb-2">Statutory & Deductions</p>
-                    <p className="text-2xl font-black italic text-destructive">₹{Number(run.totalDeduction).toLocaleString()}</p>
-                </Card>
-                <Card className="premium-card p-6 bg-card flex flex-col justify-center items-start">
-                    <p className="text-premium-label mb-2">Cycle Status</p>
-                    <div className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border ${run.status === 'completed' ? 'bg-emerald-100/50 text-emerald-700 border-emerald-200' : 'bg-amber-100/50 text-amber-700 border-amber-200'
-                        }`}>
-                        {run.status}
-                    </div>
-                </Card>
-            </div>
-
-            <div className="flex gap-4">
-                <Button onClick={handlePublish} disabled={publishing || run.status !== 'completed'} className="btn-secondary px-6 gap-2">
-                    <CheckCircle className="w-4 h-4" /> {publishing ? "Publishing..." : "Publish Payslips"}
-                </Button>
-                <Button onClick={handleProcessPayouts} disabled={paying || run.status !== 'completed'} className="btn-primary px-6 gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20">
-                    <DollarSign className="w-4 h-4" /> {paying ? "Processing..." : "Process Payouts (Razorpay)"}
-                </Button>
-                <Button
-                    onClick={handleRecalculate}
-                    disabled={recalculating || run.status === 'published' || run.status === 'paid'}
-                    variant="outline"
-                    className="premium-card bg-card font-black text-[10px] uppercase tracking-widest gap-2"
-                >
-                    <RefreshCcw className={`w-4 h-4 ${recalculating ? 'animate-spin' : ''}`} /> Recalculate
-                </Button>
-            </div>
-
-            <Card className="premium-card p-0 overflow-hidden">
-                <DataTable
-                    isLoading={false}
-                    data={run.payslips || []}
-                    columns={[
-                        {
-                            key: "user",
-                            label: "Employee",
-                            render: (_val, row: any) => (
-                                <div>
-                                    <p className="font-bold">{row.user?.firstName ?? "Unknown"} {row.user?.lastName ?? "User"}</p>
-                                    <p className="text-[10px] text-muted-foreground">{row.user?.email ?? "No Email"}</p>
-                                </div>
-                            )
-                        },
-                        { key: "designation", label: "Role", render: (val) => <span className="text-xs font-medium">{val}</span> },
-                        { key: "workedDays", label: "Attendance", render: (val, row: any) => <span className="text-xs font-medium">{val} Days (LOP: {row.lopDays})</span> },
-                        { key: "grossEarnings", label: "Gross", render: (val) => <span className="font-bold">₹{Number(val).toLocaleString()}</span> },
-                        { key: "totalDeductions", label: "Deductions", render: (val) => <span className="font-bold text-destructive">₹{Number(val).toLocaleString()}</span> },
-                        { key: "netPay", label: "Net Payable", render: (val) => <span className="font-black italic text-primary">₹{Number(val).toLocaleString()}</span> },
-                        {
-                            key: "status",
-                            label: "Status",
-                            render: (val) => (
-                                <span className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest ${val === 'published' ? 'bg-blue-100 text-blue-700' :
-                                    val === 'paid' ? 'bg-emerald-100 text-emerald-700' :
-                                        'bg-gray-100 text-gray-700'
-                                    }`}>
-                                    {val}
-                                </span>
-                            )
-                        },
-                        {
-                            key: "actions",
-                            label: "Actions",
-                            render: (_val: any, row: any) => (
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-black text-[10px] uppercase tracking-widest hover:bg-primary/5 hover:text-primary"
-                                        onClick={() => {
-                                            if (row.payslipPdf?.url) {
-                                                window.open(row.payslipPdf.url, '_blank');
-                                            } else {
-                                                toast.error("PDF not generated yet. Publish payslips first.");
-                                            }
-                                        }}
-                                    >
-                                        <Download className="w-4 h-4 mr-2" /> PDF
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="font-black text-[10px] uppercase tracking-widest hover:bg-amber-50 hover:text-amber-600"
-                                        onClick={() => {
-                                            if (row.user) {
-                                                setSelectedUser(row.user);
-                                            } else {
-                                                toast.error("User data missing for this payslip");
-                                            }
-                                        }}
-                                        disabled={run.status === 'published' || run.status === 'paid'}
-                                    >
-                                        <Settings2 className="w-4 h-4 mr-2" /> Adjust
-                                    </Button>
-                                </div>
-                            )
-                        }
-                    ]}
-                />
-            </Card>
-
-            <PayrollAdjustmentModal
-                isOpen={!!selectedUser}
-                onClose={() => setSelectedUser(null)}
-                user={selectedUser}
-                month={run.month}
-                year={run.year}
-                onSuccess={() => {
-                    toast.info("Adjustment saved. Click 'Recalculate' to apply changes.");
-                }}
-            />
-        </div>
+      <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-base font-semibold text-foreground">Access restricted</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Only admins can access payroll.</p>
+        <Link href="/dashboard" className="mt-6">
+          <Button>Back to dashboard</Button>
+        </Link>
+      </div>
     );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+        <p className="text-sm text-muted-foreground">Loading payroll run…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="m-4 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-6 text-center text-sm text-destructive">
+        {error.message}
+      </div>
+    );
+  }
+
+  if (!run) {
+    return (
+      <div className="mx-auto max-w-md px-6 py-16 text-center">
+        <Clock className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+        <h2 className="text-base font-semibold text-foreground">Payroll run not found</h2>
+        <Link href="/payroll" className="mt-6 inline-block">
+          <Button variant="outline">Back to payroll</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const locked = !!run.hasLockedPayslips;
+  const hasPayslips = (run.payslips || []).length > 0;
+  const publishedCount = run.publishedCount ?? 0;
+  const paidCount = run.paidCount ?? 0;
+
+  const stepIndex =
+    paidCount > 0
+      ? 4
+      : publishedCount > 0
+        ? 3
+        : run.status === "completed" && hasPayslips
+          ? 2
+          : run.status === "draft" || run.status === "failed"
+            ? 0
+            : 1;
+
+  const steps = [
+    { label: "Draft", desc: "Run created" },
+    { label: "Process", desc: "Calculate payslips" },
+    { label: "Review", desc: "Adjust / advances" },
+    { label: "Publish", desc: "PDFs + employee view" },
+    { label: "Payout", desc: "Bank transfer" },
+  ];
+
+  const handleProcess = async () => {
+    try {
+      await processRun({ variables: { payrollRunId: id } });
+      toast.success("Payroll calculated");
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handlePublish = async () => {
+    try {
+      await publishPayslips({ variables: { payrollRunId: id } });
+      toast.success("Payslips published");
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleProcessPayouts = async () => {
+    try {
+      const res = await executePayout({ variables: { payrollRunId: id } });
+      toast.success(
+        `Processed payouts for ${res.data?.executePayrollPayout ?? 0} employees.`
+      );
+      refetch();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const recoveries = advancePreview?.advanceRecoveryPreview || [];
+
+  return (
+    <div className="page-shell">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-3">
+          <Link
+            href="/payroll"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to payroll
+          </Link>
+          <PageHeader
+            title={`${monthNames[run.month - 1]} ${run.year}`}
+            description="Follow the steps: process → review → publish → payout."
+          />
+        </div>
+        <PayrollTourButton variant="detail" />
+      </div>
+
+      <Card id="payroll-run-stepper" className="p-4">
+        <ol className="grid gap-3 sm:grid-cols-5">
+          {steps.map((s, i) => (
+            <li
+              key={s.label}
+              className={cn(
+                "rounded-lg border px-3 py-2",
+                i <= stepIndex
+                  ? "border-primary/40 bg-primary/5"
+                  : "border-border bg-muted/30"
+              )}
+            >
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Step {i + 1}
+              </p>
+              <p className="text-sm font-semibold text-foreground">{s.label}</p>
+              <p className="text-xs text-muted-foreground">{s.desc}</p>
+            </li>
+          ))}
+        </ol>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <p className="text-sm text-muted-foreground">Net pay</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            ₹{Number(run.totalNetPay).toLocaleString()}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-muted-foreground">Gross</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            ₹{Number(run.totalGross).toLocaleString()}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-muted-foreground">Deductions</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-destructive">
+            ₹{Number(run.totalDeduction).toLocaleString()}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-muted-foreground">Status</p>
+          <span
+            className={cn(
+              "mt-2 inline-flex rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
+              statusChip(run.status)
+            )}
+          >
+            {run.status}
+          </span>
+        </Card>
+      </div>
+
+      {recoveries.length > 0 && !locked && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <p className="text-sm font-semibold text-foreground">
+            Advances to recover on next process
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+            {recoveries.map((r: any) => (
+              <li key={r.advanceId}>
+                {r.userName}: ₹{Number(r.deduct).toLocaleString()} (remaining after ₹
+                {Number(r.remainingAfter).toLocaleString()})
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          id="payroll-process"
+          onClick={handleProcess}
+          disabled={processing || locked}
+          variant={run.status === "draft" || run.status === "failed" ? "default" : "outline"}
+        >
+          {run.status === "draft" || !hasPayslips ? (
+            <Play className="mr-2 h-4 w-4" />
+          ) : (
+            <RefreshCcw className={cn("mr-2 h-4 w-4", processing && "animate-spin")} />
+          )}
+          {processing
+            ? "Processing…"
+            : locked
+              ? "Locked (published/paid)"
+              : hasPayslips
+                ? "Recalculate"
+                : "Process payroll"}
+        </Button>
+        <Button
+          id="payroll-publish"
+          onClick={handlePublish}
+          disabled={publishing || run.status !== "completed" || !hasPayslips}
+          variant="outline"
+        >
+          <CheckCircle className="mr-2 h-4 w-4" />
+          {publishing ? "Publishing…" : "Publish payslips"}
+        </Button>
+        <Button
+          id="payroll-payout"
+          onClick={handleProcessPayouts}
+          disabled={paying || publishedCount === 0}
+        >
+          <DollarSign className="mr-2 h-4 w-4" />
+          {paying ? "Processing…" : "Process payouts"}
+        </Button>
+      </div>
+
+      <Card className="overflow-hidden p-0">
+        <DataTable
+          isLoading={false}
+          data={run.payslips || []}
+          columns={[
+            {
+              key: "user",
+              label: "Employee",
+              render: (_val, row: any) => (
+                <div>
+                  <p className="font-medium text-foreground">
+                    {row.user?.firstName ?? "Unknown"} {row.user?.lastName ?? ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{row.user?.email ?? "—"}</p>
+                </div>
+              ),
+            },
+            {
+              key: "workedDays",
+              label: "Attendance",
+              render: (val, row: any) => (
+                <span className="text-sm">
+                  {val} days (LOP: {row.lopDays})
+                </span>
+              ),
+            },
+            {
+              key: "grossEarnings",
+              label: "Gross",
+              render: (val) => (
+                <span className="tabular-nums">₹{Number(val).toLocaleString()}</span>
+              ),
+            },
+            {
+              key: "totalDeductions",
+              label: "Deductions",
+              render: (val) => (
+                <span className="tabular-nums text-destructive">
+                  ₹{Number(val).toLocaleString()}
+                </span>
+              ),
+            },
+            {
+              key: "netPay",
+              label: "Net pay",
+              render: (val) => (
+                <span className="font-medium tabular-nums">
+                  ₹{Number(val).toLocaleString()}
+                </span>
+              ),
+            },
+            {
+              key: "status",
+              label: "Status",
+              render: (val) => (
+                <span
+                  className={cn(
+                    "rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
+                    statusChip(String(val))
+                  )}
+                >
+                  {val}
+                </span>
+              ),
+            },
+            {
+              key: "actions",
+              label: "Actions",
+              render: (_val: any, row: any) => (
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (row.payslipPdf?.url) window.open(row.payslipPdf.url, "_blank");
+                      else toast.error("PDF not ready. Publish payslips first.");
+                    }}
+                  >
+                    <Download className="mr-1.5 h-3.5 w-3.5" />
+                    PDF
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (row.user) setSelectedUser(row.user);
+                      else toast.error("User data missing");
+                    }}
+                    disabled={locked}
+                  >
+                    <Settings2 className="mr-1.5 h-3.5 w-3.5" />
+                    Adjust
+                  </Button>
+                </div>
+              ),
+            },
+          ]}
+        />
+      </Card>
+
+      <PayrollAdjustmentModal
+        isOpen={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        user={selectedUser}
+        month={run.month}
+        year={run.year}
+        onSuccess={() => {
+          toast.info("Adjustment saved. Click Recalculate to apply.");
+        }}
+      />
+    </div>
+  );
 }
