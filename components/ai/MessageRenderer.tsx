@@ -6,6 +6,7 @@ import { useMessageParser } from "./useMessageParser";
 import { InsightCard } from "./cards/InsightCard";
 import { PayrollCard } from "./cards/PayrollCard";
 import { CitationChips } from "./CitationChips";
+import { CorrectionCard } from "./cards/CorrectionCard";
 import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
@@ -259,6 +260,26 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     return <InsightCard key={idx} {...part.value} />;
                 } else if (part.type === 'payroll') {
                     return <PayrollCard key={idx} {...part.value} />;
+                } else if (part.type === 'correction') {
+                    return (
+                        <CorrectionCard
+                            key={idx}
+                            id={String(part.value.id)}
+                            date={part.value.date}
+                            login={part.value.login}
+                            suggested_logout={part.value.suggested_logout}
+                            reason={part.value.reason}
+                            onConfirm={(id, suggested) => {
+                                const timePart = suggested && suggested !== '—'
+                                    ? ` with logout time ${suggested}`
+                                    : '';
+                                handleSend?.(
+                                    undefined,
+                                    `Confirm attendance correction ID ${id}${timePart}`
+                                );
+                            }}
+                        />
+                    );
                 }
                 return null;
             })}
