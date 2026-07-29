@@ -27,6 +27,7 @@ export const GET_SALARY_STRUCTURES = gql`
           id
           name
           code
+          componentType
         }
         calculationType
         value

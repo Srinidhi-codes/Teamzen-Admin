@@ -104,6 +104,31 @@ export const CREATE_SALARY_STRUCTURE = gql`
   }
 `;
 
+export const UPDATE_SALARY_STRUCTURE = gql`
+  mutation UpdateSalaryStructure(
+    $structureId: ID!
+    $name: String!
+    $description: String!
+    $components: [SalaryStructureComponentInput!]!
+  ) {
+    updateSalaryStructure(
+      structureId: $structureId
+      name: $name
+      description: $description
+      components: $components
+    ) {
+      id
+      name
+    }
+  }
+`;
+
+export const DELETE_SALARY_STRUCTURE = gql`
+  mutation DeleteSalaryStructure($structureId: ID!) {
+    deleteSalaryStructure(structureId: $structureId)
+  }
+`;
+
 export const ASSIGN_SALARY_TO_EMPLOYEE = gql`
   mutation AssignSalaryToEmployee(
     $userId: ID!
@@ -116,7 +141,12 @@ export const ASSIGN_SALARY_TO_EMPLOYEE = gql`
       structureId: $structureId
       annualCtc: $annualCtc
       effectiveFrom: $effectiveFrom
-    )
+    ) {
+      id
+      annualCtc
+      effectiveFrom
+      isActive
+    }
   }
 `;
 
@@ -148,6 +178,27 @@ export const CANCEL_SALARY_ADVANCE = gql`
     cancelSalaryAdvance(advanceId: $advanceId) {
       id
       status
+    }
+  }
+`;
+
+export const SAVE_EMPLOYEE_COMPONENT_OVERRIDES = gql`
+  mutation SaveEmployeeComponentOverrides(
+    $employeeSalaryId: ID!
+    $overrides: [ComponentOverrideInput!]!
+  ) {
+    saveEmployeeComponentOverrides(
+      employeeSalaryId: $employeeSalaryId
+      overrides: $overrides
+    ) {
+      id
+      component {
+        id
+        name
+        code
+      }
+      isExcluded
+      overrideValue
     }
   }
 `;

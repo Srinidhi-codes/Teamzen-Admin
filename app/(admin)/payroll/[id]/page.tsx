@@ -70,11 +70,11 @@ export default function PayrollRunDetailsPage({
   const { data, loading, error, refetch } = useQuery(GET_PAYROLL_RUN_DETAILS, {
     variables: { id },
     fetchPolicy: "network-only",
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
   }) as any;
 
   const { data: advancePreview } = useQuery(GET_ADVANCE_RECOVERY_PREVIEW, {
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
   }) as any;
 
   const [publishPayslips, { loading: publishing }] = useMutation(PUBLISH_PAYSLIPS);
@@ -86,7 +86,7 @@ export default function PayrollRunDetailsPage({
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
   const run = data?.payrollRun;
 
-  if (user && user.role !== "admin") {
+  if (user && user.role !== "admin" && user.role !== "superadmin") {
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-6 text-center">
         <h1 className="text-base font-semibold text-foreground">Access restricted</h1>

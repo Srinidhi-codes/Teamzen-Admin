@@ -4,8 +4,10 @@ import { User } from "@/lib/graphql/users/types";
 import { Mail, Phone, Building2, Edit, MapPin } from "lucide-react";
 import { Switch } from "../ui/switch";
 import Image from "next/image";
+import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 
 interface EmployeeCardProps {
   employee: User;
@@ -14,6 +16,7 @@ interface EmployeeCardProps {
 }
 
 export default function EmployeeCard({ employee, onEdit, onStatusToggle }: EmployeeCardProps) {
+  const [isPhotoOpen, setIsPhotoOpen] = useState(false);
   const { user: currentUser } = useStore();
   const isAdminOrHr =
     currentUser?.role === "admin" ||
@@ -21,9 +24,18 @@ export default function EmployeeCard({ employee, onEdit, onStatusToggle }: Emplo
     currentUser?.role === "superadmin";
 
   return (
+    <>
     <div className="flex flex-col rounded-xl border border-border bg-card">
       <div className="flex items-start gap-3 border-b border-border p-4">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-muted">
+        <button
+          type="button"
+          onClick={() => employee.profilePictureUrl && setIsPhotoOpen(true)}
+          className={cn(
+            "relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-muted",
+            employee.profilePictureUrl ? "cursor-zoom-in" : "cursor-default"
+          )}
+          title={employee.profilePictureUrl ? "View photo" : undefined}
+        >
           {employee.profilePictureUrl ? (
             <Image
               src={employee.profilePictureUrl}
@@ -38,7 +50,7 @@ export default function EmployeeCard({ employee, onEdit, onStatusToggle }: Emplo
               {employee.lastName?.charAt(0)}
             </div>
           )}
-        </div>
+        </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -125,5 +137,12 @@ export default function EmployeeCard({ employee, onEdit, onStatusToggle }: Emplo
         </div>
       )}
     </div>
+    <PhotoOverlay
+      open={isPhotoOpen}
+      onOpenChange={setIsPhotoOpen}
+      src={employee.profilePictureUrl || null}
+      name={`${employee.firstName || ""} ${employee.lastName || ""}`.trim()}
+    />
+    </>
   );
 }

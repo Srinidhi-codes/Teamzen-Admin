@@ -211,6 +211,7 @@ export function AssistantWidget() {
                     isLast={i === messages.length - 1}
                     isStreaming={isStreaming}
                     activeTool={i === messages.length - 1 ? activeTool : null}
+                    sources={msg.sources}
                   />
                   <div
                     className={cn(

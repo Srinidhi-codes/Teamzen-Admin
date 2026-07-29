@@ -5,6 +5,7 @@ import { useGraphQLUserMutations } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
 import { Loader2, Eye, EyeOff, Plus } from "lucide-react";
+import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
 import { z } from "zod";
@@ -18,6 +19,7 @@ import { FormSkeleton } from "../common/Skeleton";
 
 
 import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
+import { Switch as ToggleSwitch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
 import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucide-react";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
@@ -37,6 +39,7 @@ const employeeSchema = z.object({
     phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
     role: z.string().min(1, "Role required "),
     dateOfJoining: z.string().default(moment().format("YYYY-MM-DD")),
+    dateOfBirth: z.string().optional(),
     dateOfExit: z.string().optional(),
     employmentType: z.string().min(1, "Employment type required "),
     isActive: z.boolean().default(true),
@@ -104,11 +107,13 @@ export default function EmployeeForm({
     const { departments, isDepartmentsLoading } = useGraphQLDepartments();
     const { officeLocations, isOfficeLocationsLoading } = useGraphQLOfficeLocations();
     const { salaryStructures, isStructuresLoading } = usePayrollQueries();
-    const { assignSalaryToEmployee } = usePayrollMutations();
+    const { assignSalaryToEmployee, saveEmployeeComponentOverrides } = usePayrollMutations();
 
     const [activeTab, setActiveTab] = useState("identity");
     const [profilePicture, setProfilePicture] = useState<File | null>(null);
     const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(initialData?.profilePictureUrl || null);
+    const [isPhotoOpen, setIsPhotoOpen] = useState(false);
+    const [componentOverrides, setComponentOverrides] = useState<Record<string, { isExcluded: boolean; overrideValue: string }>>({});
     const isSubmitting = isCreatingUser || isUpdatingUser;
     const formMetaLoading =
         (isDepartmentsLoading && !departments) ||
@@ -193,6 +198,17 @@ export default function EmployeeForm({
             annualCtc: initialData.salaryDetails?.annualCtc ? String(initialData.salaryDetails.annualCtc) : "",
             effectiveFrom: initialData.salaryDetails?.effectiveFrom || moment().startOf('month').format("YYYY-MM-DD"),
         });
+        // Populate component overrides
+        if (initialData.salaryDetails?.componentOverrides) {
+            const ovrs: Record<string, { isExcluded: boolean; overrideValue: string }> = {};
+            for (const o of initialData.salaryDetails.componentOverrides) {
+                ovrs[o.component.id] = {
+                    isExcluded: o.isExcluded,
+                    overrideValue: o.overrideValue != null ? String(o.overrideValue) : "",
+                };
+            }
+            setComponentOverrides(ovrs);
+        }
     }, [initialData]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,6 +260,10 @@ export default function EmployeeForm({
                 newData.officeLocationId = "";
                 newData.managerId = "";
             }
+
+            if (name === "salaryStructureId") {
+                setComponentOverrides({});
+            }
             
             return newData;
         });
@@ -253,10 +273,65 @@ export default function EmployeeForm({
         setFormData((prev) => ({ ...prev, [name]: checked }));
     };
 
+    const buildOverridePayload = () =>
+        Object.entries(componentOverrides)
+            .filter(([_, v]) => v.isExcluded || v.overrideValue !== "")
+            .map(([componentId, v]) => ({
+                componentId,
+                isExcluded: v.isExcluded,
+                overrideValue: v.overrideValue ? Number(v.overrideValue) : null,
+            }));
+
+    const handlePayrollOnlySave = async () => {
+        if (!initialData) {
+            toast.error("Create the employee first before saving payroll details.");
+            return;
+        }
+
+        let employeeSalaryId = initialData.salaryDetails?.id || null;
+
+        if (formData.salaryStructureId && formData.annualCtc) {
+            const payrollResult = await assignSalaryToEmployee(
+                initialData.id,
+                formData.salaryStructureId,
+                Number(formData.annualCtc),
+                formData.effectiveFrom
+            );
+            if (!payrollResult.success) {
+                toast.error("Failed to save payroll details: " + payrollResult.error);
+                return;
+            }
+            employeeSalaryId = payrollResult.salary?.id || employeeSalaryId;
+            toast.success("Salary structure assigned successfully");
+        }
+
+        const overridesList = buildOverridePayload();
+        if (employeeSalaryId && Object.keys(componentOverrides).length > 0) {
+            const ovrResult = await saveEmployeeComponentOverrides(employeeSalaryId, overridesList);
+            if (!ovrResult.success) {
+                toast.error("Failed to save component overrides: " + ovrResult.error);
+                return;
+            }
+            toast.success("Component overrides saved");
+        }
+
+        if (!formData.salaryStructureId && overridesList.length > 0) {
+            toast.error("Assign a salary structure before saving component overrides.");
+            return;
+        }
+
+        onSuccess();
+    };
+
     const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
         e?.preventDefault();
 
         try {
+            if (initialData && activeTab === "payroll") {
+                await handlePayrollOnlySave();
+                return;
+            }
+
             const validationResult = employeeSchema.safeParse(formData);
             if (!validationResult.success) {
                 const fieldErrors: Record<string, string> = {};
@@ -322,6 +397,7 @@ export default function EmployeeForm({
             }
 
             // Handle Payroll Assignment...
+            let savedSalaryId = initialData?.salaryDetails?.id || null;
             if (savedUser && formData.salaryStructureId && formData.annualCtc) {
                 const payrollResult = await assignSalaryToEmployee(
                     savedUser.id,
@@ -330,9 +406,20 @@ export default function EmployeeForm({
                     formData.effectiveFrom
                 );
                 if (payrollResult.success) {
+                    savedSalaryId = payrollResult.salary?.id || savedSalaryId;
                     toast.success("Salary structure assigned successfully");
                 } else {
                     toast.error("User saved, but failed to assign salary structure: " + payrollResult.error);
+                }
+            }
+
+            // Save component overrides if employee has a salary record
+            const salaryId = savedSalaryId;
+            if (salaryId && Object.keys(componentOverrides).length > 0) {
+                const overridesList = buildOverridePayload();
+                const ovrResult = await saveEmployeeComponentOverrides(salaryId, overridesList);
+                if (!ovrResult.success) {
+                    toast.error("Failed to save component overrides: " + ovrResult.error);
                 }
             }
 
@@ -347,7 +434,8 @@ export default function EmployeeForm({
     }
 
     return (
-        <form onSubmit={handleSubmit} className="flex min-h-full flex-col">
+        <>
+        <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }} className="flex min-h-full flex-col">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
                 <TabsList className="mb-4 grid h-auto w-full shrink-0 grid-cols-4 gap-0 rounded-none border-b border-border bg-transparent p-0">
                     <TabsTrigger
@@ -385,13 +473,17 @@ export default function EmployeeForm({
                     {/* Profile Picture Upload Section */}
                     <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-4">
                         <div className="relative">
-                            <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
+                            <button
+                                type="button"
+                                onClick={() => profilePicturePreview && setIsPhotoOpen(true)}
+                                className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border border-border bg-card ${profilePicturePreview ? "cursor-zoom-in" : "cursor-default"}`}
+                            >
                                 {profilePicturePreview ? (
                                     <img src={profilePicturePreview} alt="Preview" className="h-full w-full object-cover" />
                                 ) : (
                                     <UserIcon className="h-8 w-8 text-muted-foreground/40" />
                                 )}
-                            </div>
+                            </button>
                             <label className="absolute -bottom-1.5 -right-1.5 cursor-pointer rounded-lg bg-primary p-1.5 text-primary-foreground hover:bg-primary/90">
                                 <Plus className="h-3.5 w-3.5" />
                                 <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
@@ -483,6 +575,74 @@ export default function EmployeeForm({
                             />
                         </div>
                     </div>
+
+                    {/* Per-employee component customization */}
+                    {(() => {
+                        const selectedStructure = salaryStructures.find((s: any) => String(s.id) === formData.salaryStructureId);
+                        const structComponents = selectedStructure?.components || [];
+                        if (structComponents.length === 0) return null;
+                        return (
+                        <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
+                            <div className="flex items-center gap-3">
+                                <Wallet className="h-5 w-5 text-primary" />
+                                <div>
+                                    <h3 className="text-sm font-medium">Component Customization</h3>
+                                    <p className="text-xs text-muted-foreground">Toggle or override specific salary components for this employee.</p>
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                {structComponents.map((sc: any) => {
+                                    const compId = sc.component.id;
+                                    const ovr = componentOverrides[compId] || { isExcluded: false, overrideValue: "" };
+                                    const isEarning = sc.component.componentType === "earning";
+                                    return (
+                                        <div key={sc.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+                                            <ToggleSwitch
+                                                checked={!ovr.isExcluded}
+                                                onCheckedChange={(checked) => {
+                                                    setComponentOverrides((prev) => ({
+                                                        ...prev,
+                                                        [compId]: { ...ovr, isExcluded: !checked },
+                                                    }));
+                                                }}
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-medium truncate">{sc.component.name}</span>
+                                                    <span className={cn(
+                                                        "text-[10px] px-1.5 py-0.5 rounded font-medium",
+                                                        isEarning ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
+                                                    )}>
+                                                        {isEarning ? "Earning" : "Deduction"}
+                                                    </span>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Default: {sc.calculationType === "flat" ? `₹${sc.value}` : `${sc.value}% of ${sc.component.code}`}
+                                                </p>
+                                            </div>
+                                            <div className="w-32 shrink-0">
+                                                <input
+                                                    type="number"
+                                                    placeholder="Override ₹"
+                                                    disabled={ovr.isExcluded}
+                                                    value={ovr.overrideValue}
+                                                    onChange={(e) => {
+                                                        setComponentOverrides((prev) => ({
+                                                            ...prev,
+                                                            [compId]: { ...ovr, overrideValue: e.target.value },
+                                                        }));
+                                                    }}
+                                                    className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm disabled:opacity-50"
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        );
+                    })()}
                 </TabsContent>
                 </div>
             </Tabs>
@@ -494,5 +654,12 @@ export default function EmployeeForm({
                 </button>
             </div>
         </form>
+        <PhotoOverlay
+            open={isPhotoOpen}
+            onOpenChange={setIsPhotoOpen}
+            src={profilePicturePreview}
+            name={`${formData.firstName || ""} ${formData.lastName || ""}`.trim() || "Employee"}
+        />
+        </>
     );
 }

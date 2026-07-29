@@ -68,10 +68,27 @@ export interface User {
     salaryStructure: {
       id: string;
       name: string;
+      components?: {
+        id: string;
+        component: {
+          id: string;
+          name: string;
+          code: string;
+          componentType: string;
+        };
+        calculationType: string;
+        value: number;
+      }[];
     };
     annualCtc: number;
     effectiveFrom: string;
     isActive: boolean;
+    componentOverrides?: {
+      id: string;
+      component: { id: string; name: string; code: string };
+      isExcluded: boolean;
+      overrideValue: number | null;
+    }[];
   } | null;
 }
 
@@ -87,4 +104,4 @@ export interface SecurityLogResponse {
   mySecurityLogs: {
     results: SecurityLog[];
   };
-}
+}

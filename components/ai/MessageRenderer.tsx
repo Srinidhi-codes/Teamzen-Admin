@@ -5,6 +5,8 @@ import { X, Calendar, Building2, Cpu } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
 import { InsightCard } from "./cards/InsightCard";
 import { PayrollCard } from "./cards/PayrollCard";
+import { CitationChips } from "./CitationChips";
+import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
     content: string;
@@ -13,6 +15,7 @@ interface MessageRendererProps {
     isLast?: boolean;
     isStreaming?: boolean;
     activeTool?: { name: string; status: 'running' | 'completed' } | null;
+    sources?: PolicySource[];
 }
 
 const renderInlineFormatting = (text: string) => {
@@ -117,7 +120,7 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
     );
 };
 
-export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming, activeTool }: MessageRendererProps) => {
+export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming, activeTool, sources }: MessageRendererProps) => {
     const parts = useMessageParser(content);
     const showDots = isLast && isStreaming && role === 'assistant' && (parts.length === 0 || (parts.length === 1 && !parts[0].value.trim()));
 
@@ -259,6 +262,9 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                 }
                 return null;
             })}
+            {role === 'assistant' && sources && sources.length > 0 && (
+                <CitationChips sources={sources} />
+            )}
         </div>
     );
 };

@@ -60,10 +60,31 @@ export const GET_ME = gql`
         salaryStructure {
           id
           name
+          components {
+            id
+            component {
+              id
+              name
+              code
+              componentType
+            }
+            calculationType
+            value
+          }
         }
         annualCtc
         effectiveFrom
         isActive
+        componentOverrides {
+          id
+          component {
+            id
+            name
+            code
+          }
+          isExcluded
+          overrideValue
+        }
       }
     }
   }
@@ -130,10 +151,31 @@ export const GET_ALL_USERS = gql`
           salaryStructure {
             id
             name
+            components {
+              id
+              component {
+                id
+                name
+                code
+                componentType
+              }
+              calculationType
+              value
+            }
           }
           annualCtc
           effectiveFrom
           isActive
+          componentOverrides {
+            id
+            component {
+              id
+              name
+              code
+            }
+            isExcluded
+            overrideValue
+          }
         }
       }
       total

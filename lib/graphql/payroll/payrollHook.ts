@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_SALARY_STRUCTURES, GET_SALARY_COMPONENTS } from "./queries";
-import { ASSIGN_SALARY_TO_EMPLOYEE } from "./mutations";
+import { ASSIGN_SALARY_TO_EMPLOYEE, SAVE_EMPLOYEE_COMPONENT_OVERRIDES } from "./mutations";
 import { toast } from "sonner";
 
 export const usePayrollQueries = () => {
@@ -18,7 +18,8 @@ export const usePayrollQueries = () => {
 };
 
 export const usePayrollMutations = () => {
-    const [assignSalary] = useMutation<{ assignSalaryToEmployee: boolean }>(ASSIGN_SALARY_TO_EMPLOYEE);
+    const [assignSalary] = useMutation<{ assignSalaryToEmployee: { id: string } }>(ASSIGN_SALARY_TO_EMPLOYEE);
+    const [saveOverrides] = useMutation<{ saveEmployeeComponentOverrides: any[] }>(SAVE_EMPLOYEE_COMPONENT_OVERRIDES);
 
     const assignSalaryToEmployee = async (userId: string, structureId: string, annualCtc: number, effectiveFrom: string) => {
         try {
@@ -30,14 +31,30 @@ export const usePayrollMutations = () => {
                     effectiveFrom,
                 },
             });
-            return { success: !!data?.assignSalaryToEmployee };
+            return { success: !!data?.assignSalaryToEmployee, salary: data?.assignSalaryToEmployee || null };
         } catch (error: any) {
             console.error("Error assigning salary:", error);
             return { success: false, error: error.message };
         }
     };
 
+    const saveEmployeeComponentOverrides = async (
+        employeeSalaryId: string,
+        overrides: { componentId: string; isExcluded: boolean; overrideValue: number | null }[]
+    ) => {
+        try {
+            const { data } = await saveOverrides({
+                variables: { employeeSalaryId, overrides },
+            });
+            return { success: true, data: data?.saveEmployeeComponentOverrides };
+        } catch (error: any) {
+            console.error("Error saving overrides:", error);
+            return { success: false, error: error.message };
+        }
+    };
+
     return {
         assignSalaryToEmployee,
+        saveEmployeeComponentOverrides,
     };
 };

@@ -21,6 +21,8 @@ import {
   CREATE_PAYROLL_RUN,
   CREATE_SALARY_COMPONENT,
   CREATE_SALARY_STRUCTURE,
+  UPDATE_SALARY_STRUCTURE,
+  DELETE_SALARY_STRUCTURE,
   DELETE_PAYROLL_RUN,
   CREATE_SALARY_ADVANCE,
   CANCEL_SALARY_ADVANCE,
@@ -39,6 +41,7 @@ import {
   CheckCircle2,
   Circle,
   Banknote,
+  Pencil,
 } from "lucide-react";
 import {
   Dialog,
@@ -89,48 +92,49 @@ export default function PayrollPage() {
 
   const { data: runsData, loading: runsLoading, refetch: refetchRuns } = useQuery(
     GET_PAYROLL_RUNS,
-    { skip: !!(user && user.role !== "admin") }
+    { skip: !!(user && user.role !== "admin" && user.role !== "superadmin") }
   ) as any;
   const {
     data: componentsData,
     loading: componentsLoading,
     refetch: refetchComponents,
   } = useQuery(GET_SALARY_COMPONENTS, {
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
   }) as any;
   const {
     data: structuresData,
     loading: structuresLoading,
     refetch: refetchStructures,
   } = useQuery(GET_SALARY_STRUCTURES, {
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
   }) as any;
   const { data: checklistData, refetch: refetchChecklist } = useQuery(
     GET_PAYROLL_SETUP_CHECKLIST,
-    { skip: !!(user && user.role !== "admin") }
+    { skip: !!(user && user.role !== "admin" && user.role !== "superadmin") }
   ) as any;
   const {
     data: advancesData,
     loading: advancesLoading,
     refetch: refetchAdvances,
   } = useQuery(GET_SALARY_ADVANCES, {
-    skip: !!(user && user.role !== "admin") || !canAdvances,
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin") || !canAdvances,
   }) as any;
   const {
     data: settingsData,
     loading: settingsLoading,
     refetch: refetchSettings,
   } = useQuery(GET_PAYROLL_SETTINGS, {
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
   }) as any;
   const { data: usersData } = useQuery(GET_ALL_USERS, {
     variables: { pageSize: 200 },
-    skip: !!(user && user.role !== "admin"),
+    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
   }) as any;
 
   const [createPayrollRun] = useMutation(CREATE_PAYROLL_RUN) as any;
   const [createSalaryComponent] = useMutation(CREATE_SALARY_COMPONENT) as any;
   const [deletePayrollRun] = useMutation(DELETE_PAYROLL_RUN) as any;
+  const [deleteSalaryStructureMut] = useMutation(DELETE_SALARY_STRUCTURE) as any;
   const [createSalaryAdvance] = useMutation(CREATE_SALARY_ADVANCE) as any;
   const [cancelSalaryAdvance] = useMutation(CANCEL_SALARY_ADVANCE) as any;
   const [updatePayrollSettings] = useMutation(UPDATE_PAYROLL_SETTINGS) as any;
@@ -145,6 +149,8 @@ export default function PayrollPage() {
 
   const [modalConfig, setModalConfig] = useState({ isOpen: false, runId: "" });
   const [cancelAdvanceId, setCancelAdvanceId] = useState<string | null>(null);
+  const [editingStructure, setEditingStructure] = useState<any>(null);
+  const [deleteStructureModal, setDeleteStructureModal] = useState<{ isOpen: boolean; id: string; name: string }>({ isOpen: false, id: "", name: "" });
 
   const settings = settingsData?.payrollSettings;
   const [cycleDay, setCycleDay] = useState(1);
@@ -158,7 +164,7 @@ export default function PayrollPage() {
     }
   }, [settings]);
 
-  if (user && user.role !== "admin") {
+  if (user && user.role !== "admin" && user.role !== "superadmin") {
     return (
       <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-6 text-center">
         <h1 className="text-base font-semibold text-foreground">Access restricted</h1>
@@ -280,6 +286,18 @@ export default function PayrollPage() {
       toast.success("Advance cancelled");
       setCancelAdvanceId(null);
       refetchAdvances();
+      refetchChecklist();
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleDeleteStructure = async () => {
+    try {
+      await deleteSalaryStructureMut({ variables: { structureId: deleteStructureModal.id } });
+      toast.success("Structure deleted");
+      setDeleteStructureModal({ isOpen: false, id: "", name: "" });
+      refetchStructures();
       refetchChecklist();
     } catch (error: any) {
       toast.error(error.message);
@@ -776,7 +794,7 @@ export default function PayrollPage() {
 
         <TabsContent value="structures" className="mt-0">
           <div className="mb-4 flex justify-end">
-            <NewStructureDialog
+            <StructureDialog
               components={componentsData?.salaryComponents || []}
               onSuccess={() => {
                 refetchStructures();
@@ -797,9 +815,24 @@ export default function PayrollPage() {
                       <h3 className="text-sm font-semibold text-foreground">{struct.name}</h3>
                       <p className="text-xs text-muted-foreground">Salary structure</p>
                     </div>
-                    <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                      Active
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEditingStructure(struct)}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                        title="Edit structure"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeleteStructureModal({ isOpen: true, id: struct.id, name: struct.name })}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+                        title="Delete structure"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                   <p className="mb-4 text-sm text-muted-foreground">
                     {struct.description || "No description"}
@@ -833,6 +866,19 @@ export default function PayrollPage() {
               ))}
             </div>
           )}
+
+          {/* Edit structure dialog */}
+          <StructureDialog
+            components={componentsData?.salaryComponents || []}
+            editData={editingStructure}
+            open={!!editingStructure}
+            onOpenChange={(open) => { if (!open) setEditingStructure(null); }}
+            onSuccess={() => {
+              refetchStructures();
+              refetchChecklist();
+              setEditingStructure(null);
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-0">
@@ -917,6 +963,17 @@ export default function PayrollPage() {
         description="This stops further installment recovery for this advance."
         confirmText="Cancel advance"
         cancelText="Keep"
+      />
+
+      <ConfirmationModal
+        isOpen={deleteStructureModal.isOpen}
+        onClose={() => setDeleteStructureModal({ isOpen: false, id: "", name: "" })}
+        onConfirm={handleDeleteStructure}
+        variant="destructive"
+        title={`Delete "${deleteStructureModal.name}"?`}
+        description="This permanently deletes this salary structure. Structures assigned to employees cannot be deleted."
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </div>
   );
@@ -1137,28 +1194,54 @@ function GrantAdvanceDialog({
   );
 }
 
-function NewStructureDialog({
+function StructureDialog({
   components,
   onSuccess,
+  editData,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: {
   components: any[];
   onSuccess: () => void;
+  editData?: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const isEdit = !!editData;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = controlledOnOpenChange ?? setInternalOpen;
+
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedComponents, setSelectedComponents] = useState<any[]>([]);
-  const [createStructure, { loading }] = useMutation(CREATE_SALARY_STRUCTURE) as any;
+  const [createStructure, { loading: creating }] = useMutation(CREATE_SALARY_STRUCTURE) as any;
+  const [updateStructure, { loading: updating }] = useMutation(UPDATE_SALARY_STRUCTURE) as any;
+  const loading = creating || updating;
+
+  useEffect(() => {
+    if (editData && open) {
+      setName(editData.name || "");
+      setDescription(editData.description || "");
+      setSelectedComponents(
+        (editData.components || []).map((sc: any) => ({
+          component_id: sc.component.id,
+          calculation_type: sc.calculationType,
+          value: sc.value,
+          base_component_id: sc.baseComponent?.id || null,
+        }))
+      );
+    } else if (!open) {
+      setName("");
+      setDescription("");
+      setSelectedComponents([]);
+    }
+  }, [editData, open]);
 
   const addComponentRow = () => {
     setSelectedComponents([
       ...selectedComponents,
-      {
-        component_id: "",
-        calculation_type: "flat",
-        value: 0,
-        base_component_id: null,
-      },
+      { component_id: "", calculation_type: "flat", value: 0, base_component_id: null },
     ]);
   };
 
@@ -1174,182 +1257,190 @@ function NewStructureDialog({
     setSelectedComponents(next);
   };
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     if (!name) return toast.error("Structure name is required");
     if (selectedComponents.length === 0) return toast.error("Add at least one component");
 
+    const vars = {
+      name,
+      description,
+      components: selectedComponents.map((c) => ({
+        componentId: c.component_id,
+        calculationType: c.calculation_type,
+        value: parseFloat(c.value),
+        baseComponentId: c.base_component_id || null,
+      })),
+    };
+
     try {
-      await createStructure({
-        variables: {
-          name,
-          description,
-          components: selectedComponents.map((c) => ({
-            componentId: c.component_id,
-            calculationType: c.calculation_type,
-            value: parseFloat(c.value),
-            baseComponentId: c.base_component_id || null,
-          })),
-        },
-      });
-      toast.success("Salary structure created");
+      if (isEdit) {
+        await updateStructure({ variables: { structureId: editData.id, ...vars } });
+        toast.success("Structure updated");
+      } else {
+        await createStructure({ variables: vars });
+        toast.success("Structure created");
+      }
       setOpen(false);
       onSuccess();
-      setName("");
-      setDescription("");
-      setSelectedComponents([]);
     } catch (error: any) {
       toast.error(error.message);
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90">
-          <Plus className="h-4 w-4" />
-          Create structure
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create salary structure</DialogTitle>
-          <DialogDescription>Define components and how each is calculated.</DialogDescription>
-        </DialogHeader>
+  const dialogContent = (
+    <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{isEdit ? "Edit salary structure" : "Create salary structure"}</DialogTitle>
+        <DialogDescription>Define components and how each is calculated.</DialogDescription>
+      </DialogHeader>
 
-        <div className="space-y-5 py-2">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Name</label>
-              <input
-                className="input"
-                placeholder="e.g. Standard structure"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium">Description</label>
-              <input
-                className="input"
-                placeholder="Optional description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-            </div>
+      <div className="space-y-5 py-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Name</label>
+            <input
+              className="input"
+              placeholder="e.g. Standard structure"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <h4 className="text-sm font-semibold">Components</h4>
-              <Button onClick={addComponentRow} variant="outline" size="sm">
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add component
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              {selectedComponents.map((row, idx) => (
-                <div
-                  key={idx}
-                  className="grid grid-cols-1 items-end gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-12"
-                >
-                  <div className="space-y-1 sm:col-span-4">
-                    <label className="text-xs text-muted-foreground">Component</label>
-                    <Select
-                      value={row.component_id}
-                      onValueChange={(val) => updateRow(idx, { component_id: val })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {components.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name} ({c.code})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs text-muted-foreground">Mode</label>
-                    <Select
-                      value={row.calculation_type}
-                      onValueChange={(val) => updateRow(idx, { calculation_type: val })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="flat">Flat amount</SelectItem>
-                        <SelectItem value="percentage">Percentage</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1 sm:col-span-2">
-                    <label className="text-xs text-muted-foreground">
-                      {row.calculation_type === "percentage" ? "Rate (%)" : "Amount (₹)"}
-                    </label>
-                    <input
-                      type="number"
-                      className="input"
-                      value={row.value}
-                      onChange={(e) => updateRow(idx, { value: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-1 sm:col-span-3">
-                    <label className="text-xs text-muted-foreground">Base</label>
-                    <Select
-                      value={row.base_component_id || "none"}
-                      onValueChange={(val) =>
-                        updateRow(idx, { base_component_id: val === "none" ? null : val })
-                      }
-                      disabled={row.calculation_type !== "percentage"}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="CTC" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Cost to company (CTC)</SelectItem>
-                        {components.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive"
-                      onClick={() => removeComponentRow(idx)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-
-              {selectedComponents.length === 0 && (
-                <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
-                  No components added yet
-                </div>
-              )}
-            </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Description</label>
+            <input
+              className="input"
+              placeholder="Optional description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleCreate} disabled={loading}>
-            {loading ? "Saving…" : "Create structure"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h4 className="text-sm font-semibold">Components</h4>
+            <Button onClick={addComponentRow} variant="outline" size="sm">
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add component
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {selectedComponents.map((row, idx) => (
+              <div
+                key={idx}
+                className="grid grid-cols-1 items-end gap-2 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-12"
+              >
+                <div className="space-y-1 sm:col-span-4">
+                  <label className="text-xs text-muted-foreground">Component</label>
+                  <Select
+                    value={row.component_id}
+                    onValueChange={(val) => updateRow(idx, { component_id: val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {components.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} ({c.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs text-muted-foreground">Mode</label>
+                  <Select
+                    value={row.calculation_type}
+                    onValueChange={(val) => updateRow(idx, { calculation_type: val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="flat">Flat amount</SelectItem>
+                      <SelectItem value="percentage">Percentage</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs text-muted-foreground">
+                    {row.calculation_type === "percentage" ? "Rate (%)" : "Amount (₹)"}
+                  </label>
+                  <input
+                    type="number"
+                    className="input"
+                    value={row.value}
+                    onChange={(e) => updateRow(idx, { value: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1 sm:col-span-3">
+                  <label className="text-xs text-muted-foreground">Base</label>
+                  <Select
+                    value={row.base_component_id || "none"}
+                    onValueChange={(val) =>
+                      updateRow(idx, { base_component_id: val === "none" ? null : val })
+                    }
+                    disabled={row.calculation_type !== "percentage"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="CTC" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Cost to company (CTC)</SelectItem>
+                      {components.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive"
+                    onClick={() => removeComponentRow(idx)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+
+            {selectedComponents.length === 0 && (
+              <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                No components added yet
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter className="gap-2">
+        <Button variant="outline" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+        <Button onClick={handleSave} disabled={loading}>
+          {loading ? "Saving…" : isEdit ? "Save changes" : "Create structure"}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+
+  if (isEdit) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        {dialogContent}
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      {dialogContent}
     </Dialog>
   );
 }

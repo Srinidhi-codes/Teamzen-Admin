@@ -3,10 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 
+export type PolicySource = {
+    title: string;
+    page_number?: number | null;
+    file_id?: number | null;
+    file_url?: string | null;
+    chunk_id?: number;
+    score?: number;
+    match_type?: string;
+};
+
 export type ChatMessage = {
     role: 'user' | 'assistant';
     content: string;
     timestamp?: string;
+    sources?: PolicySource[];
 };
 
 export type AssistantResponse = {
@@ -48,7 +59,8 @@ export const useAssistant = () => {
 
         try {
             // 2. Prepare streaming message
-            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString() };
+            const sourcesThisResponse: PolicySource[] = [];
+            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString(), sources: [] };
             setHistory(prev => [...prev, assistantMsg]);
 
             // 3. Start Stream
@@ -95,6 +107,22 @@ export const useAssistant = () => {
                                 setActiveTool({ name: data.tool_start, status: 'running' });
                             } else if (data.tool_end) {
                                 setActiveTool({ name: data.tool_end, status: 'completed' });
+                            } else if (data.sources && Array.isArray(data.sources)) {
+                                for (const src of data.sources as PolicySource[]) {
+                                    const key = `${src.file_id}-${src.page_number}-${src.chunk_id}`;
+                                    const exists = sourcesThisResponse.some(
+                                        s => `${s.file_id}-${s.page_number}-${s.chunk_id}` === key
+                                    );
+                                    if (!exists) sourcesThisResponse.push(src);
+                                }
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.sources = [...sourcesThisResponse];
+                                    }
+                                    return newHistory;
+                                });
                             } else if (data.error) {
                                 // Handle backend errors gracefully
                                 const errorMsg = `[ERROR_CARD] title: Assistant Error | message: ${data.error} [/ERROR_CARD]`;
@@ -108,8 +136,17 @@ export const useAssistant = () => {
                                 });
                                 break; // Stop streaming on error
                             } else if (data.history) {
-                                // Final sync
-                                setHistory(data.history);
+                                // Final sync — preserve sources
+                                setHistory(() => {
+                                    const serverHistory: ChatMessage[] = data.history;
+                                    if (sourcesThisResponse.length > 0 && serverHistory.length > 0) {
+                                        const lastMsg = serverHistory[serverHistory.length - 1];
+                                        if (lastMsg.role === 'assistant') {
+                                            lastMsg.sources = sourcesThisResponse;
+                                        }
+                                    }
+                                    return serverHistory;
+                                });
                             }
                         } catch (e) {
                             console.warn("Error parsing stream chunk", e);

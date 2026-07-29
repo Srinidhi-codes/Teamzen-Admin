@@ -47,14 +47,16 @@ const authLink = setContext((_, { headers }) => {
 });
 
 const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: any) => {
+  // Only treat true auth/session failures as logout triggers.
+  // Business permission errors ("Unauthorized") must NOT force token refresh/logout.
   const isUnauthorized =
     (graphQLErrors &&
       graphQLErrors.some(
         (e: any) =>
           e.message === "Unauthenticated" ||
-          e.message === "Unauthorized" ||
           e.extensions?.code === "UNAUTHENTICATED" ||
-          e.message.toLowerCase().includes("signature has expired")
+          e.message.toLowerCase().includes("signature has expired") ||
+          e.message.toLowerCase().includes("authentication credentials were not provided")
       )) ||
     (networkError &&
       "statusCode" in networkError &&
