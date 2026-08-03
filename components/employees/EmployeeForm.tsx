@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useGraphQLUserMutations } from "@/lib/graphql/users/userHook";
+import { useGraphQLUserMutations, useGraphQLUsers } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
 import { Loader2, Eye, EyeOff, Plus } from "lucide-react";
@@ -102,6 +102,18 @@ export default function EmployeeForm({
     const { user: graphqlUser } = useGraphQLUser();
     const currentUser = graphqlUser || storeUser;
     const { createUser, updateUser, isCreatingUser, isUpdatingUser } = useGraphQLUserMutations();
+    const { users: orgUsers } = useGraphQLUsers({
+        page: 1,
+        pageSize: 200,
+        filters: {
+            isActive: true,
+            ...(formData.organizationId
+                ? { organizationId: formData.organizationId }
+                : currentUser?.organization?.id
+                  ? { organizationId: String(currentUser.organization.id) }
+                  : {}),
+        },
+    });
     const { organizations, isOrganizationsLoading } = useGraphQLOrganizations();
     const { designations, isDesignationsLoading } = useGraphQLDesignations();
     const { departments, isDepartmentsLoading } = useGraphQLDepartments();
@@ -153,10 +165,31 @@ export default function EmployeeForm({
         return organizations.map((o: any) => ({ label: o.name, value: String(o.id) }));
     };
 
+    const getManagerOptions = () => {
+        if (!orgUsers) return [];
+        const selfId = initialData?.id ? String(initialData.id) : "";
+        return orgUsers
+            .filter((u: any) => {
+                if (selfId && String(u.id) === selfId) return false;
+                // Prefer people who can manage; still allow any active colleague as fallback
+                return ["manager", "admin", "hr", "superadmin", "employee"].includes(
+                    (u.role || "").toLowerCase()
+                );
+            })
+            .filter((u: any) =>
+                ["manager", "admin", "hr", "superadmin"].includes((u.role || "").toLowerCase())
+            )
+            .map((u: any) => ({
+                label: `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email,
+                value: String(u.id),
+            }));
+    };
+
     const departmentOptions = getDepartmentOptions();
     const designationOptions = getDesignationOptions();
     const officeLocationOptions = getOfficeLocationOptions();
     const organizationOptions = getOrganizationOptions();
+    const managerOptions = getManagerOptions();
 
     useEffect(() => {
         const orgId = currentUser?.organization?.id;
@@ -347,7 +380,10 @@ export default function EmployeeForm({
             let savedUser: any = null;
             if (initialData) {
                 const { password, salaryStructureId, annualCtc, effectiveFrom, ...updateData } = formData;
-                const result = await updateUser(initialData.id, updateData);
+                const result = await updateUser(initialData.id, {
+                    ...updateData,
+                    managerId: formData.managerId || null,
+                });
                 if (result?.success) {
                     savedUser = initialData;
                     // Handle Photo Upload via REST if selected
@@ -371,8 +407,16 @@ export default function EmployeeForm({
                     return;
                 }
             } else {
+                if (!formData.password || formData.password.length < 6) {
+                    toast.error("Temporary password is required (min 6 characters)");
+                    setActiveTab("identity");
+                    return;
+                }
                 const { salaryStructureId, annualCtc, effectiveFrom, ...createData } = formData;
-                const result = await createUser(createData);
+                const result = await createUser({
+                    ...createData,
+                    managerId: formData.managerId || null,
+                });
                 if (result?.success) {
                     savedUser = result.user;
                     // Handle Photo Upload via REST for NEW user
@@ -389,7 +433,7 @@ export default function EmployeeForm({
                             toast.error("User created, but photo upload failed");
                         }
                     }
-                    toast.success("Employee created successfully");
+                    toast.success("Employee created successfully. Welcome email with login credentials sent.");
                 } else {
                     toast.error(result?.error || "Failed to create employee");
                     return;
@@ -502,6 +546,18 @@ export default function EmployeeForm({
                         <Input label="Last Name" name="lastName" required value={formData.lastName} onChange={handleChange} error={errors.lastName} />
                         <Input label="Email" name="email" type="email" required value={formData.email} onChange={handleChange} error={errors.email} />
                         <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} error={errors.phoneNumber} />
+                        {!initialData && (
+                            <Input
+                                label="Temporary Password"
+                                name="password"
+                                type="text"
+                                required
+                                value={formData.password}
+                                onChange={handleChange}
+                                error={errors.password}
+                                hint="Auto-filled from first name (e.g. John@123). Sent in the welcome email."
+                            />
+                        )}
                         <DatePickerSimple label="Date of Birth" value={formData.dateOfBirth} onChange={(date) => handleDateChange("dateOfBirth", date)} error={errors.dateOfBirth} />
                         <FormSelect
                             label="Role"
@@ -530,6 +586,18 @@ export default function EmployeeForm({
                         <FormSelect label="Designation" required value={formData.designationId} onValueChange={(v) => handleSelectChange("designationId", v)} options={designationOptions} />
                         <FormSelect label="Employment Type" required value={formData.employmentType} onValueChange={(v) => handleSelectChange("employmentType", v)} options={[{ label: "Full Time", value: "full_time" }, { label: "Contract", value: "contract" }, { label: "Intern", value: "intern" }]} />
                         <FormSelect label="Office Location" value={formData.officeLocationId} onValueChange={(v) => handleSelectChange("officeLocationId", v)} options={officeLocationOptions} />
+                        <FormSelect
+                            label="Reporting Manager"
+                            value={formData.managerId || "none"}
+                            onValueChange={(v) =>
+                                handleSelectChange("managerId", v === "none" ? "" : v)
+                            }
+                            options={[
+                                { label: "No manager", value: "none" },
+                                ...managerOptions,
+                            ]}
+                            placeholder="Select manager"
+                        />
                     </div>
                 </TabsContent>
 

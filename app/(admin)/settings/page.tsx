@@ -40,16 +40,16 @@ const MODELS = [
     type: "Fast",
   },
   {
-    id: "gemini-1.5-flash",
-    name: "Gemini 1.5 Flash",
-    desc: "Fast responses with a large context window.",
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    desc: "Fast Google model with tool calling support.",
     provider: "Google",
     type: "Fast",
   },
   {
-    id: "gemini-1.5-pro",
-    name: "Gemini 1.5 Pro",
-    desc: "Strong reasoning for complex requests.",
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
+    desc: "Strong reasoning for complex HR requests.",
     provider: "Google",
     type: "Premium",
   },
@@ -66,13 +66,6 @@ const MODELS = [
     desc: "Very fast responses via Groq.",
     provider: "Groq",
     type: "Speed",
-  },
-  {
-    id: "mixtral-8x7b-32768",
-    name: "Mixtral 8x7B",
-    desc: "Large context with consistent quality.",
-    provider: "Groq",
-    type: "Balanced",
   },
 ];
 
@@ -107,8 +100,16 @@ function SettingsPageContent() {
 
   useEffect(() => {
     if (config) {
+      const legacyMap: Record<string, string> = {
+        "gemini-1.5-flash": "gemini-2.5-flash",
+        "gemini-1.5-pro": "gemini-2.5-pro",
+        "gemini-2.0-flash": "gemini-2.5-flash",
+        "mixtral-8x7b-32768": "llama-3.3-70b-versatile",
+        "llama-3-8b-8192": "llama-3.1-8b-instant",
+        "llama-3-70b-8192": "llama-3.3-70b-versatile",
+      };
       setFormData({
-        model_name: config.model_name,
+        model_name: legacyMap[config.model_name] || config.model_name,
         temperature: config.temperature,
         max_tokens: config.max_tokens,
         system_prompt_override: config.system_prompt_override || "",
