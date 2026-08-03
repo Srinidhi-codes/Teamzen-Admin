@@ -32,6 +32,11 @@ export interface OfficeLocation {
     latitude: number;
     longitude: number;
     geoRadiusMeters: number;
+    organizationId?: string;
+    organization?: {
+        id: string;
+        name: string;
+    };
     isActive: boolean;
     createdAt: string;
 }

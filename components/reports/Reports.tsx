@@ -1,62 +1,178 @@
 "use client";
 
-import { Info } from "lucide-react";
+import { useMemo, useState } from "react";
+import moment from "moment";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReportFiltersBar } from "./ReportFiltersBar";
+import { useCSVExport } from "@/lib/hooks/useCSVExport";
+import {
+  useWorkforceReport,
+  useAttendanceReport,
+  useLeaveReport,
+  usePayrollReport,
+} from "@/lib/graphql/reports/reportsHook";
+import type { ReportFilters } from "@/lib/graphql/reports/types";
 
-const ReportsCharts = dynamic(
-  () => import("@/components/reports/ReportsCharts").then((m) => m.ReportsCharts),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="space-y-4">
-        <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
-          <div className="h-[320px] animate-pulse rounded-xl border border-border bg-muted/40" />
-        </div>
-      </div>
-    ),
-  }
+const WorkforceReportView = dynamic(
+  () => import("./WorkforceReportView").then((m) => m.WorkforceReportView),
+  { ssr: false }
+);
+const AttendanceReportView = dynamic(
+  () => import("./AttendanceReportView").then((m) => m.AttendanceReportView),
+  { ssr: false }
+);
+const LeaveReportView = dynamic(
+  () => import("./LeaveReportView").then((m) => m.LeaveReportView),
+  { ssr: false }
+);
+const PayrollReportView = dynamic(
+  () => import("./PayrollReportView").then((m) => m.PayrollReportView),
+  { ssr: false }
 );
 
+type TabKey = "workforce" | "attendance" | "leave" | "payroll";
+
+function defaultFilters(): ReportFilters {
+  return {
+    dateFrom: moment().subtract(90, "days").format("YYYY-MM-DD"),
+    dateTo: moment().format("YYYY-MM-DD"),
+  };
+}
+
 export default function ReportsPage() {
+  const [tab, setTab] = useState<TabKey>("workforce");
+  const [filters, setFilters] = useState<ReportFilters>(defaultFilters);
+  const { exportData } = useCSVExport();
+
+  const workforce = useWorkforceReport(filters, tab !== "workforce");
+  const attendance = useAttendanceReport(filters, tab !== "attendance");
+  const leave = useLeaveReport(filters, tab !== "leave");
+  const payroll = usePayrollReport(filters, tab !== "payroll");
+
+  const handleExport = () => {
+    if (tab === "workforce" && workforce.report) {
+      exportData(
+        workforce.report.employees,
+        [
+          { accessor: "name", header: "Name" },
+          { accessor: "email", header: "Email" },
+          { accessor: "department", header: "Department" },
+          { accessor: "designation", header: "Designation" },
+          { accessor: "employmentType", header: "Employment type" },
+          { accessor: "dateOfJoining", header: "Joined" },
+          { accessor: "dateOfExit", header: "Exit" },
+          { accessor: "isActive", header: "Active" },
+        ],
+        { filename: "workforce-report" }
+      );
+    } else if (tab === "attendance" && attendance.report) {
+      exportData(
+        attendance.report.employees,
+        [
+          { accessor: "name", header: "Name" },
+          { accessor: "email", header: "Email" },
+          { accessor: "department", header: "Department" },
+          { accessor: "presentDays", header: "Present" },
+          { accessor: "lateDays", header: "Late" },
+          { accessor: "absentDays", header: "Absent" },
+          { accessor: "leaveDays", header: "Leave" },
+          { accessor: "halfDays", header: "Half day" },
+          { accessor: "attendanceRate", header: "Rate %" },
+        ],
+        { filename: "attendance-report" }
+      );
+    } else if (tab === "leave" && leave.report) {
+      exportData(
+        leave.report.requests,
+        [
+          { accessor: "employee", header: "Employee" },
+          { accessor: "leaveType", header: "Leave type" },
+          { accessor: "fromDate", header: "From" },
+          { accessor: "toDate", header: "To" },
+          { accessor: "durationDays", header: "Days" },
+          { accessor: "status", header: "Status" },
+          { accessor: "department", header: "Department" },
+        ],
+        { filename: "leave-report" }
+      );
+    } else if (tab === "payroll" && payroll.report) {
+      exportData(
+        payroll.report.runs,
+        [
+          { accessor: "label", header: "Period" },
+          { accessor: "status", header: "Status" },
+          { accessor: "totalGross", header: "Gross" },
+          { accessor: "totalDeduction", header: "Deductions" },
+          { accessor: "totalNetPay", header: "Net" },
+        ],
+        { filename: "payroll-report" }
+      );
+    }
+  };
+
+  const subtitle = useMemo(() => {
+    const map: Record<TabKey, string> = {
+      workforce: "Headcount, turnover, and workforce mix",
+      attendance: "Presence trends and employee drill-down",
+      leave: "Leave mix, utilization, and request flux",
+      payroll: "Payroll cost trends and run history",
+    };
+    return map[tab];
+  }, [tab]);
+
   return (
     <div className="page-shell">
-      <PageHeader
-        title="Reports"
-        description="Workforce, attendance, leave, and payroll trends."
-      />
+      <PageHeader title="Reports" description={subtitle} />
 
-      <div className="flex items-start gap-2.5 rounded-xl border border-border bg-muted/40 px-4 py-3">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">
-          Charts below use sample data for layout preview. Live reporting will connect to your
-          organization data in a later release.
-        </p>
-      </div>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)}>
+        <TabsList className="h-auto w-full flex-wrap justify-start gap-1 rounded-xl border border-border bg-card p-1 sm:w-fit">
+          <TabsTrigger value="workforce">Workforce</TabsTrigger>
+          <TabsTrigger value="attendance">Attendance</TabsTrigger>
+          <TabsTrigger value="leave">Leave</TabsTrigger>
+          <TabsTrigger value="payroll">Payroll</TabsTrigger>
+        </TabsList>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Turnover rate</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">2.8%</p>
-          <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400">
-            ↓ 0.5% vs last quarter
-          </p>
+        <div className="mt-4">
+          <ReportFiltersBar
+            filters={filters}
+            onChange={setFilters}
+            onExport={handleExport}
+          />
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Avg leave days / employee</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">12.5</p>
-          <p className="mt-1 text-xs text-muted-foreground">Per year</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Avg salary</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">₹57,258</p>
-          <p className="mt-1 text-xs text-sky-700 dark:text-sky-400">↑ ₹2,500 vs last month</p>
-        </div>
-      </div>
 
-      <ReportsCharts />
+        <div className="mt-4">
+          <TabsContent value="workforce" className="mt-0">
+            <WorkforceReportView
+              report={workforce.report}
+              loading={workforce.isLoading}
+              error={workforce.error as Error | null}
+            />
+          </TabsContent>
+          <TabsContent value="attendance" className="mt-0">
+            <AttendanceReportView
+              report={attendance.report}
+              loading={attendance.isLoading}
+              error={attendance.error as Error | null}
+            />
+          </TabsContent>
+          <TabsContent value="leave" className="mt-0">
+            <LeaveReportView
+              report={leave.report}
+              loading={leave.isLoading}
+              error={leave.error as Error | null}
+            />
+          </TabsContent>
+          <TabsContent value="payroll" className="mt-0">
+            <PayrollReportView
+              report={payroll.report}
+              loading={payroll.isLoading}
+              error={payroll.error as Error | null}
+            />
+          </TabsContent>
+        </div>
+      </Tabs>
     </div>
   );
 }

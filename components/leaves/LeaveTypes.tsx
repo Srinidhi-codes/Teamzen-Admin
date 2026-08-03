@@ -9,13 +9,18 @@ import ConfirmationModal from '../common/ConfirmationModal'
 import { useStore } from '@/lib/store/useStore'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { SearchInput } from '../common/SearchInput'
+import { OrganizationFilterSelect } from '@/components/common/OrganizationFilterSelect'
 
 
 const LeaveTypes = () => {
     const [searchTerm, setSearchTerm] = useState("");
+    const [organizationId, setOrganizationId] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 500);
     const { user } = useStore();
-    const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes(debouncedSearch);
+    const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes(
+        debouncedSearch,
+        organizationId || undefined
+    );
     const { createLeaveType, updateLeaveType, deleteLeaveType } = useGraphQLLeaveMutations();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<LeaveType | null>(null);
@@ -245,6 +250,10 @@ const LeaveTypes = () => {
                         onChange={setSearchTerm}
                         containerClassName="flex-1 lg:w-64 min-w-[200px]"
                         className="h-9"
+                    />
+                    <OrganizationFilterSelect
+                        value={organizationId}
+                        onChange={setOrganizationId}
                     />
                     <button
                         onClick={() => {

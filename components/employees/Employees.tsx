@@ -34,25 +34,36 @@ import {
   useGraphQLOfficeLocations,
   useGraphQLOrganizations,
 } from "@/lib/graphql/organization/organizationsHook";
+import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { useSearchParams } from "next/navigation";
+import { useStore } from "@/lib/store/useStore";
 
 export default function EmployeesPage() {
+  const { user } = useStore();
+  const searchParams = useSearchParams();
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
   const [searchTerm, setSearchTerm] = useState("");
+  const [organizationId, setOrganizationId] = useState(
+    () => searchParams.get("organizationId") || ""
+  );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   const { users, total, isUsersLoading, refetchUsers } = useGraphQLUsers({
     page: currentPage,
     pageSize,
-    filters: { search: debouncedSearchTerm },
+    filters: {
+      search: debouncedSearchTerm || undefined,
+      organizationId: organizationId || undefined,
+    },
   });
   // Prefetch dropdown data so Add/Edit employee opens instantly from cache
   useGraphQLOrganizations();
-  useGraphQLDepartments();
-  useGraphQLDesignations();
-  useGraphQLOfficeLocations();
+  useGraphQLDepartments(undefined, organizationId || undefined);
+  useGraphQLDesignations(undefined, organizationId || undefined);
+  useGraphQLOfficeLocations(undefined, organizationId || undefined);
   const { updateUserStatus } = useGraphQLUserStatusMutations();
   const { exportData } = useCSVExport<User>();
 
@@ -69,7 +80,15 @@ export default function EmployeesPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, organizationId]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get("organizationId") || "";
+    if (fromUrl && fromUrl !== organizationId) {
+      setOrganizationId(fromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const handleEdit = (user: User) => {
     setSelectedEmployee(user);
@@ -211,12 +230,20 @@ export default function EmployeesPage() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchInput
-          placeholder="Search by name, email, or employee ID…"
-          value={searchTerm}
-          onChange={setSearchTerm}
-          containerClassName="max-w-md"
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <SearchInput
+            placeholder="Search by name, email, or employee ID…"
+            value={searchTerm}
+            onChange={setSearchTerm}
+            containerClassName="max-w-md"
+          />
+          {user?.role === "superadmin" && (
+            <OrganizationFilterSelect
+              value={organizationId}
+              onChange={setOrganizationId}
+            />
+          )}
+        </div>
       </div>
 
       {isUsersLoading && !users?.length ? (

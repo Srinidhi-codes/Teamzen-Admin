@@ -76,7 +76,7 @@ export default function OfficeLocationList({ officeLocations, onEdit }: OfficeLo
               </div>
               <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                 <Building2 className="h-3 w-3" />
-                Office
+                {office.organization?.name || "Organization"}
               </p>
             </div>
           </div>

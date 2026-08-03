@@ -39,6 +39,11 @@ import {
 import { useStore } from "@/lib/store/useStore";
 import { SegmentedTabs } from "@/components/common/SegmentedTabs";
 import { PageSkeleton, Skeleton } from "@/components/common/Skeleton";
+import {
+  OrganizationFilterSelect,
+  PlanFilterSelect,
+  StatusFilterSelect,
+} from "@/components/common/OrganizationFilterSelect";
 
 export default function OrganizationsPage() {
   const { user } = useStore();
@@ -66,8 +71,12 @@ export default function OrganizationsPage() {
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [editingDesig, setEditingDesig] = useState<Designation | null>(null);
   const [search, setSearch] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
+  const [planFilter, setPlanFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "active" | "suspended">("");
   const debouncedSearch = useDebounce(search, 500);
   const router = useRouter();
+  const isSuperadmin = user?.role === "superadmin";
 
   const openForm = (key: FormKey) => setActiveForm(key);
 
@@ -93,20 +102,38 @@ export default function OrganizationsPage() {
     }
   };
 
-  const { organizations, isOrganizationsLoading: orgsLoading } = useGraphQLOrganizations(
-    activeTab === "organizations" ? debouncedSearch : ""
-  );
-  const { officeLocations, isOfficeLocationsLoading: officesLoading } = useGraphQLOfficeLocations(
-    activeTab === "offices" ? debouncedSearch : ""
-  );
-  const { departments, isDepartmentsLoading: deptsLoading } = useGraphQLDepartments(
-    activeTab === "departments" ? debouncedSearch : ""
-  );
-  const { designations, isDesignationsLoading: desigsLoading } = useGraphQLDesignations(
-    activeTab === "designations" ? debouncedSearch : ""
+  const orgListFilters = useMemo(
+    () => ({
+      plan: planFilter || undefined,
+      isActive:
+        statusFilter === "active"
+          ? true
+          : statusFilter === "suspended"
+            ? false
+            : null,
+    }),
+    [planFilter, statusFilter]
   );
 
-  const handleViewEmployees = () => router.push(`/employees`);
+  const { organizations, isOrganizationsLoading: orgsLoading } = useGraphQLOrganizations(
+    activeTab === "organizations" ? debouncedSearch : "",
+    activeTab === "organizations" ? orgListFilters : undefined
+  );
+  const { officeLocations, isOfficeLocationsLoading: officesLoading } = useGraphQLOfficeLocations(
+    activeTab === "offices" ? debouncedSearch : "",
+    activeTab === "offices" ? organizationId || undefined : undefined
+  );
+  const { departments, isDepartmentsLoading: deptsLoading } = useGraphQLDepartments(
+    activeTab === "departments" ? debouncedSearch : "",
+    activeTab === "departments" ? organizationId || undefined : undefined
+  );
+  const { designations, isDesignationsLoading: desigsLoading } = useGraphQLDesignations(
+    activeTab === "designations" ? debouncedSearch : "",
+    activeTab === "designations" ? organizationId || undefined : undefined
+  );
+
+  const handleViewEmployees = (org: Organization) =>
+    router.push(`/employees?organizationId=${org.id}`);
   const handleEditOrg = (org: Organization) => {
     setEditingOrg(org);
     setActiveForm("organization");
@@ -215,13 +242,27 @@ export default function OrganizationsPage() {
         />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <SearchInput
-          placeholder={`Search ${activeTab}…`}
-          value={search}
-          onChange={setSearch}
-          containerClassName="max-w-md"
-        />
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <SearchInput
+            placeholder={`Search ${activeTab}…`}
+            value={search}
+            onChange={setSearch}
+            containerClassName="max-w-md"
+          />
+          {isSuperadmin && activeTab === "organizations" && (
+            <>
+              <PlanFilterSelect value={planFilter} onChange={setPlanFilter} />
+              <StatusFilterSelect value={statusFilter} onChange={setStatusFilter} />
+            </>
+          )}
+          {isSuperadmin && activeTab !== "organizations" && (
+            <OrganizationFilterSelect
+              value={organizationId}
+              onChange={setOrganizationId}
+            />
+          )}
+        </div>
 
         {!(activeTab === "organizations" && user.role !== "superadmin") && (
           <button

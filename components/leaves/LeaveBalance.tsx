@@ -7,6 +7,7 @@ import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { SearchInput } from '../common/SearchInput'
+import { OrganizationFilterSelect } from '@/components/common/OrganizationFilterSelect'
 
 
 import { DataTable, Column } from '../common/DataTable'
@@ -16,10 +17,14 @@ import ConfirmationModal from '../common/ConfirmationModal'
 
 const LeaveBalance = () => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [organizationId, setOrganizationId] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
     const { me } = useMe();
-    const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances(debouncedSearch);
-    const { leaveTypes } = useGraphQLLeaveTypes();
+    const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances(
+        debouncedSearch,
+        organizationId || undefined
+    );
+    const { leaveTypes } = useGraphQLLeaveTypes(undefined, organizationId || undefined);
     const { users } = useUsers();
     const { createLeaveBalance, updateLeaveBalance, deleteLeaveBalance } = useGraphQLLeaveMutations();
 
@@ -236,6 +241,10 @@ const LeaveBalance = () => {
                         onChange={setSearchQuery}
                         containerClassName="flex-1 sm:w-80"
                         className="h-9"
+                    />
+                    <OrganizationFilterSelect
+                        value={organizationId}
+                        onChange={setOrganizationId}
                     />
                     <button
                         onClick={() => {

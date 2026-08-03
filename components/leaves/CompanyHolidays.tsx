@@ -10,12 +10,17 @@ import { useStore } from '@/lib/store/useStore'
 import { format } from 'date-fns'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { SearchInput } from '../common/SearchInput'
+import { OrganizationFilterSelect } from '@/components/common/OrganizationFilterSelect'
 
 const CompanyHolidays = () => {
     const [search, setSearch] = useState("");
+    const [organizationId, setOrganizationId] = useState("");
     const debouncedSearch = useDebounce(search, 500);
     const { user } = useStore();
-    const { companyHolidays, isLoading, error, refetch } = useGraphQLCompanyHolidays(debouncedSearch);
+    const { companyHolidays, isLoading, error, refetch } = useGraphQLCompanyHolidays(
+        debouncedSearch,
+        organizationId || undefined
+    );
     const { createCompanyHoliday, updateCompanyHoliday, deleteCompanyHoliday } = useGraphQLCompanyHolidayMutations();
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -205,6 +210,10 @@ const CompanyHolidays = () => {
                         onChange={setSearch}
                         containerClassName="flex-1 lg:w-64 min-w-[200px]"
                         className="h-9"
+                    />
+                    <OrganizationFilterSelect
+                        value={organizationId}
+                        onChange={setOrganizationId}
                     />
                     <button
                         onClick={() => {

@@ -139,14 +139,16 @@ function Avatar({
 }: {
   name: string;
   src?: string | null;
-  tone?: "muted" | "amber" | "sky";
+  tone?: "muted" | "amber" | "sky" | "emerald";
 }) {
   const toneClass =
     tone === "amber"
       ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
       : tone === "sky"
         ? "bg-sky-500/10 text-sky-700 dark:text-sky-400"
-        : "bg-muted text-muted-foreground";
+        : tone === "emerald"
+          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+          : "bg-muted text-muted-foreground";
 
   const resolved = profileSrc(src);
 
@@ -344,13 +346,25 @@ export default function AdminDashboard() {
                   <Avatar
                     name={event.user}
                     src={event.profilePicture}
-                    tone={event.type === "birthday" ? "amber" : "sky"}
+                    tone={
+                      event.type === "birthday"
+                        ? "amber"
+                        : event.type === "holiday" || event.type === "optional_holiday"
+                          ? "emerald"
+                          : "sky"
+                    }
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{event.user}</p>
                     <p className="text-xs text-muted-foreground">
-                      {event.type === "birthday" ? "Birthday" : "Work anniversary"} ·{" "}
-                      {moment(event.date).format("MMM D")}
+                      {event.type === "birthday"
+                        ? "Birthday"
+                        : event.type === "optional_holiday"
+                          ? "Optional holiday"
+                          : event.type === "holiday"
+                            ? "Holiday"
+                            : "Work anniversary"}{" "}
+                      · {moment(event.date).format("MMM D")}
                     </p>
                   </div>
                   <span

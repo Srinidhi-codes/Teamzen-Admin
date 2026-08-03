@@ -40,18 +40,18 @@ const MODELS = [
     type: "Fast",
   },
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    desc: "Fast Google model with tool calling support.",
+    id: "gemini-3.5-flash",
+    name: "Gemini 3.5 Flash",
+    desc: "Current Google Flash model — strong for agent tools.",
     provider: "Google",
     type: "Fast",
   },
   {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    desc: "Strong reasoning for complex HR requests.",
+    id: "gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash-Lite",
+    desc: "Lower cost / latency Google model for high volume.",
     provider: "Google",
-    type: "Premium",
+    type: "Efficient",
   },
   {
     id: "llama-3.3-70b-versatile",
@@ -63,7 +63,7 @@ const MODELS = [
   {
     id: "llama-3.1-8b-instant",
     name: "Llama 3.1 8B",
-    desc: "Very fast responses via Groq.",
+    desc: "Fast Groq model — limited tools/context on free tier. Prefer 70B for full HR agent.",
     provider: "Groq",
     type: "Speed",
   },
@@ -101,9 +101,11 @@ function SettingsPageContent() {
   useEffect(() => {
     if (config) {
       const legacyMap: Record<string, string> = {
-        "gemini-1.5-flash": "gemini-2.5-flash",
-        "gemini-1.5-pro": "gemini-2.5-pro",
-        "gemini-2.0-flash": "gemini-2.5-flash",
+        "gemini-1.5-flash": "gemini-3.5-flash-lite",
+        "gemini-1.5-pro": "gemini-3.5-flash",
+        "gemini-2.0-flash": "gemini-3.5-flash-lite",
+        "gemini-2.5-flash": "gemini-3.5-flash",
+        "gemini-2.5-pro": "gemini-3.5-flash",
         "mixtral-8x7b-32768": "llama-3.3-70b-versatile",
         "llama-3-8b-8192": "llama-3.1-8b-instant",
         "llama-3-70b-8192": "llama-3.3-70b-versatile",
@@ -128,9 +130,18 @@ function SettingsPageContent() {
     return () => window.clearTimeout(t);
   }, [section]);
 
+  const isSuperadmin = user?.role === "superadmin";
+
   const handleSave = async () => {
     try {
-      await updateAIConfig(formData);
+      const payload = isSuperadmin
+        ? formData
+        : {
+            temperature: formData.temperature,
+            max_tokens: formData.max_tokens,
+            system_prompt_override: formData.system_prompt_override,
+          };
+      await updateAIConfig(payload);
       toast.success("AI settings saved");
     } catch {
       toast.error("Failed to update AI settings");
@@ -151,7 +162,11 @@ function SettingsPageContent() {
       <PageHeader
         eyebrow="Workspace"
         title="Settings"
-        description="Manage your plan, AI assistant, and organization credentials."
+        description={
+          user?.role === "superadmin"
+            ? "Set the platform AI model for all organizations. Plans are managed per company."
+            : "Manage your plan, assistant prompt, and organization credentials. The AI model is provided by Teamzen."
+        }
         actions={
           <button
             onClick={handleSave}
@@ -165,64 +180,71 @@ function SettingsPageContent() {
         }
       />
 
-      <PlanBillingSection highlight={highlightPlan} />
+      {user?.role !== "superadmin" && (
+        <PlanBillingSection highlight={highlightPlan} />
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <section className="rounded-xl border border-border bg-card p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Zap className="h-4 w-4 text-muted-foreground" />
-              <h2 className="text-sm font-semibold text-foreground">Model</h2>
-            </div>
-            <div className="space-y-2">
-              {MODELS.map((m) => {
-                const selected = formData.model_name === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, model_name: m.id }))
-                    }
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors",
-                      selected
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted/50"
-                    )}
-                  >
-                    <div
+          {isSuperadmin && (
+            <section className="rounded-xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold text-foreground">Model</h2>
+              </div>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Platform model provided with the SaaS plan. Company admins cannot change this.
+              </p>
+              <div className="space-y-2">
+                {MODELS.map((m) => {
+                  const selected = formData.model_name === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() =>
+                        setFormData((prev) => ({ ...prev, model_name: m.id }))
+                      }
                       className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                        "flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors",
                         selected
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted/50"
                       )}
                     >
-                      <Cpu className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium text-foreground">{m.name}</p>
-                        <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                          {m.provider} · {m.type}
-                        </span>
+                      <div
+                        className={cn(
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                          selected
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        <Cpu className="h-4 w-4" />
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {m.desc}
-                      </p>
-                    </div>
-                    <div
-                      className={cn(
-                        "h-4 w-4 shrink-0 rounded-full border-2",
-                        selected ? "border-primary bg-primary" : "border-border"
-                      )}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-sm font-medium text-foreground">{m.name}</p>
+                          <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                            {m.provider} · {m.type}
+                          </span>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {m.desc}
+                        </p>
+                      </div>
+                      <div
+                        className={cn(
+                          "h-4 w-4 shrink-0 rounded-full border-2",
+                          selected ? "border-primary bg-primary" : "border-border"
+                        )}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           <PlanGate
             allowed={can("org_llm_key")}

@@ -43,6 +43,7 @@ export const GET_ME = gql`
       uanNumber
       hasSeenOnboarding
       hasSeenAiOnboarding
+      emailLoginAlerts
       organization {
         id
         name
@@ -186,8 +187,8 @@ export const GET_ALL_USERS = gql`
 `;
 
 export const GET_LOGIN_HISTORY = gql`
-  query GlobalLoginHistory($page: Int, $pageSize: Int) {
-    globalLoginHistory(page: $page, pageSize: $pageSize) {
+  query GlobalLoginHistory($page: Int, $pageSize: Int, $organizationId: ID, $search: String) {
+    globalLoginHistory(page: $page, pageSize: $pageSize, organizationId: $organizationId, search: $search) {
       results {
         id
         loginTime

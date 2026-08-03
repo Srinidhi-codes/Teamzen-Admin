@@ -46,7 +46,7 @@ export function PlanExpiryBanner() {
     }
   }, [visible, days, expiresAt]);
 
-  if (!user || !visible || dismissed || days === null) return null;
+  if (!user || user.role === "superadmin" || !visible || dismissed || days === null) return null;
 
   const expired = days < 0;
   const dayText = expired

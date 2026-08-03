@@ -43,12 +43,14 @@ const navItems: NavItem[] = [
     name: "Performance",
     href: "/performance",
     icon: TrendingUp,
+    roles: ["superadmin", "admin", "hr", "manager"],
     feature: "advanced_analytics",
   },
   {
     name: "Reports",
     href: "/reports",
     icon: BarChart3,
+    roles: ["superadmin", "admin", "hr"],
     feature: "advanced_analytics",
   },
   {
@@ -81,6 +83,8 @@ export function AdminSidebar({
   const filteredNavItems = navItems.filter((item) => {
     if (!user) return false;
     if (item.roles && !item.roles.includes(user.role)) return false;
+    // Superadmin is not plan-gated for nav visibility
+    if (user.role === "superadmin") return true;
     if (
       item.feature &&
       !hasPlanFeature(user.organization?.plan, user.organization?.planExpiresAt, item.feature)

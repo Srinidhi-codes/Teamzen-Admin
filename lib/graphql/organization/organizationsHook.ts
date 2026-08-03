@@ -7,10 +7,19 @@ import { toast } from "sonner";
 import { useStore } from "@/lib/store/useStore";
 
 
-export function useGraphQLOrganizations(search?: string) {
-    const { setOrganizations } = useStore();
+export function useGraphQLOrganizations(
+    search?: string,
+    filters?: { plan?: string; isActive?: boolean | null },
+    options?: { skip?: boolean }
+) {
+    const { setOrganizations, isAuthenticated } = useStore();
     const { data, loading, error, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
-        variables: { search }
+        variables: {
+            search: search || undefined,
+            plan: filters?.plan || undefined,
+            isActive: filters?.isActive ?? undefined,
+        },
+        skip: !isAuthenticated || !!options?.skip,
     })
 
     useEffect(() => {
@@ -28,8 +37,9 @@ export function useGraphQLOrganizations(search?: string) {
 }
 
 export function useGraphQLOrganization(id: string) {
-    const { setOrganizations } = useStore();
+    const { setOrganizations, isAuthenticated } = useStore();
     const { data: pluralData, loading: pluralLoading, error: pluralError, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
+        skip: !isAuthenticated,
     });
 
     useEffect(() => {
@@ -51,10 +61,18 @@ export function useGraphQLOrganization(id: string) {
 }
 
 
-export function useGraphQLOfficeLocations(search?: string) {
-    const { setOfficeLocations } = useStore();
+export function useGraphQLOfficeLocations(
+    search?: string,
+    organizationId?: string,
+    options?: { skip?: boolean }
+) {
+    const { setOfficeLocations, isAuthenticated } = useStore();
     const { data, loading, error, refetch } = useQuery<OfficeLocationResponse>(GET_OFFICE_LOCATIONS, {
-        variables: { search }
+        variables: {
+            search: search || undefined,
+            organizationId: organizationId || undefined,
+        },
+        skip: !isAuthenticated || !!options?.skip,
     })
 
     useEffect(() => {
@@ -71,10 +89,18 @@ export function useGraphQLOfficeLocations(search?: string) {
     }
 }
 
-export function useGraphQLDepartments(search?: string) {
-    const { setDepartments } = useStore();
+export function useGraphQLDepartments(
+    search?: string,
+    organizationId?: string,
+    options?: { skip?: boolean }
+) {
+    const { setDepartments, isAuthenticated } = useStore();
     const { data, loading, error, refetch } = useQuery<DepartmentResponse>(GET_DEPARTMENTS, {
-        variables: { search }
+        variables: {
+            search: search || undefined,
+            organizationId: organizationId || undefined,
+        },
+        skip: !isAuthenticated || !!options?.skip,
     })
 
     useEffect(() => {
@@ -91,10 +117,18 @@ export function useGraphQLDepartments(search?: string) {
     }
 }
 
-export function useGraphQLDesignations(search?: string) {
-    const { setDesignations } = useStore();
+export function useGraphQLDesignations(
+    search?: string,
+    organizationId?: string,
+    options?: { skip?: boolean }
+) {
+    const { setDesignations, isAuthenticated } = useStore();
     const { data, loading, error, refetch } = useQuery<DesignationResponse>(GET_DESIGNATIONS, {
-        variables: { search }
+        variables: {
+            search: search || undefined,
+            organizationId: organizationId || undefined,
+        },
+        skip: !isAuthenticated || !!options?.skip,
     })
 
     useEffect(() => {

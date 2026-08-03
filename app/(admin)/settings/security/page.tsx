@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { GET_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
+import React, { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@apollo/client/react";
+import { GET_LOGIN_HISTORY, GET_ME } from "@/lib/graphql/users/queries";
+import { UPDATE_PROFILE } from "@/lib/graphql/users/mutations";
 import { DataTable } from "@/components/admin/DataTable";
 import { Card } from "@/components/common/Card";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Switch } from "@/components/ui/switch";
 import {
   ShieldCheck,
   Globe,
@@ -13,10 +15,16 @@ import {
   User as UserIcon,
   AlertCircle,
   RefreshCcw,
+  Mail,
 } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useStore } from "@/lib/store/useStore";
+import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { SearchInput } from "@/components/common/SearchInput";
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 function parseUserAgent(uaRaw?: string) {
   const ua = uaRaw?.toLowerCase() || "";
@@ -37,16 +45,65 @@ function parseUserAgent(uaRaw?: string) {
 }
 
 export default function SecuritySettingsPage() {
+  const { user, updateUser } = useStore();
   const [page, setPage] = useState(1);
+  const [organizationId, setOrganizationId] = useState("");
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
   const pageSize = 20;
+  const isSuperadmin = user?.role === "superadmin";
+
+  const { data: meData, refetch: refetchMe } = useQuery(GET_ME, {
+    fetchPolicy: "cache-and-network",
+  }) as any;
+  const me = meData?.me;
+  const emailLoginAlerts = Boolean(me?.emailLoginAlerts ?? user?.emailLoginAlerts);
+
+  const [updateProfile, { loading: savingToggle }] = useMutation(UPDATE_PROFILE) as any;
+
   const { data, loading, error, refetch } = useQuery(GET_LOGIN_HISTORY, {
-    variables: { page, pageSize },
+    variables: {
+      page,
+      pageSize,
+      organizationId: organizationId || undefined,
+      search: debouncedSearch || undefined,
+    },
     fetchPolicy: "network-only",
   }) as any;
+
+  useEffect(() => {
+    setPage(1);
+  }, [organizationId, debouncedSearch]);
 
   const response = data?.globalLoginHistory || {};
   const logs = response.results || [];
   const totalCount = response.total || 0;
+
+  const handleToggleLoginAlerts = async (checked: boolean) => {
+    try {
+      const res = await updateProfile({
+        variables: { input: { emailLoginAlerts: checked } },
+      });
+      if (res.data?.updateProfile?.error) {
+        throw new Error(res.data.updateProfile.error);
+      }
+      updateUser({ emailLoginAlerts: checked } as any);
+      await refetchMe();
+      toast.success(
+        checked
+          ? "Login alert emails enabled"
+          : "Login alert emails disabled"
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update preference");
+    }
+  };
+
+  const alertDescription = isSuperadmin
+    ? "Email you whenever anyone signs in across the platform."
+    : user?.role === "admin" || user?.role === "hr"
+      ? "Email you when anyone in your organization signs in (and when you sign in)."
+      : "Email you whenever your account is signed in.";
 
   if (error) {
     return (
@@ -68,7 +125,7 @@ export default function SecuritySettingsPage() {
     <div className="page-shell">
       <PageHeader
         title="Security"
-        description="Login history across your organization."
+        description="Login alerts and history across your organization."
         actions={
           <button
             onClick={() => refetch()}
@@ -80,13 +137,46 @@ export default function SecuritySettingsPage() {
         }
       />
 
+      <Card className="p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Mail className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">Email login alerts</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">{alertDescription}</p>
+            </div>
+          </div>
+          <Switch
+            checked={emailLoginAlerts}
+            disabled={savingToggle}
+            onCheckedChange={handleToggleLoginAlerts}
+          />
+        </div>
+      </Card>
+
       <Card className="overflow-hidden p-0">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
             <Globe className="h-4 w-4 text-muted-foreground" />
             Login history
           </h3>
-          <span className="text-xs text-muted-foreground">{totalCount} records</span>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <SearchInput
+              placeholder="Search user, IP, location…"
+              value={search}
+              onChange={setSearch}
+              containerClassName="max-w-xs"
+            />
+            <OrganizationFilterSelect
+              value={organizationId}
+              onChange={setOrganizationId}
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {totalCount} records
+            </span>
+          </div>
         </div>
 
         <DataTable

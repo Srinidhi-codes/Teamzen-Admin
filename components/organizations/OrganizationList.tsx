@@ -72,16 +72,23 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
                 >
                   {org.name}
                 </button>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                    org.isActive
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-destructive/10 text-destructive"
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span
+                    className={cn(
+                      "rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                      org.isActive
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : "bg-destructive/10 text-destructive"
+                    )}
+                  >
+                    {org.isActive ? "Active" : "Suspended"}
+                  </span>
+                  {org.plan && (
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
+                      {org.plan} plan
+                    </span>
                   )}
-                >
-                  {org.isActive ? "Active" : "Suspended"}
-                </span>
+                </div>
               </div>
               <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                 <Users className="h-3 w-3" />

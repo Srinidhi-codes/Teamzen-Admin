@@ -26,14 +26,18 @@ import { Stat } from "@/components/common/Stats";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { SearchInput } from "@/components/common/SearchInput";
 import { cn } from "@/lib/utils";
+import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { useStore } from "@/lib/store/useStore";
 
 export default function AttendancePage() {
+  const { user } = useStore();
   const [startDate, setStartDate] = useState(
     moment().startOf("month").format("YYYY-MM-DD")
   );
   const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
   const [selected, setSelected] = useState<AttendanceCorrection | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const pageSize = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,7 +50,10 @@ export default function AttendancePage() {
   } = useGraphQLAttendanceCorrection({
     page: currentPage,
     pageSize,
-    filters: { search: debouncedSearchTerm },
+    filters: {
+      search: debouncedSearchTerm || undefined,
+      organizationId: organizationId || undefined,
+    },
   });
 
   const loadAttendance = async (start: string, end: string) => {
@@ -272,12 +279,20 @@ export default function AttendancePage() {
             </button>
           </div>
         </div>
-        <div className="mt-4 max-w-md">
-          <SearchInput
-            placeholder="Search employees…"
-            value={searchTerm}
-            onChange={setSearchTerm}
-          />
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="max-w-md flex-1">
+            <SearchInput
+              placeholder="Search employees…"
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+          </div>
+          {user?.role === "superadmin" && (
+            <OrganizationFilterSelect
+              value={organizationId}
+              onChange={setOrganizationId}
+            />
+          )}
         </div>
       </div>
 

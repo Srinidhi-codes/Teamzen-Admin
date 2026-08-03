@@ -20,6 +20,7 @@ export const UPDATE_PROFILE = gql`
         uanNumber
         hasSeenOnboarding
         hasSeenAiOnboarding
+        emailLoginAlerts
       }
     }
   }

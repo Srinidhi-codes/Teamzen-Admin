@@ -10,12 +10,18 @@ import { Stat } from "../common/Stats";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { SearchInput } from "../common/SearchInput";
+import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 
 
 export default function LeaveRequests() {
     const [searchTerm, setSearchTerm] = useState("");
+    const [organizationId, setOrganizationId] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 500);
-    const { leaveRequestData, isLoading, error, refetch } = useGraphQLLeaveRequests(true, debouncedSearch);
+    const { leaveRequestData, isLoading, error, refetch } = useGraphQLLeaveRequests(
+        true,
+        debouncedSearch,
+        organizationId || undefined
+    );
     const { leaveRequestProcess } = useGraphQLLeaveRequestProcess();
     const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
     const [comments, setComments] = useState("");
@@ -229,6 +235,10 @@ export default function LeaveRequests() {
                         onChange={setSearchTerm}
                         containerClassName="flex-1 lg:w-64 min-w-[200px]"
                         className="h-9"
+                    />
+                    <OrganizationFilterSelect
+                        value={organizationId}
+                        onChange={setOrganizationId}
                     />
                     {pendingCount > 0 && (
                         <div className="rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground whitespace-nowrap">

@@ -19,7 +19,7 @@ const navItems: NavItem[] = [
   { name: "Leaves", href: "/leaves", icon: "📅" },
   { name: "Attendance", href: "/attendance", icon: "📍" },
   { name: "Payroll", href: "/payroll", icon: "💰", roles: ["admin", "superadmin"] },
-  { name: "Performance", href: "/performance", icon: "🎯" },
+  { name: "Performance", href: "/performance", icon: "🎯", roles: ["admin", "hr", "manager", "superadmin"] },
   { name: "Reports", href: "/reports", icon: "📈", roles: ["admin", "hr", "superadmin"] },
   { name: "Notifications", href: "/notifications", icon: "🔔" },
   { name: "Settings", href: "/settings", icon: "⚙️", roles: ["admin", "hr", "superadmin"] },

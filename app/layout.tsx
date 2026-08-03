@@ -18,6 +18,34 @@ export const metadata: Metadata = {
   description: "Payroll and workforce administration for Teamzen",
 };
 
+/** Runs before paint to avoid theme/accent flash after login. */
+const THEME_BOOT_SCRIPT = `
+(function() {
+  try {
+    var root = document.documentElement;
+    var storage = localStorage.getItem('payroll-app-storage');
+    var accent = 'teal';
+    if (storage) {
+      var parsed = JSON.parse(storage);
+      var state = parsed && parsed.state;
+      if (state && state.accent) accent = state.accent;
+      else if (state && state.user && state.user.organization && state.user.organization.accent) {
+        accent = state.user.organization.accent;
+      }
+    }
+    root.setAttribute('data-accent', accent);
+
+    var theme = localStorage.getItem('theme');
+    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var isDark = theme === 'dark' || ((theme === 'system' || !theme) && prefersDark);
+    root.classList.toggle('dark', isDark);
+    root.style.colorScheme = isDark ? 'dark' : 'light';
+  } catch (e) {
+    document.documentElement.setAttribute('data-accent', 'teal');
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,29 +54,7 @@ export default function RootLayout({
   return (
     <html lang="en" style={{ scrollbarGutter: "stable" }} suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var storage = localStorage.getItem('payroll-app-storage');
-                  if (storage) {
-                    var state = JSON.parse(storage);
-                    if (state && state.state && state.state.accent) {
-                      document.documentElement.setAttribute('data-accent', state.state.accent);
-                    } else {
-                      document.documentElement.setAttribute('data-accent', 'teal');
-                    }
-                  } else {
-                    document.documentElement.setAttribute('data-accent', 'teal');
-                  }
-                } catch (e) {
-                  document.documentElement.setAttribute('data-accent', 'teal');
-                }
-              })();
-            `,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>

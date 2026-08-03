@@ -66,6 +66,7 @@ import moment from "moment";
 import { cn } from "@/lib/utils";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { PlanGate } from "@/components/common/PlanGate";
+import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 
 function statusChipClass(status: string) {
   switch (status) {
@@ -89,46 +90,56 @@ export default function PayrollPage() {
   const canAutoRun = can("payroll_auto_run");
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("runs");
+  const [organizationId, setOrganizationId] = useState("");
+  const orgVars = { organizationId: organizationId || undefined };
+  const skipPayroll = !!(user && user.role !== "admin" && user.role !== "superadmin");
 
   const { data: runsData, loading: runsLoading, refetch: refetchRuns } = useQuery(
     GET_PAYROLL_RUNS,
-    { skip: !!(user && user.role !== "admin" && user.role !== "superadmin") }
+    { skip: skipPayroll, variables: orgVars }
   ) as any;
   const {
     data: componentsData,
     loading: componentsLoading,
     refetch: refetchComponents,
   } = useQuery(GET_SALARY_COMPONENTS, {
-    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
+    skip: skipPayroll,
+    variables: orgVars,
   }) as any;
   const {
     data: structuresData,
     loading: structuresLoading,
     refetch: refetchStructures,
   } = useQuery(GET_SALARY_STRUCTURES, {
-    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
+    skip: skipPayroll,
+    variables: orgVars,
   }) as any;
   const { data: checklistData, refetch: refetchChecklist } = useQuery(
     GET_PAYROLL_SETUP_CHECKLIST,
-    { skip: !!(user && user.role !== "admin" && user.role !== "superadmin") }
+    { skip: skipPayroll, variables: orgVars }
   ) as any;
   const {
     data: advancesData,
     loading: advancesLoading,
     refetch: refetchAdvances,
   } = useQuery(GET_SALARY_ADVANCES, {
-    skip: !!(user && user.role !== "admin" && user.role !== "superadmin") || !canAdvances,
+    skip: skipPayroll || !canAdvances,
+    variables: orgVars,
   }) as any;
   const {
     data: settingsData,
     loading: settingsLoading,
     refetch: refetchSettings,
   } = useQuery(GET_PAYROLL_SETTINGS, {
-    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
+    skip: skipPayroll,
+    variables: orgVars,
   }) as any;
   const { data: usersData } = useQuery(GET_ALL_USERS, {
-    variables: { pageSize: 200 },
-    skip: !!(user && user.role !== "admin" && user.role !== "superadmin"),
+    variables: {
+      pageSize: 200,
+      filters: organizationId ? { organizationId } : undefined,
+    },
+    skip: skipPayroll,
   }) as any;
 
   const [createPayrollRun] = useMutation(CREATE_PAYROLL_RUN) as any;
@@ -368,6 +379,10 @@ export default function PayrollPage() {
         description="Run payroll, manage salary components, and salary structures."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <OrganizationFilterSelect
+              value={organizationId}
+              onChange={setOrganizationId}
+            />
             <PayrollTourButton variant="list" />
             <CreateMonthlyRunDialog onConfirm={handleCreateRun} />
           </div>

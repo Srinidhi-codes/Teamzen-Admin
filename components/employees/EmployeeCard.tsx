@@ -87,7 +87,9 @@ export default function EmployeeCard({ employee, onEdit, onStatusToggle }: Emplo
         <div className="flex items-center gap-2 text-muted-foreground">
           <Building2 className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate text-foreground">
-            {employee.department?.name || "No department"}
+            {employee.organization?.name
+              ? `${employee.organization.name} · ${employee.department?.name || "No department"}`
+              : employee.department?.name || "No department"}
           </span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">

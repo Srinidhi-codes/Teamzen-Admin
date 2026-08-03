@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
 import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
 import { SecurityLogResponse } from "@/lib/graphql/users/types";
@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { canUpgradePlan, nextPlan, planBadgeClass, planLabel } from "@/lib/plans";
+import { normalizeAccent } from "@/lib/transformers";
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -50,22 +51,73 @@ function roleLabel(role?: string) {
 }
 
 export function Navbar({ onMenuClick }: NavbarProps) {
-  const { logoutUser, user: storeUser, setAuthenticatedUser } = useStore();
+  const {
+    logoutUser,
+    user: storeUser,
+    setAuthenticatedUser,
+    updateUser,
+    setAccent,
+  } = useStore();
   const { user: graphqlUser, isLoading: isUserLoading } = useGraphQLUser();
   const { data } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
     variables: { page: 1, pageSize: 1 },
     fetchPolicy: "cache-first",
   });
   const pathname = usePathname();
-  const orgLogo = (graphqlUser || storeUser)?.organization?.logo?.url;
+
+  // Prefer GraphQL when available — it always includes plan/accent.
+  const user = graphqlUser || storeUser;
+  const orgLogo = user?.organization?.logo?.url;
+  const plan = user?.organization?.plan;
+  const planReady = Boolean(plan) || user?.role === "superadmin" || (!isUserLoading && !user?.organization);
+  const showUpgrade =
+    user?.role === "admin" &&
+    planReady &&
+    Boolean(plan) &&
+    canUpgradePlan(plan);
 
   useEffect(() => {
-    if (graphqlUser && !storeUser && !isUserLoading) {
-      setAuthenticatedUser(graphqlUser as any);
-    }
-  }, [graphqlUser, storeUser, isUserLoading, setAuthenticatedUser]);
+    if (!graphqlUser || isUserLoading) return;
 
-  const user = graphqlUser || storeUser;
+    if (!storeUser) {
+      setAuthenticatedUser(graphqlUser as any);
+      return;
+    }
+
+    const gOrg = graphqlUser.organization;
+    const sOrg = storeUser.organization;
+    const needsOrgSync =
+      !!gOrg &&
+      (!sOrg?.plan ||
+        sOrg.plan !== gOrg.plan ||
+        sOrg.planExpiresAt !== gOrg.planExpiresAt ||
+        sOrg.accent !== gOrg.accent ||
+        sOrg.name !== gOrg.name ||
+        (gOrg.logo?.url && sOrg.logo?.url !== gOrg.logo.url));
+
+    if (needsOrgSync) {
+      updateUser({
+        organization: {
+          ...(sOrg || { id: gOrg.id, name: gOrg.name }),
+          ...gOrg,
+        },
+      } as any);
+    }
+
+    if (gOrg?.accent) {
+      const accent = normalizeAccent(gOrg.accent);
+      setAccent(accent);
+      document.documentElement.setAttribute("data-accent", accent);
+    }
+  }, [
+    graphqlUser,
+    storeUser,
+    isUserLoading,
+    setAuthenticatedUser,
+    updateUser,
+    setAccent,
+  ]);
+
   const locationVerified = Boolean(data?.mySecurityLogs?.results?.[0]?.latitude);
 
   const handleLogout = async () => {
@@ -87,6 +139,20 @@ export function Navbar({ onMenuClick }: NavbarProps) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
+
+  const planBadge = useMemo(() => {
+    if (!planReady || !plan) return null;
+    return (
+      <span
+        className={cn(
+          "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+          planBadgeClass(plan)
+        )}
+      >
+        {planLabel(plan)}
+      </span>
+    );
+  }, [plan, planReady]);
 
   return (
     <header className="sticky top-0 z-70 border-b border-border bg-background/95 backdrop-blur-sm">
@@ -117,14 +183,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                 {user?.organization?.name || "Teamzen"}
               </p>
               <div className="flex min-w-0 items-center gap-1.5">
-                <span
-                  className={cn(
-                    "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                    planBadgeClass(user?.organization?.plan)
-                  )}
-                >
-                  {planLabel(user?.organization?.plan)}
-                </span>
+                {planBadge}
                 <span className="truncate text-xs text-muted-foreground">
                   {roleLabel(user?.role)}
                 </span>
@@ -160,16 +219,14 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1">
-          {user &&
-            (user.role === "admin" || user.role === "superadmin") &&
-            canUpgradePlan(user.organization?.plan) && (
-              <Link
-                href="/settings?section=plan"
-                className="mr-1 hidden items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15 sm:inline-flex"
-              >
-                Upgrade to {planLabel(nextPlan(user.organization?.plan) || "pro")}
-              </Link>
-            )}
+          {showUpgrade && (
+            <Link
+              href="/settings?section=plan"
+              className="mr-1 hidden items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15 sm:inline-flex"
+            >
+              Upgrade to {planLabel(nextPlan(plan) || "pro")}
+            </Link>
+          )}
           <NotificationBell />
           <ThemeSelector />
 
@@ -208,14 +265,16 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                     {user.organization?.name && (
                       <span className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                         <span className="truncate">{user.organization.name}</span>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                            planBadgeClass(user.organization.plan)
-                          )}
-                        >
-                          {planLabel(user.organization.plan)}
-                        </span>
+                        {planReady && plan ? (
+                          <span
+                            className={cn(
+                              "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                              planBadgeClass(plan)
+                            )}
+                          >
+                            {planLabel(plan)}
+                          </span>
+                        ) : null}
                       </span>
                     )}
                     <span
@@ -240,11 +299,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                     Employee portal
                   </a>
                 </DropdownMenuItem>
-                {(user.role === "admin" || user.role === "superadmin") && (
+                {user.role === "admin" && planReady && (
                   <DropdownMenuItem asChild>
                     <Link href="/settings?section=plan" className="cursor-pointer">
-                      {canUpgradePlan(user.organization?.plan)
-                        ? `Upgrade to ${planLabel(nextPlan(user.organization?.plan) || "pro")}`
+                      {showUpgrade
+                        ? `Upgrade to ${planLabel(nextPlan(plan) || "pro")}`
                         : "Manage plan"}
                     </Link>
                   </DropdownMenuItem>

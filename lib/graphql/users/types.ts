@@ -28,6 +28,7 @@ export interface User {
     plan?: "free" | "pro" | "elite" | string;
     planExpiresAt?: string | null;
     daysUntilPlanExpiry?: number | null;
+    accent?: string | null;
     logo?: {
       url: string;
     } | null;
@@ -35,6 +36,7 @@ export interface User {
 
   hasSeenOnboarding: boolean;
   hasSeenAiOnboarding: boolean;
+  emailLoginAlerts?: boolean;
 
   manager?: {
     id: string;
