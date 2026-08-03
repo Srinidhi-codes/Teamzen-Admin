@@ -27,6 +27,7 @@ export const UPDATE_ORGANIZATION = gql`
             headquartersAddress
             llmApiKey
             accent
+            faceAttendanceEnabled
             plan
             planExpiresAt
             isActive

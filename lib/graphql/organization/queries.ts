@@ -16,6 +16,7 @@ export const GET_ORGANIZATIONS = gql`
             registrationNumber
             llmApiKey
             accent
+            faceAttendanceEnabled
             plan
             planExpiresAt
             daysUntilPlanExpiry
@@ -41,6 +42,7 @@ export const GET_ORGANIZATION = gql`
             registrationNumber
             llmApiKey
             accent
+            faceAttendanceEnabled
             createdAt
             updatedAt
         }

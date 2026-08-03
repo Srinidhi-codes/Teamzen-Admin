@@ -14,6 +14,7 @@ export interface Organization {
     updatedAt: string;
     llmApiKey?: string;
     accent?: string;
+    faceAttendanceEnabled?: boolean;
     plan?: string;
     planExpiresAt?: string | null;
     daysUntilPlanExpiry?: number | null;
@@ -69,6 +70,7 @@ export interface CreateOrganizationInput {
     isActive: boolean;
     llmApiKey?: string;
     accent?: string;
+    faceAttendanceEnabled?: boolean;
 }
 
 export interface OrganizationInput {
@@ -82,6 +84,7 @@ export interface OrganizationInput {
     id: string;
     llmApiKey?: string;
     accent?: string;
+    faceAttendanceEnabled?: boolean;
 }
 
 export interface CreateOfficeLocationInput {

@@ -21,6 +21,8 @@ export interface User {
 
   employeeId?: string | null;
   employmentType?: "full_time" | "contract" | "intern";
+  faceEnrolled?: boolean;
+  faceEnrolledAt?: string | null;
 
   organization?: {
     id: string;

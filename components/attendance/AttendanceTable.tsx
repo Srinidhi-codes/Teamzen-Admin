@@ -123,20 +123,27 @@ export function AttendanceTable({
         {
             key: "status",
             label: "Verdict",
-            render: (value: string) => {
+            render: (value: string, row: AttendanceCorrection) => {
                 return (
-                    <span
-                        className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${value === "approved"
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5"
-                            : value === "rejected"
-                                ? "bg-destructive/10 text-destructive border border-destructive/20 shadow-destructive/5"
-                                : value === "pending"
-                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-amber-500/5"
-                                    : "bg-muted text-muted-foreground border border-border"
-                            }`}
-                    >
-                        {value}
-                    </span>
+                    <div className="flex flex-col items-start gap-1.5">
+                        <span
+                            className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${value === "approved"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5"
+                                : value === "rejected"
+                                    ? "bg-destructive/10 text-destructive border border-destructive/20 shadow-destructive/5"
+                                    : value === "pending"
+                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-amber-500/5"
+                                        : "bg-muted text-muted-foreground border border-border"
+                                }`}
+                        >
+                            {value}
+                        </span>
+                        {row.attendanceRecord?.faceVerified && (
+                            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                                Face verified
+                            </span>
+                        )}
+                    </div>
                 );
             },
 
