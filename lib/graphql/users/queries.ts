@@ -55,6 +55,7 @@ export const GET_ME = gql`
         }
         llmApiKey
         accent
+        faceAttendanceEnabled
       }
       salaryDetails {
         id
@@ -120,6 +121,8 @@ export const GET_ALL_USERS = gql`
         profilePictureUrl
         employeeId
         employmentType
+        faceEnrolled
+        faceEnrolledAt
         organization {
           id
           name

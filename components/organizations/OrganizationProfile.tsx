@@ -16,6 +16,7 @@ import {
   Edit3,
   Save,
   X,
+  ScanFace,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
@@ -29,6 +30,7 @@ import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import moment from "moment";
 import { cn } from "@/lib/utils";
 import { AccentPicker, COMPANY_ACCENTS } from "./AccentPicker";
+import { Switch } from "@/components/ui/switch";
 
 interface OrganizationProfileProps {
   id: string;
@@ -70,6 +72,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       logo: organization.logo?.url || "",
       llmApiKey: organization.llmApiKey || "",
       accent: organization.accent || "teal",
+      faceAttendanceEnabled: organization.faceAttendanceEnabled ?? false,
     });
     setIsEditing(true);
   };
@@ -85,6 +88,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       logo: "",
       llmApiKey: "",
       accent: "teal",
+      faceAttendanceEnabled: false,
     });
   };
 
@@ -377,9 +381,26 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       onChange={(accent) => setFormData({ ...formData, accent })}
                     />
                   </div>
+                  <div className="md:col-span-2 flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/20 p-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <ScanFace className="h-4 w-4 text-primary" />
+                        Face attendance
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Require face verification and geofence for check-in/out on web and mobile.
+                      </p>
+                    </div>
+                    <Switch
+                      checked={!!formData.faceAttendanceEnabled}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, faceAttendanceEnabled: checked })
+                      }
+                    />
+                  </div>
                 </div>
 
-                <div className="flex justify-end gap-2 border-t border-border pt-4">
+                <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
                   <Button type="button" variant="outline" onClick={handleCancel}>
                     Cancel
                   </Button>
@@ -431,6 +452,11 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                     COMPANY_ACCENTS.find((a) => a.name === (organization.accent || "teal"))
                       ?.label || "Teal"
                   }
+                />
+                <DataBox
+                  icon={ScanFace}
+                  label="Face attendance"
+                  value={organization.faceAttendanceEnabled ? "Enabled" : "Disabled"}
                 />
               </div>
 

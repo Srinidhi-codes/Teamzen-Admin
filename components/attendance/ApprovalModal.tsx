@@ -10,7 +10,8 @@ import {
     XCircle,
     MessageSquare,
     ArrowRight,
-    User
+    User,
+    ScanFace
 } from "lucide-react";
 import { FormTextarea } from "../common/FormTextArea";
 import dynamic from "next/dynamic";
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils";
 const AttendanceMap = dynamic(() => import("./AttendanceMap"), {
     ssr: false,
     loading: () => (
-        <div className="flex h-[300px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 text-sm text-muted-foreground">
+        <div className="flex h-[220px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-muted/40 text-sm text-muted-foreground sm:h-[300px]">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             Loading map…
         </div>
@@ -52,19 +53,19 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
     const formatTime = (timeStr?: string | null) => timeStr ? moment(timeStr, "HH:mm:ss").format("hh:mm A") : "--:--";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60 p-4">
-            <div className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 p-0 sm:items-center sm:p-4">
+            <div className="flex max-h-[calc(100dvh-0.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-lg sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl">
                 {/* Header */}
-                <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 py-4">
-                    <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border px-4 py-4 sm:gap-4 sm:px-6">
+                    <div className="flex min-w-0 items-center gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-sm font-semibold text-foreground">
                             {correction.requestedBy?.firstName?.charAt(0) || <User className="h-5 w-5" />}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h2 className="text-base font-semibold text-foreground">
                                 Review correction
                             </h2>
-                            <p className="mt-0.5 text-sm text-muted-foreground">
+                            <p className="mt-0.5 truncate text-sm text-muted-foreground">
                                 {correction.requestedBy?.firstName} {correction.requestedBy?.lastName}
                                 {correction.requestedBy?.designation?.name && (
                                     <span className="text-muted-foreground/70"> · {correction.requestedBy.designation.name}</span>
@@ -121,6 +122,60 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                             </div>
                         </div>
                     </div>
+
+                    {(correction.attendanceRecord.faceVerified ||
+                        correction.attendanceRecord.checkInSelfieUrl ||
+                        correction.attendanceRecord.checkOutSelfieUrl) && (
+                        <div className="rounded-lg border border-border bg-muted/30 p-4">
+                            <div className="mb-3 flex flex-wrap items-center gap-2">
+                                <ScanFace className="h-4 w-4 text-primary" />
+                                <h3 className="text-sm font-medium text-foreground">Face verification</h3>
+                                {correction.attendanceRecord.faceVerified && (
+                                    <span className="inline-flex items-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                        Verified
+                                        {correction.attendanceRecord.faceMatchScore != null &&
+                                            ` · ${Number(correction.attendanceRecord.faceMatchScore).toFixed(2)}`}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                {correction.attendanceRecord.checkInSelfieUrl && (
+                                    <a
+                                        href={correction.attendanceRecord.checkInSelfieUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="block overflow-hidden rounded-md border border-border"
+                                    >
+                                        <img
+                                            src={correction.attendanceRecord.checkInSelfieUrl}
+                                            alt="Check-in selfie"
+                                            className="h-16 w-16 object-cover"
+                                        />
+                                        <span className="block bg-muted px-1.5 py-0.5 text-center text-[10px] text-muted-foreground">
+                                            In
+                                        </span>
+                                    </a>
+                                )}
+                                {correction.attendanceRecord.checkOutSelfieUrl && (
+                                    <a
+                                        href={correction.attendanceRecord.checkOutSelfieUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="block overflow-hidden rounded-md border border-border"
+                                    >
+                                        <img
+                                            src={correction.attendanceRecord.checkOutSelfieUrl}
+                                            alt="Check-out selfie"
+                                            className="h-16 w-16 object-cover"
+                                        />
+                                        <span className="block bg-muted px-1.5 py-0.5 text-center text-[10px] text-muted-foreground">
+                                            Out
+                                        </span>
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Geolocation Verification Map */}
                     {(() => {
@@ -215,13 +270,14 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="flex shrink-0 flex-col justify-end gap-2 border-t border-border bg-muted/30 px-6 py-3 sm:flex-row">
-                    <Button variant="outline" onClick={onClose} disabled={loading}>
+                <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-border bg-muted/30 px-4 py-3 sm:flex-row sm:justify-end sm:px-6">
+                    <Button variant="outline" className="w-full sm:w-auto" onClick={onClose} disabled={loading}>
                         Cancel
                     </Button>
-                    <div className="flex gap-2">
+                    <div className="flex w-full gap-2 sm:w-auto">
                         <Button
                             variant="destructive"
+                            className="flex-1 sm:flex-none"
                             onClick={() => handleSubmit("rejected")}
                             disabled={loading}
                         >
@@ -229,6 +285,7 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                             Reject
                         </Button>
                         <Button
+                            className="flex-1 sm:flex-none"
                             onClick={() => handleSubmit("approved")}
                             disabled={loading}
                         >

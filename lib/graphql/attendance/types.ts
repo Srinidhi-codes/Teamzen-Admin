@@ -14,6 +14,10 @@ export interface AttendanceRecord {
   workedHours?: number | null;
 
   isWithinGeofence: boolean;
+  faceVerified?: boolean;
+  faceMatchScore?: number | null;
+  checkInSelfieUrl?: string | null;
+  checkOutSelfieUrl?: string | null;
   remarks?: string | null;
 
   correctionStatus?: string;

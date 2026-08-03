@@ -100,9 +100,16 @@ export default function EmployeeCard({ employee, onEdit, onStatusToggle }: Emplo
         </div>
 
         <div className="mt-1 flex items-center justify-between gap-2 pt-1">
-          <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
-            {employee.employmentType?.replace("_", " ") || "—"}
-          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium capitalize text-muted-foreground">
+              {employee.employmentType?.replace("_", " ") || "—"}
+            </span>
+            {employee.faceEnrolled && (
+              <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                Face enrolled
+              </span>
+            )}
+          </div>
           {employee.employeeId && (
             <span className="text-[11px] text-muted-foreground">{employee.employeeId}</span>
           )}
