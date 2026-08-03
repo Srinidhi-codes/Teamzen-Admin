@@ -389,7 +389,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                         Face attendance
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Require face verification and geofence for check-in/out on web and mobile.
+                        Require face verification for check-in/out on web and mobile.
                       </p>
                     </div>
                     <Switch
