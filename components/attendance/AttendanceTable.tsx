@@ -80,13 +80,49 @@ export function AttendanceTable({
             key: "correctionRequest",
             label: "Check-In / Out",
             render: (_: any, row: AttendanceCorrection) => (
-                <div className="flex flex-col items-start gap-1">
+                <div className="flex flex-col items-start gap-2">
                     <div className="flex items-center gap-1.5 text-primary font-black text-sm bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 shadow-sm shadow-primary/5">
                         <Clock className="w-3.5 h-3.5" />
                         {row.attendanceRecord.loginTime ? moment(row.attendanceRecord.loginTime, "HH:mm:ss").format("hh:mm A") : "--:--"}
                         <ArrowRight className="w-3 h-3 text-primary/30" />
                         {row.attendanceRecord.logoutTime ? moment(row.attendanceRecord.logoutTime, "HH:mm:ss").format("hh:mm A") : "--:--"}
                     </div>
+                    {(row.attendanceRecord.checkInSelfieUrl || row.attendanceRecord.checkOutSelfieUrl) && (
+                        <div className="flex items-center gap-1.5">
+                            {row.attendanceRecord.checkInSelfieUrl && (
+                                <a
+                                    href={row.attendanceRecord.checkInSelfieUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="block h-9 w-9 overflow-hidden rounded-md border border-border"
+                                    title="Check-in selfie"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <img
+                                        src={row.attendanceRecord.checkInSelfieUrl}
+                                        alt="In"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </a>
+                            )}
+                            {row.attendanceRecord.checkOutSelfieUrl && (
+                                <a
+                                    href={row.attendanceRecord.checkOutSelfieUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="block h-9 w-9 overflow-hidden rounded-md border border-border"
+                                    title="Check-out selfie"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <img
+                                        src={row.attendanceRecord.checkOutSelfieUrl}
+                                        alt="Out"
+                                        className="h-full w-full object-cover"
+                                    />
+                                </a>
+                            )}
+                        </div>
+                    )}
                 </div>
 
             ),
