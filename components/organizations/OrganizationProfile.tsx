@@ -69,7 +69,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       registrationNumber: organization.registrationNumber || "",
       headquartersAddress: organization.headquartersAddress || "",
       isActive: organization.isActive,
-      logo: organization.logo?.url || "",
+      // Don't put logo.url here — absolute URLs exceed ImageField varchar and must not be re-saved
+      logo: "",
       llmApiKey: organization.llmApiKey || "",
       accent: organization.accent || "teal",
       faceAttendanceEnabled: organization.faceAttendanceEnabled ?? false,
