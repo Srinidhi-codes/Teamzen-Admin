@@ -14,6 +14,8 @@ export interface ReportKpi {
 }
 
 export interface ReportSeriesPoint {
+  // Recharts ChartDataInput requires a string index signature
+  [key: string]: string | number | null | undefined;
   label: string;
   value: number;
   secondary?: number | null;
@@ -21,6 +23,8 @@ export interface ReportSeriesPoint {
 }
 
 export interface ReportNamedValue {
+  // Recharts ChartDataInput requires a string index signature
+  [key: string]: string | number | null | undefined;
   name: string;
   value: number;
   color?: string | null;
