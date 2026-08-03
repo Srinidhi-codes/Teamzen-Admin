@@ -1,4 +1,6 @@
 export interface NamedCount {
+  // Recharts ChartDataInput requires a string index signature
+  [key: string]: string | number;
   name: string;
   value: number;
 }
