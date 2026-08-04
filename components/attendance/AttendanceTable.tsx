@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { DataTable } from "@/components/common/DataTable";
+import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 import moment from "moment";
 import { AttendanceCorrection } from "@/lib/graphql/attendance/types";
 import {
@@ -40,6 +44,7 @@ export function AttendanceTable({
     pageSize?: number;
     onPageChange?: (page: number) => void;
 }) {
+    const [preview, setPreview] = useState<{ src: string; name: string } | null>(null);
     const columns = [
         {
             key: "requestedBy",
@@ -90,36 +95,44 @@ export function AttendanceTable({
                     {(row.attendanceRecord.checkInSelfieUrl || row.attendanceRecord.checkOutSelfieUrl) && (
                         <div className="flex items-center gap-1.5">
                             {row.attendanceRecord.checkInSelfieUrl && (
-                                <a
-                                    href={row.attendanceRecord.checkInSelfieUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="block h-9 w-9 overflow-hidden rounded-md border border-border"
+                                <button
+                                    type="button"
+                                    className="block h-9 w-9 cursor-zoom-in overflow-hidden rounded-md border border-border"
                                     title="Check-in selfie"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreview({
+                                            src: row.attendanceRecord.checkInSelfieUrl!,
+                                            name: "Check-in selfie",
+                                        });
+                                    }}
                                 >
                                     <img
                                         src={row.attendanceRecord.checkInSelfieUrl}
                                         alt="In"
                                         className="h-full w-full object-cover"
                                     />
-                                </a>
+                                </button>
                             )}
                             {row.attendanceRecord.checkOutSelfieUrl && (
-                                <a
-                                    href={row.attendanceRecord.checkOutSelfieUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="block h-9 w-9 overflow-hidden rounded-md border border-border"
+                                <button
+                                    type="button"
+                                    className="block h-9 w-9 cursor-zoom-in overflow-hidden rounded-md border border-border"
                                     title="Check-out selfie"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreview({
+                                            src: row.attendanceRecord.checkOutSelfieUrl!,
+                                            name: "Check-out selfie",
+                                        });
+                                    }}
                                 >
                                     <img
                                         src={row.attendanceRecord.checkOutSelfieUrl}
                                         alt="Out"
                                         className="h-full w-full object-cover"
                                     />
-                                </a>
+                                </button>
                             )}
                         </div>
                     )}
@@ -224,15 +237,23 @@ export function AttendanceTable({
     ];
 
     return (
-        <DataTable
-            columns={columns}
-            data={data}
-            isLoading={isLoading}
-            total={total}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            onPageChange={onPageChange}
-            paginationLabel="corrections"
-        />
+        <>
+            <DataTable
+                columns={columns}
+                data={data}
+                isLoading={isLoading}
+                total={total}
+                currentPage={currentPage}
+                pageSize={pageSize}
+                onPageChange={onPageChange}
+                paginationLabel="corrections"
+            />
+            <PhotoOverlay
+                open={Boolean(preview)}
+                onOpenChange={(open) => !open && setPreview(null)}
+                src={preview?.src}
+                name={preview?.name}
+            />
+        </>
     );
 }

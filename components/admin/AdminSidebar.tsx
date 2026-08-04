@@ -16,6 +16,8 @@ import {
   ChevronRight,
   FileText,
   ShieldCheck,
+  MessageSquare,
+  ClipboardList,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -36,6 +38,12 @@ const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Organizations", href: "/organizations", icon: Building2, roles: ["admin", "superadmin"] },
   { name: "Employees", href: "/employees", icon: Users },
+  {
+    name: "Onboarding",
+    href: "/onboarding",
+    icon: ClipboardList,
+    roles: ["superadmin", "admin", "hr"],
+  },
   { name: "Attendance", href: "/attendance", icon: Clock },
   { name: "Leaves", href: "/leaves", icon: Calendar },
   { name: "Payroll", href: "/payroll", icon: DollarSign, roles: ["admin", "superadmin"] },
@@ -60,6 +68,7 @@ const navItems: NavItem[] = [
     roles: ["admin", "superadmin"],
     feature: "policies",
   },
+  { name: "Feedback", href: "/feedback", icon: MessageSquare },
   { name: "Security", href: "/settings/security", icon: ShieldCheck, roles: ["admin", "superadmin"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["admin", "superadmin"] },
 ];
