@@ -476,23 +476,27 @@ export default function OnboardingPage() {
                         })
                       }
                     />
-                    Attach CTC annexure in generated PDF
+                    Include CTC annexure (Annexure A) in the offer PDF
                   </label>
                   {form.includeCtcAnnexure && (
                     <div className="mt-3">
                       <label className="mb-1 block text-xs text-muted-foreground">
-                        Annual CTC (INR)
+                        Annual CTC (INR) — required for annexure
                       </label>
                       <Input
                         type="number"
                         min={0}
                         step="0.01"
-                        placeholder="e.g. 800000"
+                        placeholder="e.g. 600000"
                         value={form.annualCtc}
                         onChange={(e) =>
                           setForm({ ...form, annualCtc: e.target.value })
                         }
+                        required={form.includeCtcAnnexure}
                       />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        PDF will include a full monthly / annual CTC break-up table.
+                      </p>
                     </div>
                   )}
                 </>
