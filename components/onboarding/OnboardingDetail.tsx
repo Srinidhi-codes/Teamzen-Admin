@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/PageHeader";
+import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { FormSkeleton, Skeleton } from "@/components/common/Skeleton";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -15,17 +16,88 @@ import {
   useOnboardingDetail,
   useOnboardingMutations,
 } from "@/lib/graphql/onboarding/onboardingHook";
+import type {
+  EmployeeDocument,
+  OnboardingTask,
+} from "@/lib/graphql/onboarding/types";
 
-function formatJoinDate(value?: string | null) {
-  if (!value) return "—";
+function formatJoinDate(value?: string | Date | null) {
+  if (value == null || value === "") return "—";
+  // GraphQL Date scalars arrive as YYYY-MM-DD — parse as calendar date (no TZ shift)
+  if (typeof value === "string") {
+    const day = value.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+    if (day) {
+      const m = moment(day[1], "YYYY-MM-DD", true);
+      if (m.isValid()) return m.format("DD MMM YYYY");
+    }
+  }
   const m = moment(value);
-  return m.isValid() ? m.format("DD MMM YYYY") : value;
+  return m.isValid() ? m.format("DD MMM YYYY") : String(value);
 }
 
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
+function formatDateTime(value?: string | Date | null) {
+  if (value == null || value === "") return "—";
   const m = moment(value);
-  return m.isValid() ? m.format("DD MMM YYYY, hh:mm A") : value;
+  return m.isValid() ? m.format("DD MMM YYYY, hh:mm A") : String(value);
+}
+
+function getActivateWarning(
+  userName: string,
+  tasks: OnboardingTask[],
+  documents: EmployeeDocument[]
+) {
+  const openTasks = tasks.filter(
+    (t) => t.status !== "completed" && t.status !== "skipped"
+  );
+  const requiredOpen = openTasks.filter((t) => t.isRequired);
+  const pendingDocs = documents.filter(
+    (d) => d.verificationStatus === "pending"
+  );
+  const rejectedDocs = documents.filter(
+    (d) => d.verificationStatus === "rejected"
+  );
+  const incomplete =
+    openTasks.length > 0 ||
+    pendingDocs.length > 0 ||
+    rejectedDocs.length > 0;
+
+  if (!incomplete) {
+    return {
+      incomplete: false,
+      title: `Activate ${userName}?`,
+      description:
+        "Their account will become active and day-1+ onboarding tasks will be created.",
+    };
+  }
+
+  const parts: string[] = [];
+  if (requiredOpen.length > 0) {
+    parts.push(
+      `${requiredOpen.length} required task${requiredOpen.length === 1 ? "" : "s"} still open`
+    );
+  }
+  const optionalOpen = openTasks.length - requiredOpen.length;
+  if (optionalOpen > 0) {
+    parts.push(
+      `${optionalOpen} optional task${optionalOpen === 1 ? "" : "s"} still open`
+    );
+  }
+  if (pendingDocs.length > 0) {
+    parts.push(
+      `${pendingDocs.length} document${pendingDocs.length === 1 ? "" : "s"} awaiting verification`
+    );
+  }
+  if (rejectedDocs.length > 0) {
+    parts.push(
+      `${rejectedDocs.length} document${rejectedDocs.length === 1 ? "" : "s"} rejected`
+    );
+  }
+
+  return {
+    incomplete: true,
+    title: `Activate ${userName} with incomplete preboarding?`,
+    description: `${parts.join(". ")}. You can still activate remaining work continues after day 1.`,
+  };
 }
 export default function OnboardingDetailPage({ id }: { id: string }) {
   const { onboarding, isLoading, error, refetch } = useOnboardingDetail(id);
@@ -52,6 +124,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
   const [sendAfterGenerate, setSendAfterGenerate] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+  const [activateModalOpen, setActivateModalOpen] = useState(false);
   const offerFileRef = useRef<HTMLInputElement>(null);
   const headerBusy =
     activateLoading || cancelLoading || sendInviteLoading;
@@ -111,6 +184,12 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
       setMessage(e instanceof Error ? e.message : "Action failed");
     }
   }
+
+  const activateWarning = getActivateWarning(
+    onboarding.userName,
+    onboarding.tasks,
+    onboarding.documents
+  );
 
   async function handleGenerateOffer() {
     const ctcValue = annualCtc.trim() ? Number(annualCtc) : undefined;
@@ -204,15 +283,10 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               onboarding.status !== "completed" &&
               onboarding.status !== "cancelled" && (
                 <Button
-                  className="cursor-pointer"
+                  className="cursor-pointer bg-green-500 hover:bg-green-600"
                   type="button"
                   disabled={activateLoading || headerBusy}
-                  onClick={() =>
-                    run(
-                      () => activate({ variables: { onboardingId: id } }),
-                      "Employee activated"
-                    )
-                  }
+                  onClick={() => setActivateModalOpen(true)}
                 >
                   {activateLoading ? (
                     <>
@@ -567,6 +641,9 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   {task.phase} · {task.assigneeRole}
                   {task.assigneeName ? ` · ${task.assigneeName}` : ""} · {task.status}
                   {task.dueAt ? ` · due ${formatJoinDate(task.dueAt)}` : ""}
+                  {task.completedAt
+                    ? ` · completed ${formatDateTime(task.completedAt)}`
+                    : ""}
                 </p>
               </div>
               {task.status !== "completed" && task.status !== "skipped" && (
@@ -601,6 +678,24 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
           ))}
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={activateModalOpen}
+        onClose={() => setActivateModalOpen(false)}
+        onConfirm={() =>
+          run(
+            () => activate({ variables: { onboardingId: id } }),
+            "Employee activated"
+          )
+        }
+        variant={activateWarning.incomplete ? "warning" : "success"}
+        title={activateWarning.title}
+        description={activateWarning.description}
+        confirmText={
+          activateWarning.incomplete ? "Activate anyway" : "Activate"
+        }
+        cancelText="Not now"
+      />
     </div>
   );
 }
