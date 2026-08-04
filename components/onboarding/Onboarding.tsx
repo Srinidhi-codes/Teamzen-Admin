@@ -2,15 +2,11 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FormSelect } from "@/components/common/FormSelect";
 import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import {
   useOnboardingMutations,
@@ -176,14 +172,12 @@ export default function OnboardingPage() {
             >
               Offer letters
             </Link>
-            <button
-              type="button"
+            <Button
               id="onboarding-start-hire"
               onClick={() => setShowStart(true)}
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
             >
               Start hire
-            </button>
+            </Button>
           </div>
         }
       />
@@ -193,26 +187,23 @@ export default function OnboardingPage() {
           value={organizationId}
           onChange={setOrganizationId}
         />
-        <input
+        <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search name or email"
-          className="h-10 rounded-lg border border-border bg-background px-3 text-sm"
+          className="h-10"
         />
         <div className="flex flex-wrap gap-1">
           {STATUS_FILTERS.map((s) => (
-            <button
+            <Button
               key={s.value || "all"}
               type="button"
+              size="sm"
+              variant={status === s.value ? "default" : "secondary"}
               onClick={() => setStatus(s.value)}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                status === s.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
             >
               {s.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -329,9 +320,9 @@ export default function OnboardingPage() {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Start hire / preboarding</h2>
-              <button type="button" onClick={() => setShowStart(false)}>
+              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowStart(false)}>
                 ✕
-              </button>
+              </Button>
             </div>
             {formError && (
               <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -339,44 +330,40 @@ export default function OnboardingPage() {
               </p>
             )}
             <div className="grid grid-cols-2 gap-3">
-              <input
+              <Input
                 required
                 placeholder="First name"
-                className="rounded-lg border border-border px-3 py-2 text-sm"
                 value={form.firstName}
                 onChange={(e) => setForm({ ...form, firstName: e.target.value })}
               />
-              <input
+              <Input
                 required
                 placeholder="Last name"
-                className="rounded-lg border border-border px-3 py-2 text-sm"
                 value={form.lastName}
                 onChange={(e) => setForm({ ...form, lastName: e.target.value })}
               />
             </div>
-            <input
+            <Input
               required
               type="email"
               placeholder="Work email"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
-            <input
+            <Input
               required
               type="text"
               placeholder="Temp password"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
             />
-            <input
+            <Input
               type="date"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
               value={form.dateOfJoining}
               onChange={(e) => setForm({ ...form, dateOfJoining: e.target.value })}
             />
-            <Select
+            <FormSelect
+              label="Department"
               value={form.departmentId || "__none__"}
               onValueChange={(value) =>
                 setForm({
@@ -384,22 +371,17 @@ export default function OnboardingPage() {
                   departmentId: value === "__none__" ? "" : value,
                 })
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Department (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Department (optional)</SelectItem>
-                {(departments || []).map(
-                  (d: { id: string; name: string }) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            <Select
+              placeholder="Department (optional)"
+              options={[
+                { label: "Department (optional)", value: "__none__" },
+                ...(departments || []).map((d: { id: string; name: string }) => ({
+                  label: d.name,
+                  value: d.id,
+                })),
+              ]}
+            />
+            <FormSelect
+              label="Designation"
               value={form.designationId || "__none__"}
               onValueChange={(value) =>
                 setForm({
@@ -407,22 +389,17 @@ export default function OnboardingPage() {
                   designationId: value === "__none__" ? "" : value,
                 })
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Designation (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Designation (optional)</SelectItem>
-                {(designations || []).map(
-                  (d: { id: string; name: string }) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.name}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            <Select
+              placeholder="Designation (optional)"
+              options={[
+                { label: "Designation (optional)", value: "__none__" },
+                ...(designations || []).map((d: { id: string; name: string }) => ({
+                  label: d.name,
+                  value: d.id,
+                })),
+              ]}
+            />
+            <FormSelect
+              label="Manager"
               value={form.managerId || "__none__"}
               onValueChange={(value) =>
                 setForm({
@@ -430,27 +407,24 @@ export default function OnboardingPage() {
                   managerId: value === "__none__" ? "" : value,
                 })
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Manager (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Manager (optional)</SelectItem>
-                {managers.map(
+              placeholder="Manager (optional)"
+              options={[
+                { label: "Manager (optional)", value: "__none__" },
+                ...managers.map(
                   (m: {
                     id: string;
                     firstName?: string;
                     lastName?: string;
                     email: string;
-                  }) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.firstName} {m.lastName} ({m.email})
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            <Select
+                  }) => ({
+                    label: `${m.firstName || ""} ${m.lastName || ""} (${m.email})`.trim(),
+                    value: m.id,
+                  })
+                ),
+              ]}
+            />
+            <FormSelect
+              label="Template"
               value={form.templateId || "__default__"}
               onValueChange={(value) =>
                 setForm({
@@ -458,20 +432,15 @@ export default function OnboardingPage() {
                   templateId: value === "__default__" ? "" : value,
                 })
               }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default template" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__default__">Default template</SelectItem>
-                {templates.map((t) => (
-                  <SelectItem key={t.id} value={t.id}>
-                    {t.name}
-                    {t.isDefault ? " (default)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              placeholder="Default template"
+              options={[
+                { label: "Default template", value: "__default__" },
+                ...templates.map((t) => ({
+                  label: `${t.name}${t.isDefault ? " (default)" : ""}`,
+                  value: t.id,
+                })),
+              ]}
+            />
             <div className="rounded-xl border border-border bg-muted/20 p-4">
               <p className="mb-3 text-sm font-medium">Offer letter</p>
               <label className="flex items-center gap-2 text-sm">
@@ -514,11 +483,10 @@ export default function OnboardingPage() {
                       <label className="mb-1 block text-xs text-muted-foreground">
                         Annual CTC (INR)
                       </label>
-                      <input
+                      <Input
                         type="number"
                         min={0}
                         step="0.01"
-                        className="w-full rounded-lg border border-border px-3 py-2 text-sm"
                         placeholder="e.g. 800000"
                         value={form.annualCtc}
                         onChange={(e) =>
@@ -530,17 +498,17 @@ export default function OnboardingPage() {
                 </>
               )}
             </div>
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
+              className="w-full"
             >
               {loading
                 ? "Creating…"
                 : form.sendInvite
                   ? "Create & send invite"
                   : "Create hire"}
-            </button>
+            </Button>
           </form>
         </div>
       )}

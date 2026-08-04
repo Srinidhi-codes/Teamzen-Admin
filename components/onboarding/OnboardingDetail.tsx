@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import axios from "axios";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/PageHeader";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
@@ -124,10 +126,10 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
             >
               Back
             </Link>
-            <button
+            <Button
               type="button"
+              variant="outline"
               disabled={loading}
-              className="rounded-lg border border-border px-3 py-2 text-sm"
               onClick={() =>
                 run(
                   () => sendInvite({ variables: { onboardingId: id } }),
@@ -136,14 +138,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               }
             >
               Resend invite
-            </button>
+            </Button>
             {onboarding.status !== "in_progress" &&
               onboarding.status !== "completed" &&
               onboarding.status !== "cancelled" && (
-                <button
+                <Button
                   type="button"
                   disabled={loading}
-                  className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground"
                   onClick={() =>
                     run(
                       () => activate({ variables: { onboardingId: id } }),
@@ -152,13 +153,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   }
                 >
                   Activate employee
-                </button>
+                </Button>
               )}
             {onboarding.status !== "cancelled" && (
-              <button
+              <Button
                 type="button"
+                variant="destructive"
                 disabled={loading}
-                className="rounded-lg border border-rose-300 px-3 py-2 text-sm text-rose-700"
                 onClick={() =>
                   run(
                     () => cancel({ variables: { onboardingId: id } }),
@@ -167,7 +168,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 }
               >
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         }
@@ -227,11 +228,11 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 <label className="mb-1 block text-xs text-muted-foreground">
                   Annual CTC (INR)
                 </label>
-                <input
+                <Input
                   type="number"
                   min={0}
                   step="0.01"
-                  className="w-full max-w-xs rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  className="w-full max-w-xs"
                   placeholder="e.g. 1200000"
                   value={annualCtc}
                   onChange={(e) => setAnnualCtc(e.target.value)}
@@ -251,14 +252,14 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               Email PDF to candidate after generate / upload
             </label>
             <div className="flex flex-wrap gap-2">
-              <button
+              <Button
                 type="button"
+                variant="default"
                 disabled={loading || uploading}
-                className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50"
                 onClick={() => handleGenerateOffer()}
               >
                 {loading ? "Working…" : "Generate branded PDF"}
-              </button>
+              </Button>
               <input
                 ref={offerFileRef}
                 type="file"
@@ -269,19 +270,19 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   if (f) handleUploadOffer(f);
                 }}
               />
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 disabled={loading || uploading}
-                className="rounded-lg border border-border px-3 py-2 text-sm disabled:opacity-50"
                 onClick={() => offerFileRef.current?.click()}
               >
                 {uploading ? "Uploading…" : "Upload offer PDF"}
-              </button>
+              </Button>
               {onboarding.offerLetter?.pdfUrl && (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   disabled={loading}
-                  className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 disabled:opacity-50"
                   onClick={() =>
                     run(
                       () => sendOfferEmail({ variables: { onboardingId: id } }),
@@ -290,7 +291,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   }
                 >
                   Email current PDF
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -398,9 +399,9 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               </div>
               {doc.verificationStatus === "pending" && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <input
+                  <Input
                     placeholder="Reject reason"
-                    className="rounded border border-border px-2 py-1 text-xs"
+                    className="h-8 text-xs"
                     value={rejectReason[doc.id] || ""}
                     onChange={(e) =>
                       setRejectReason({
@@ -409,9 +410,9 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                       })
                     }
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="rounded bg-emerald-600 px-2 py-1 text-xs text-white"
+                    size="xs"
                     onClick={() =>
                       run(
                         () =>
@@ -423,10 +424,11 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                     }
                   >
                     Approve
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="rounded bg-rose-600 px-2 py-1 text-xs text-white"
+                    size="xs"
+                    variant="destructive"
                     onClick={() =>
                       run(
                         () =>
@@ -443,7 +445,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                     }
                   >
                     Reject
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -468,9 +470,10 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 </p>
               </div>
               {task.status !== "completed" && task.status !== "skipped" && (
-                <button
+                <Button
                   type="button"
-                  className="rounded-lg border border-border px-3 py-1.5 text-xs"
+                  size="sm"
+                  variant="outline"
                   onClick={() =>
                     run(
                       () => completeTask({ variables: { taskId: task.id } }),
@@ -479,7 +482,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   }
                 >
                   Mark complete
-                </button>
+                </Button>
               )}
             </div>
           ))}
