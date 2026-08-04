@@ -131,10 +131,11 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
       }
       setMessage(
         sendAfterGenerate
-          ? "Offer PDF uploaded and emailed"
-          : res.data?.warning || "Offer PDF uploaded"
+          ? "Offer PDF uploaded — visible on the hire's preboarding portal and emailed."
+          : res.data?.warning ||
+              "Offer PDF uploaded — visible on the hire's preboarding portal."
       );
-      refetch();
+      await refetch();
     } catch (e: any) {
       setMessage(e?.response?.data?.error || e?.message || "Upload failed");
     } finally {
@@ -283,7 +284,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 checked={sendAfterGenerate}
                 onChange={(e) => setSendAfterGenerate(e.target.checked)}
               />
-              Email PDF to candidate after generate / upload
+              Email offer PDF to candidate (also shows on their preboarding portal)
             </label>
             <div className="flex flex-wrap gap-2">
               <Button

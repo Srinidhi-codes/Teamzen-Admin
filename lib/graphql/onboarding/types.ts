@@ -173,6 +173,7 @@ export const ONBOARDING_DETAIL_FIELDS = `
     signedUploadedAt
     status
     source
+    updatedAt
     includeCtcAnnexure
     annualCtc
     acceptedName
