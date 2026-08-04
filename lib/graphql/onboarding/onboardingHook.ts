@@ -119,22 +119,22 @@ export function useLetterTemplates(organizationId?: string, letterType?: string)
 }
 
 export function useOnboardingMutations() {
-  const [startPreboarding, startState] = useMutation(START_PREBOARDING);
-  const [sendInvite, sendState] = useMutation(SEND_PREBOARDING_INVITE);
-  const [activate, activateState] = useMutation(ACTIVATE_ONBOARDING);
-  const [cancel, cancelState] = useMutation(CANCEL_ONBOARDING);
-  const [completeTask, completeState] = useMutation(COMPLETE_ONBOARDING_TASK);
-  const [verifyDoc, verifyState] = useMutation(VERIFY_EMPLOYEE_DOCUMENT);
-  const [generateOffer, offerState] = useMutation(GENERATE_OFFER);
-  const [createTemplate, createTplState] = useMutation(CREATE_ONBOARDING_TEMPLATE);
-  const [updateTemplate, updateTplState] = useMutation(UPDATE_ONBOARDING_TEMPLATE);
-  const [upsertTask, upsertTaskState] = useMutation(UPSERT_TASK_DEFINITION);
-  const [deleteTaskDef, deleteTaskState] = useMutation(DELETE_TASK_DEFINITION);
-  const [reorderTasks, reorderState] = useMutation(REORDER_TASK_DEFINITIONS);
-  const [suggestTasks, suggestState] = useMutation(SUGGEST_ONBOARDING_TASKS);
-  const [polishOffer, polishState] = useMutation(POLISH_OFFER_LETTER);
-  const [createLetter, createLetterState] = useMutation(CREATE_LETTER_TEMPLATE);
-  const [updateLetter, updateLetterState] = useMutation(UPDATE_LETTER_TEMPLATE);
+  const [startPreboarding, startState] = useMutation<any>(START_PREBOARDING);
+  const [sendInvite, sendState] = useMutation<any>(SEND_PREBOARDING_INVITE);
+  const [activate, activateState] = useMutation<any>(ACTIVATE_ONBOARDING);
+  const [cancel, cancelState] = useMutation<any>(CANCEL_ONBOARDING);
+  const [completeTask, completeState] = useMutation<any>(COMPLETE_ONBOARDING_TASK);
+  const [verifyDoc, verifyState] = useMutation<any>(VERIFY_EMPLOYEE_DOCUMENT);
+  const [generateOffer, offerState] = useMutation<any>(GENERATE_OFFER);
+  const [createTemplate, createTplState] = useMutation<any>(CREATE_ONBOARDING_TEMPLATE);
+  const [updateTemplate, updateTplState] = useMutation<any>(UPDATE_ONBOARDING_TEMPLATE);
+  const [upsertTask, upsertTaskState] = useMutation<any>(UPSERT_TASK_DEFINITION);
+  const [deleteTaskDef, deleteTaskState] = useMutation<any>(DELETE_TASK_DEFINITION);
+  const [reorderTasks, reorderState] = useMutation<any>(REORDER_TASK_DEFINITIONS);
+  const [suggestTasks, suggestState] = useMutation<any>(SUGGEST_ONBOARDING_TASKS);
+  const [polishOffer, polishState] = useMutation<any>(POLISH_OFFER_LETTER);
+  const [createLetter, createLetterState] = useMutation<any>(CREATE_LETTER_TEMPLATE);
+  const [updateLetter, updateLetterState] = useMutation<any>(UPDATE_LETTER_TEMPLATE);
 
   return {
     startPreboarding,

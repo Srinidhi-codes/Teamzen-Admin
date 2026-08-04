@@ -114,9 +114,9 @@ export default function FeedbackPage() {
     refetch: () => void;
   };
 
-  const [createFeedback] = useMutation(CREATE_FEEDBACK);
-  const [replyToFeedback] = useMutation(REPLY_TO_FEEDBACK);
-  const [updateStatus] = useMutation(UPDATE_FEEDBACK_STATUS);
+  const [createFeedback] = useMutation<any>(CREATE_FEEDBACK);
+  const [replyToFeedback] = useMutation<any>(REPLY_TO_FEEDBACK);
+  const [updateStatus] = useMutation<any>(UPDATE_FEEDBACK_STATUS);
 
   const items = useMemo(() => {
     const list = data?.feedbackList || [];
