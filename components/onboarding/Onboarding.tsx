@@ -204,10 +204,15 @@ export default function OnboardingPage() {
       )}
 
       {inviteUrl && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Invite sent. Portal link:{" "}
-          <a className="underline break-all" href={inviteUrl} target="_blank" rel="noreferrer">
-            {inviteUrl}
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <span>Invite sent.</span>
+          <a
+            className="inline-flex items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800"
+            href={inviteUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open joining link
           </a>
         </div>
       )}

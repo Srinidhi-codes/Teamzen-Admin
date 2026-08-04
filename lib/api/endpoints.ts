@@ -31,6 +31,8 @@ export const API_ENDPOINTS = {
   AI_CONFIG: "/ai/ai-config/",
   FORMAT_TEXT: "/ai/format-text/",
   FEEDBACK_ATTACHMENTS: "/feedback/attachments/",
+  ONBOARDING_OFFER_UPLOAD: "/onboarding/offers/upload/",
+  ONBOARDING_SIGNED_OFFER_UPLOAD: "/onboarding/offers/signed/upload/",
 
   // Organizations
   ORGANIZATIONS: "/organizations/",
