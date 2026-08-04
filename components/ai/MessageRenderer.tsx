@@ -7,6 +7,7 @@ import { InsightCard } from "./cards/InsightCard";
 import { PayrollCard } from "./cards/PayrollCard";
 import { CitationChips } from "./CitationChips";
 import { CorrectionCard } from "./cards/CorrectionCard";
+import { RouteCard } from "./cards/RouteCard";
 import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
@@ -260,6 +261,15 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     return <InsightCard key={idx} {...part.value} />;
                 } else if (part.type === 'payroll') {
                     return <PayrollCard key={idx} {...part.value} />;
+                } else if (part.type === 'route') {
+                    return (
+                        <RouteCard
+                            key={idx}
+                            path={part.value.path || part.value.href || ""}
+                            label={part.value.label}
+                            reason={part.value.reason || part.value.message}
+                        />
+                    );
                 } else if (part.type === 'correction') {
                     return (
                         <CorrectionCard

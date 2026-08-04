@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   Send,
   X,
@@ -13,6 +13,7 @@ import {
   MicOff,
   MessageCircle,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
 import { VoiceWave } from "./VoiceWave";
 import { useAssistant } from "@/lib/api/assistant";
@@ -23,14 +24,53 @@ import { MessageRenderer } from "./MessageRenderer";
 import { useStore } from "@/lib/store/useStore";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 
-const SUGGESTIONS = [
-  "What is the analysis of my team?",
-  "Show me attendance summary for today",
-  "Are there any pending leave requests?",
-];
+function suggestionsForPath(pathname: string): string[] {
+  if (pathname.startsWith("/onboarding")) {
+    return [
+      "What's left for this hire?",
+      "Suggest an onboarding checklist",
+      "How do I activate an employee?",
+    ];
+  }
+  if (pathname.startsWith("/leaves")) {
+    return [
+      "Are there any pending leave requests?",
+      "Show team leave this week",
+      "Who is on leave today?",
+    ];
+  }
+  if (pathname.startsWith("/attendance")) {
+    return [
+      "Show me attendance summary for today",
+      "Who has low attendance this month?",
+      "Any pending attendance corrections?",
+    ];
+  }
+  if (pathname.startsWith("/payroll")) {
+    return [
+      "Check payroll anomalies this month",
+      "Summarize team payroll issues",
+      "Explain common deduction spikes",
+    ];
+  }
+  if (pathname.startsWith("/employees")) {
+    return [
+      "What is the analysis of my team?",
+      "Show me attendance summary for today",
+      "Are there any pending leave requests?",
+    ];
+  }
+  return [
+    "What is the analysis of my team?",
+    "Show me attendance summary for today",
+    "Are there any pending leave requests?",
+  ];
+}
 
 export function AssistantWidget() {
   const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
+  const pathname = usePathname() || "/dashboard";
+  const suggestions = useMemo(() => suggestionsForPath(pathname), [pathname]);
   const [input, setInput] = useState("");
   const {
     messages,
@@ -167,7 +207,7 @@ export function AssistantWidget() {
                 </div>
 
                 <div className="space-y-2 pl-10">
-                  {SUGGESTIONS.map((q) => (
+                  {suggestions.map((q) => (
                     <button
                       key={q}
                       type="button"
