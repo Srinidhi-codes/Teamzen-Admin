@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Loader2, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { Skeleton } from "@/components/common/Skeleton";
 import {
   Select,
   SelectContent,
@@ -179,8 +180,15 @@ export default function OnboardingTemplatesPage() {
           className="space-y-3 rounded-xl border border-border bg-card p-4"
         >
           <h3 className="font-semibold">Templates</h3>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          {templates.map((t) => (
+          {isLoading && (
+            <div className="space-y-2" aria-busy="true">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-14 w-full rounded-lg" />
+              ))}
+            </div>
+          )}
+          {!isLoading &&
+            templates.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -212,7 +220,7 @@ export default function OnboardingTemplatesPage() {
             <button
               type="button"
               disabled={!newName || loading}
-              className="w-full rounded-lg bg-primary py-2 text-sm text-primary-foreground disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm text-primary-foreground disabled:opacity-50"
               onClick={async () => {
                 await createTemplate({
                   variables: {
@@ -227,14 +235,31 @@ export default function OnboardingTemplatesPage() {
                 refetch();
               }}
             >
-              Create template
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating…
+                </>
+              ) : (
+                "Create template"
+              )}
             </button>
           </div>
         </div>
 
         <div className="space-y-3 rounded-xl border border-border bg-card p-4 lg:col-span-2">
           {!selected ? (
-            <p className="text-sm text-muted-foreground">Select a template</p>
+            isLoading ? (
+              <div className="space-y-3" aria-busy="true">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-72" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-3/4" />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">Select a template</p>
+            )
           ) : (
             <>
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -262,7 +287,14 @@ export default function OnboardingTemplatesPage() {
                     onClick={saveOrder}
                     className="rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-40"
                   >
-                    {reorderSaving ? "Saving…" : "Save order"}
+                    {reorderSaving ? (
+                      <>
+                        <Loader2 className="mr-1 inline h-3.5 w-3.5 animate-spin" />
+                        Saving…
+                      </>
+                    ) : (
+                      "Save order"
+                    )}
                   </button>
                 </div>
               </div>
@@ -339,7 +371,7 @@ export default function OnboardingTemplatesPage() {
                         refetch();
                       }}
                     >
-                      Delete
+                      <Trash2 className="h-4 w-4 cursor-pointer" />
                     </button>
                   </div>
                 ))}

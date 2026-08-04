@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import axios from "axios";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/PageHeader";
+import { FormSkeleton, Skeleton } from "@/components/common/Skeleton";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import {
@@ -34,7 +36,36 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
   const offerFileRef = useRef<HTMLInputElement>(null);
 
   if (isLoading) {
-    return <div className="p-6 text-muted-foreground">Loading onboarding…</div>;
+    return (
+      <div className="space-y-6" aria-busy="true" aria-label="Loading onboarding">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-56" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-20" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <FormSkeleton />
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-9 w-40" />
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <Skeleton className="h-5 w-28" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-3/4" />
+        </div>
+      </div>
+    );
   }
   if (error || !onboarding) {
     return (
@@ -127,6 +158,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               Back
             </Link>
             <Button
+            className="cursor-pointer"
               type="button"
               variant="outline"
               disabled={loading}
@@ -143,6 +175,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               onboarding.status !== "completed" &&
               onboarding.status !== "cancelled" && (
                 <Button
+                  className="cursor-pointer"
                   type="button"
                   disabled={loading}
                   onClick={() =>
@@ -157,7 +190,8 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               )}
             {onboarding.status !== "cancelled" && (
               <Button
-                type="button"
+                className="cursor-pointer"
+                type="button" 
                 variant="destructive"
                 disabled={loading}
                 onClick={() =>
@@ -258,7 +292,14 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 disabled={loading || uploading}
                 onClick={() => handleGenerateOffer()}
               >
-                {loading ? "Working…" : "Generate branded PDF"}
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Working…
+                  </>
+                ) : (
+                  "Generate branded PDF"
+                )}
               </Button>
               <input
                 ref={offerFileRef}
@@ -276,7 +317,14 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 disabled={loading || uploading}
                 onClick={() => offerFileRef.current?.click()}
               >
-                {uploading ? "Uploading…" : "Upload offer PDF"}
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading…
+                  </>
+                ) : (
+                  "Upload offer PDF"
+                )}
               </Button>
               {onboarding.offerLetter?.pdfUrl && (
                 <Button

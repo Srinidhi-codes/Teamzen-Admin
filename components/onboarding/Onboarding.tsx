@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/components/common/FormSelect";
 import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { Skeleton } from "@/components/common/Skeleton";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import {
   useOnboardingMutations,
@@ -71,7 +73,7 @@ export default function OnboardingPage() {
     sendInvite: true,
   });
 
-  const { overview, refetch: refetchOverview } = useOnboardingOverview(
+  const { overview, isLoading: overviewLoading, refetch: refetchOverview } = useOnboardingOverview(
     organizationId || undefined
   );
   const { onboardings, isLoading, error, refetch } = useOnboardings({
@@ -84,6 +86,8 @@ export default function OnboardingPage() {
   const { departments } = useGraphQLDepartments(undefined, organizationId || undefined);
   const { designations } = useGraphQLDesignations(undefined, organizationId || undefined);
   const { startPreboarding, loading } = useOnboardingMutations();
+  const [submitting, setSubmitting] = useState(false);
+  const startBusy = loading || submitting;
 
   const managers = useMemo(
     () =>
@@ -95,8 +99,10 @@ export default function OnboardingPage() {
 
   async function handleStart(e: React.FormEvent) {
     e.preventDefault();
+    if (startBusy) return;
     setFormError("");
     setInviteUrl("");
+    setSubmitting(true);
     try {
       const result = await startPreboarding({
         variables: {
@@ -126,8 +132,9 @@ export default function OnboardingPage() {
         setFormError(payload?.error || "Failed to start preboarding");
         return;
       }
-      setInviteUrl(payload.inviteUrl || "");
+      // Close modal immediately so UI doesn't feel stuck during refetch
       setShowStart(false);
+      setInviteUrl(payload.inviteUrl || "");
       setForm({
         email: "",
         firstName: "",
@@ -143,10 +150,11 @@ export default function OnboardingPage() {
         annualCtc: "",
         sendInvite: true,
       });
-      refetch();
-      refetchOverview();
+      void Promise.all([refetch(), refetchOverview()]);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Failed to start");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -173,6 +181,7 @@ export default function OnboardingPage() {
               Offer letters
             </Link>
             <Button
+              className="cursor-pointer"
               id="onboarding-start-hire"
               onClick={() => setShowStart(true)}
             >
@@ -208,7 +217,16 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {overview && (
+      {overviewLoading && !overview ? (
+        <div id="onboarding-kpis" className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-card p-4">
+              <Skeleton className="mb-2 h-3 w-16" />
+              <Skeleton className="h-7 w-10" />
+            </div>
+          ))}
+        </div>
+      ) : overview ? (
         <div id="onboarding-kpis" className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
           <Kpi label="Total" value={overview.total} />
           <Kpi label="Preboarding" value={overview.preboarding} />
@@ -217,7 +235,7 @@ export default function OnboardingPage() {
           <Kpi label="Pending docs" value={overview.pendingVerifications} />
           <Kpi label="Overdue tasks" value={overview.overdueTasks} />
         </div>
-      )}
+      ) : null}
 
       {inviteUrl && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -252,13 +270,30 @@ export default function OnboardingPage() {
             </tr>
           </thead>
           <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  Loading…
-                </td>
-              </tr>
-            )}
+            {isLoading &&
+              Array.from({ length: 5 }).map((_, i) => (
+                <tr key={`sk-${i}`} className="border-t border-border">
+                  <td className="px-4 py-3">
+                    <Skeleton className="mb-1.5 h-4 w-36" />
+                    <Skeleton className="h-3 w-48" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-2 w-24 rounded-full" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-20" />
+                  </td>
+                  <td className="px-4 py-3">
+                    <Skeleton className="h-4 w-24" />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Skeleton className="ml-auto h-4 w-12" />
+                  </td>
+                </tr>
+              ))}
             {!isLoading && onboardings.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
@@ -266,7 +301,8 @@ export default function OnboardingPage() {
                 </td>
               </tr>
             )}
-            {onboardings.map((row) => (
+            {!isLoading &&
+              onboardings.map((row) => (
               <tr key={row.id} className="border-t border-border">
                 <td className="px-4 py-3">
                   <div className="font-medium">{row.userName}</div>
@@ -320,10 +356,17 @@ export default function OnboardingPage() {
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Start hire / preboarding</h2>
-              <Button type="button" variant="ghost" size="icon-sm" onClick={() => setShowStart(false)}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                disabled={startBusy}
+                onClick={() => setShowStart(false)}
+              >
                 ✕
               </Button>
             </div>
+            <fieldset disabled={startBusy} className="space-y-4 disabled:opacity-70">
             {formError && (
               <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {formError}
@@ -502,17 +545,33 @@ export default function OnboardingPage() {
                 </>
               )}
             </div>
+            </fieldset>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={startBusy}
               className="w-full"
             >
-              {loading
-                ? "Creating…"
-                : form.sendInvite
-                  ? "Create & send invite"
-                  : "Create hire"}
+              {startBusy ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {form.generateOffer
+                    ? "Creating hire & offer…"
+                    : form.sendInvite
+                      ? "Creating & sending…"
+                      : "Creating hire…"}
+                </>
+              ) : form.sendInvite ? (
+                "Create & send invite"
+              ) : (
+                "Create hire"
+              )}
             </Button>
+            {startBusy && (
+              <p className="text-center text-xs text-muted-foreground">
+                This can take a few seconds while we generate the offer PDF
+                {form.sendInvite ? " and send the invite" : ""}.
+              </p>
+            )}
           </form>
         </div>
       )}

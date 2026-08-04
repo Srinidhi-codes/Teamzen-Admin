@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { Skeleton } from "@/components/common/Skeleton";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import {
   useLetterTemplates,
@@ -87,8 +89,15 @@ export default function LetterTemplatesPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-2 rounded-xl border border-border bg-card p-4">
           <h3 className="font-semibold">Templates</h3>
-          {isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-          {templates.map((t) => (
+          {isLoading && (
+            <div className="space-y-2" aria-busy="true">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
+            </div>
+          )}
+          {!isLoading &&
+            templates.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -132,7 +141,16 @@ export default function LetterTemplatesPage() {
           className="space-y-3 rounded-xl border border-border bg-card p-4 lg:col-span-2"
         >
           {!selected ? (
-            <p className="text-sm text-muted-foreground">No templates yet</p>
+            isLoading ? (
+              <div className="space-y-3" aria-busy="true">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-60 w-full" />
+                <Skeleton className="h-9 w-32" />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No templates yet</p>
+            )
           ) : (
             <>
               <input
@@ -197,12 +215,19 @@ export default function LetterTemplatesPage() {
                     }
                   }}
                 >
-                  {polishing ? "Polishing…" : "AI Polish"}
+                  {polishing ? (
+                    <>
+                      <Loader2 className="mr-1 inline h-4 w-4 animate-spin" />
+                      Polishing…
+                    </>
+                  ) : (
+                    "AI Polish"
+                  )}
                 </button>
                 <button
                   type="button"
-                  disabled={loading}
-                  className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
+                  disabled={loading || polishing}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-50"
                   onClick={async () => {
                     await updateLetter({
                       variables: {
@@ -218,7 +243,14 @@ export default function LetterTemplatesPage() {
                     refetch();
                   }}
                 >
-                  Save template
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Save template"
+                  )}
                 </button>
               </div>
             </>
