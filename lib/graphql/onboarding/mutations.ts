@@ -57,9 +57,18 @@ export const VERIFY_EMPLOYEE_DOCUMENT = gql`
 `;
 
 export const GENERATE_OFFER = gql`
-  mutation GenerateOfferForOnboarding($onboardingId: ID!, $letterTemplateId: ID) {
-    generateOfferForOnboarding(onboardingId: $onboardingId, letterTemplateId: $letterTemplateId) {
+  mutation GenerateOfferForOnboarding($input: GenerateOfferInput!) {
+    generateOfferForOnboarding(input: $input) {
       ${ONBOARDING_DETAIL_FIELDS}
+    }
+  }
+`;
+
+export const SEND_OFFER_LETTER_EMAIL = gql`
+  mutation SendOfferLetterEmail($onboardingId: ID!) {
+    sendOfferLetterEmail(onboardingId: $onboardingId) {
+      success
+      error
     }
   }
 `;

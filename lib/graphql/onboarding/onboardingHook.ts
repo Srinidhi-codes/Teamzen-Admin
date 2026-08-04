@@ -15,6 +15,7 @@ import {
   DELETE_TASK_DEFINITION,
   GENERATE_OFFER,
   REORDER_TASK_DEFINITIONS,
+  SEND_OFFER_LETTER_EMAIL,
   SEND_PREBOARDING_INVITE,
   START_PREBOARDING,
   SUGGEST_ONBOARDING_TASKS,
@@ -126,6 +127,7 @@ export function useOnboardingMutations() {
   const [completeTask, completeState] = useMutation<any>(COMPLETE_ONBOARDING_TASK);
   const [verifyDoc, verifyState] = useMutation<any>(VERIFY_EMPLOYEE_DOCUMENT);
   const [generateOffer, offerState] = useMutation<any>(GENERATE_OFFER);
+  const [sendOfferEmail, sendOfferState] = useMutation<any>(SEND_OFFER_LETTER_EMAIL);
   const [createTemplate, createTplState] = useMutation<any>(CREATE_ONBOARDING_TEMPLATE);
   const [updateTemplate, updateTplState] = useMutation<any>(UPDATE_ONBOARDING_TEMPLATE);
   const [upsertTask, upsertTaskState] = useMutation<any>(UPSERT_TASK_DEFINITION);
@@ -144,6 +146,7 @@ export function useOnboardingMutations() {
     completeTask,
     verifyDoc,
     generateOffer,
+    sendOfferEmail,
     createTemplate,
     updateTemplate,
     upsertTask,
@@ -161,6 +164,7 @@ export function useOnboardingMutations() {
       completeState.loading ||
       verifyState.loading ||
       offerState.loading ||
+      sendOfferState.loading ||
       createTplState.loading ||
       updateTplState.loading ||
       upsertTaskState.loading ||

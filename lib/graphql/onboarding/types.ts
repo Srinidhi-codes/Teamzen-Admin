@@ -46,7 +46,12 @@ export type OfferLetter = {
   subject: string;
   bodyHtml: string;
   pdfUrl: string;
+  signedPdfUrl?: string;
+  signedUploadedAt?: string | null;
   status: string;
+  source?: string;
+  includeCtcAnnexure?: boolean;
+  annualCtc?: number | null;
   acceptedName: string;
   acceptedAt?: string | null;
 };
@@ -164,7 +169,12 @@ export const ONBOARDING_DETAIL_FIELDS = `
     subject
     bodyHtml
     pdfUrl
+    signedPdfUrl
+    signedUploadedAt
     status
+    source
+    includeCtcAnnexure
+    annualCtc
     acceptedName
     acceptedAt
   }
