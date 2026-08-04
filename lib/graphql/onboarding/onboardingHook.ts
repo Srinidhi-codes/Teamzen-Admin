@@ -156,6 +156,23 @@ export function useOnboardingMutations() {
     polishOffer,
     createLetter,
     updateLetter,
+    startPreboardingLoading: startState.loading,
+    sendInviteLoading: sendState.loading,
+    activateLoading: activateState.loading,
+    cancelLoading: cancelState.loading,
+    completeTaskLoading: completeState.loading,
+    verifyDocLoading: verifyState.loading,
+    generateOfferLoading: offerState.loading,
+    sendOfferEmailLoading: sendOfferState.loading,
+    createTemplateLoading: createTplState.loading,
+    updateTemplateLoading: updateTplState.loading,
+    upsertTaskLoading: upsertTaskState.loading,
+    deleteTaskLoading: deleteTaskState.loading,
+    reorderTasksLoading: reorderState.loading,
+    suggestTasksLoading: suggestState.loading,
+    polishOfferLoading: polishState.loading,
+    createLetterLoading: createLetterState.loading,
+    updateLetterLoading: updateLetterState.loading,
     loading:
       startState.loading ||
       sendState.loading ||

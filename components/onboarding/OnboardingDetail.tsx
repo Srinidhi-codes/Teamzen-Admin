@@ -37,7 +37,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
     sendInvite,
     generateOffer,
     sendOfferEmail,
-    loading,
+    activateLoading,
+    cancelLoading,
+    completeTaskLoading,
+    verifyDocLoading,
+    sendInviteLoading,
+    generateOfferLoading,
+    sendOfferEmailLoading,
   } = useOnboardingMutations();
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -45,7 +51,10 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
   const [annualCtc, setAnnualCtc] = useState("");
   const [sendAfterGenerate, setSendAfterGenerate] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const offerFileRef = useRef<HTMLInputElement>(null);
+  const headerBusy =
+    activateLoading || cancelLoading || sendInviteLoading;
 
   if (isLoading) {
     return (
@@ -174,7 +183,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
             className="cursor-pointer"
               type="button"
               variant="outline"
-              disabled={loading}
+              disabled={sendInviteLoading || headerBusy}
               onClick={() =>
                 run(
                   () => sendInvite({ variables: { onboardingId: id } }),
@@ -182,7 +191,14 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 )
               }
             >
-              Resend invite
+              {sendInviteLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sending…
+                </>
+              ) : (
+                "Resend invite"
+              )}
             </Button>
             {onboarding.status !== "in_progress" &&
               onboarding.status !== "completed" &&
@@ -190,7 +206,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 <Button
                   className="cursor-pointer"
                   type="button"
-                  disabled={loading}
+                  disabled={activateLoading || headerBusy}
                   onClick={() =>
                     run(
                       () => activate({ variables: { onboardingId: id } }),
@@ -198,15 +214,22 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                     )
                   }
                 >
-                  Activate employee
+                  {activateLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Activating…
+                    </>
+                  ) : (
+                    "Activate employee"
+                  )}
                 </Button>
               )}
             {onboarding.status !== "cancelled" && (
               <Button
                 className="cursor-pointer"
-                type="button" 
+                type="button"
                 variant="destructive"
-                disabled={loading}
+                disabled={cancelLoading || headerBusy}
                 onClick={() =>
                   run(
                     () => cancel({ variables: { onboardingId: id } }),
@@ -214,7 +237,14 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   )
                 }
               >
-                Cancel
+                {cancelLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Cancelling…
+                  </>
+                ) : (
+                  "Cancel"
+                )}
               </Button>
             )}
           </div>
@@ -302,13 +332,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               <Button
                 type="button"
                 variant="default"
-                disabled={loading || uploading}
+                disabled={generateOfferLoading || uploading}
                 onClick={() => handleGenerateOffer()}
               >
-                {loading ? (
+                {generateOfferLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Working…
+                    Generating…
                   </>
                 ) : (
                   "Generate branded PDF"
@@ -327,7 +357,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               <Button
                 type="button"
                 variant="outline"
-                disabled={loading || uploading}
+                disabled={generateOfferLoading || uploading}
                 onClick={() => offerFileRef.current?.click()}
               >
                 {uploading ? (
@@ -343,7 +373,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={loading}
+                  disabled={sendOfferEmailLoading}
                   onClick={() =>
                     run(
                       () => sendOfferEmail({ variables: { onboardingId: id } }),
@@ -351,7 +381,14 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                     )
                   }
                 >
-                  Email current PDF
+                  {sendOfferEmailLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Emailing…
+                    </>
+                  ) : (
+                    "Email current PDF"
+                  )}
                 </Button>
               )}
             </div>
@@ -474,6 +511,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   <Button
                     type="button"
                     size="xs"
+                    disabled={verifyDocLoading}
                     onClick={() =>
                       run(
                         () =>
@@ -484,12 +522,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                       )
                     }
                   >
-                    Approve
+                    {verifyDocLoading ? "…" : "Approve"}
                   </Button>
                   <Button
                     type="button"
                     size="xs"
                     variant="destructive"
+                    disabled={verifyDocLoading}
                     onClick={() =>
                       run(
                         () =>
@@ -535,14 +574,27 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() =>
-                    run(
-                      () => completeTask({ variables: { taskId: task.id } }),
-                      "Task completed"
-                    )
-                  }
+                  disabled={completingTaskId === task.id || completeTaskLoading}
+                  onClick={async () => {
+                    setCompletingTaskId(task.id);
+                    try {
+                      await run(
+                        () => completeTask({ variables: { taskId: task.id } }),
+                        "Task completed"
+                      );
+                    } finally {
+                      setCompletingTaskId(null);
+                    }
+                  }}
                 >
-                  Mark complete
+                  {completingTaskId === task.id ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Mark complete"
+                  )}
                 </Button>
               )}
             </div>
