@@ -29,9 +29,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
   const [annualCtc, setAnnualCtc] = useState("");
   const [sendAfterGenerate, setSendAfterGenerate] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [uploadingSigned, setUploadingSigned] = useState(false);
   const offerFileRef = useRef<HTMLInputElement>(null);
-  const signedFileRef = useRef<HTMLInputElement>(null);
 
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading onboarding…</div>;
@@ -109,32 +107,6 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
     } finally {
       setUploading(false);
       if (offerFileRef.current) offerFileRef.current.value = "";
-    }
-  }
-
-  async function handleUploadSigned(file: File) {
-    setUploadingSigned(true);
-    setMessage("");
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("onboarding_id", id);
-      form.append("mark_accepted", "true");
-      const res = await axios.post(
-        `/api${API_ENDPOINTS.ONBOARDING_SIGNED_OFFER_UPLOAD}`,
-        form,
-        { withCredentials: true }
-      );
-      if (!res.data?.success) {
-        throw new Error(res.data?.error || "Signed upload failed");
-      }
-      setMessage("Signed offer letter uploaded");
-      refetch();
-    } catch (e: any) {
-      setMessage(e?.response?.data?.error || e?.message || "Signed upload failed");
-    } finally {
-      setUploadingSigned(false);
-      if (signedFileRef.current) signedFileRef.current.value = "";
     }
   }
 
@@ -304,24 +276,6 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 onClick={() => offerFileRef.current?.click()}
               >
                 {uploading ? "Uploading…" : "Upload offer PDF"}
-              </button>
-              <input
-                ref={signedFileRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleUploadSigned(f);
-                }}
-              />
-              <button
-                type="button"
-                disabled={loading || uploadingSigned}
-                className="rounded-lg border border-emerald-300 px-3 py-2 text-sm text-emerald-900 disabled:opacity-50"
-                onClick={() => signedFileRef.current?.click()}
-              >
-                {uploadingSigned ? "Uploading…" : "Upload signed offer"}
               </button>
               {onboarding.offerLetter?.pdfUrl && (
                 <button

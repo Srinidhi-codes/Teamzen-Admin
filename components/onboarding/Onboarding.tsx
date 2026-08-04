@@ -19,6 +19,10 @@ import {
   useOnboardings,
 } from "@/lib/graphql/onboarding/onboardingHook";
 import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
+import {
+  useGraphQLDepartments,
+  useGraphQLDesignations,
+} from "@/lib/graphql/organization/organizationsHook";
 
 const STATUS_FILTERS = [
   { value: "", label: "All" },
@@ -61,8 +65,14 @@ export default function OnboardingPage() {
     lastName: "",
     password: "Welcome@123",
     dateOfJoining: "",
+    departmentId: "",
+    designationId: "",
     managerId: "",
     templateId: "",
+    generateOffer: true,
+    includeCtcAnnexure: false,
+    annualCtc: "",
+    sendInvite: true,
   });
 
   const { overview, refetch: refetchOverview } = useOnboardingOverview(
@@ -75,6 +85,8 @@ export default function OnboardingPage() {
   });
   const { templates } = useOnboardingTemplates(organizationId || undefined);
   const { users } = useGraphQLUsers();
+  const { departments } = useGraphQLDepartments(undefined, organizationId || undefined);
+  const { designations } = useGraphQLDesignations(undefined, organizationId || undefined);
   const { startPreboarding, loading } = useOnboardingMutations();
 
   const managers = useMemo(
@@ -99,10 +111,17 @@ export default function OnboardingPage() {
             password: form.password,
             organizationId: organizationId || undefined,
             dateOfJoining: form.dateOfJoining || undefined,
+            departmentId: form.departmentId || undefined,
+            designationId: form.designationId || undefined,
             managerId: form.managerId || undefined,
             templateId: form.templateId || undefined,
-            generateOffer: true,
-            sendInvite: true,
+            generateOffer: form.generateOffer,
+            includeCtcAnnexure: form.includeCtcAnnexure,
+            annualCtc:
+              form.includeCtcAnnexure && form.annualCtc
+                ? Number(form.annualCtc)
+                : undefined,
+            sendInvite: form.sendInvite,
           },
         },
       });
@@ -119,8 +138,14 @@ export default function OnboardingPage() {
         lastName: "",
         password: "Welcome@123",
         dateOfJoining: "",
+        departmentId: "",
+        designationId: "",
         managerId: "",
         templateId: "",
+        generateOffer: true,
+        includeCtcAnnexure: false,
+        annualCtc: "",
+        sendInvite: true,
       });
       refetch();
       refetchOverview();
@@ -352,6 +377,52 @@ export default function OnboardingPage() {
               onChange={(e) => setForm({ ...form, dateOfJoining: e.target.value })}
             />
             <Select
+              value={form.departmentId || "__none__"}
+              onValueChange={(value) =>
+                setForm({
+                  ...form,
+                  departmentId: value === "__none__" ? "" : value,
+                })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Department (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Department (optional)</SelectItem>
+                {(departments || []).map(
+                  (d: { id: string; name: string }) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+            <Select
+              value={form.designationId || "__none__"}
+              onValueChange={(value) =>
+                setForm({
+                  ...form,
+                  designationId: value === "__none__" ? "" : value,
+                })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Designation (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Designation (optional)</SelectItem>
+                {(designations || []).map(
+                  (d: { id: string; name: string }) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.name}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+            <Select
               value={form.managerId || "__none__"}
               onValueChange={(value) =>
                 setForm({
@@ -401,12 +472,74 @@ export default function OnboardingPage() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="rounded-xl border border-border bg-muted/20 p-4">
+              <p className="mb-3 text-sm font-medium">Offer letter</p>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.generateOffer}
+                  onChange={(e) =>
+                    setForm({ ...form, generateOffer: e.target.checked })
+                  }
+                />
+                Generate PDF offer letter before sending invite
+              </label>
+              <label className="mt-3 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.sendInvite}
+                  onChange={(e) =>
+                    setForm({ ...form, sendInvite: e.target.checked })
+                  }
+                />
+                Send invite email with portal link
+              </label>
+              {form.generateOffer && (
+                <>
+                  <label className="mt-3 flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form.includeCtcAnnexure}
+                      onChange={(e) =>
+                        setForm({
+                          ...form,
+                          includeCtcAnnexure: e.target.checked,
+                        })
+                      }
+                    />
+                    Attach CTC annexure in generated PDF
+                  </label>
+                  {form.includeCtcAnnexure && (
+                    <div className="mt-3">
+                      <label className="mb-1 block text-xs text-muted-foreground">
+                        Annual CTC (INR)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+                        placeholder="e.g. 800000"
+                        value={form.annualCtc}
+                        onChange={(e) =>
+                          setForm({ ...form, annualCtc: e.target.value })
+                        }
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
             <button
               type="submit"
               disabled={loading}
               className="w-full rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
-              {loading ? "Creating…" : "Create & send invite"}
+              {loading
+                ? "Creating…"
+                : form.sendInvite
+                  ? "Create & send invite"
+                  : "Create hire"}
             </button>
           </form>
         </div>
