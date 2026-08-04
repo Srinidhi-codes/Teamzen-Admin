@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import moment from "moment";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,12 @@ import {
   useGraphQLDepartments,
   useGraphQLDesignations,
 } from "@/lib/graphql/organization/organizationsHook";
+
+function formatJoinDate(value?: string | null) {
+  if (!value) return "—";
+  const m = moment(value);
+  return m.isValid() ? m.format("DD MMM YYYY") : value;
+}
 
 const STATUS_FILTERS = [
   { value: "", label: "All" },
@@ -329,7 +336,7 @@ export default function OnboardingPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {row.joinDate || "—"}
+                  {formatJoinDate(row.joinDate)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   {row.templateName || "—"}

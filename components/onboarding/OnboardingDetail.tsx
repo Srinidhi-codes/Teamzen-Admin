@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import axios from "axios";
+import moment from "moment";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,17 @@ import {
   useOnboardingMutations,
 } from "@/lib/graphql/onboarding/onboardingHook";
 
+function formatJoinDate(value?: string | null) {
+  if (!value) return "—";
+  const m = moment(value);
+  return m.isValid() ? m.format("DD MMM YYYY") : value;
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "—";
+  const m = moment(value);
+  return m.isValid() ? m.format("DD MMM YYYY, hh:mm A") : value;
+}
 export default function OnboardingDetailPage({ id }: { id: string }) {
   const { onboarding, isLoading, error, refetch } = useOnboardingDetail(id);
   const {
@@ -229,7 +241,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">Join date</dt>
-              <dd>{onboarding.joinDate || "—"}</dd>
+              <dd>{formatJoinDate(onboarding.joinDate)}</dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">Template</dt>
@@ -239,7 +251,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               <dt className="text-muted-foreground">Activated</dt>
               <dd>
                 {onboarding.activatedAt
-                  ? new Date(onboarding.activatedAt).toLocaleString()
+                  ? formatDateTime(onboarding.activatedAt)
                   : "—"}
               </dd>
             </div>
@@ -388,13 +400,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               {onboarding.offerLetter.signedUploadedAt && (
                 <p className="text-muted-foreground">
                   Signed copy uploaded{" "}
-                  {new Date(onboarding.offerLetter.signedUploadedAt).toLocaleString()}
+                  {formatDateTime(onboarding.offerLetter.signedUploadedAt)}
                 </p>
               )}
               {onboarding.offerLetter.acceptedAt && (
                 <p className="text-muted-foreground">
                   Accepted by {onboarding.offerLetter.acceptedName} on{" "}
-                  {new Date(onboarding.offerLetter.acceptedAt).toLocaleString()}
+                  {formatDateTime(onboarding.offerLetter.acceptedAt)}
                 </p>
               )}
               {onboarding.offerLetter.source !== "uploaded" && (
@@ -515,7 +527,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 <p className="text-xs text-muted-foreground">
                   {task.phase} · {task.assigneeRole}
                   {task.assigneeName ? ` · ${task.assigneeName}` : ""} · {task.status}
-                  {task.dueAt ? ` · due ${task.dueAt}` : ""}
+                  {task.dueAt ? ` · due ${formatJoinDate(task.dueAt)}` : ""}
                 </p>
               </div>
               {task.status !== "completed" && task.status !== "skipped" && (
