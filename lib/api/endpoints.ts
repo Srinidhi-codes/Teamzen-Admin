@@ -29,6 +29,8 @@ export const API_ENDPOINTS = {
   POLICIES: "/ai/policies/",
   SMART_CHAT: "/ai/chat/",
   AI_CONFIG: "/ai/ai-config/",
+  FORMAT_TEXT: "/ai/format-text/",
+  FEEDBACK_ATTACHMENTS: "/feedback/attachments/",
 
   // Organizations
   ORGANIZATIONS: "/organizations/",

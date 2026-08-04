@@ -70,6 +70,15 @@ export function useOnboardingTour() {
                     }
                 },
                 {
+                    element: '#nav-onboarding',
+                    popover: {
+                        title: 'Employee Onboarding',
+                        description: 'Start hires, verify documents, and track preboarding → day-90 checklists. Open Onboarding and use “Take onboarding tour”.',
+                        side: "right",
+                        align: 'start'
+                    }
+                },
+                {
                     element: '#ai-assistant-trigger',
                     popover: {
                         title: 'Administrative AI',

@@ -14,6 +14,7 @@ import {
     ScanFace
 } from "lucide-react";
 import { FormTextarea } from "../common/FormTextArea";
+import { PhotoOverlay } from "../common/PhotoOverlay";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 
@@ -38,6 +39,7 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
     const [comments, setComments] = useState("");
     const [loading, setLoading] = useState(false);
     const [mapTab, setMapTab] = useState<"checkin" | "checkout">("checkin");
+    const [preview, setPreview] = useState<{ src: string; name: string } | null>(null);
 
     const handleSubmit = async (status: "approved" | "rejected") => {
         setLoading(true);
@@ -53,6 +55,7 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
     const formatTime = (timeStr?: string | null) => timeStr ? moment(timeStr, "HH:mm:ss").format("hh:mm A") : "--:--";
 
     return (
+        <>
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-background/60 p-0 sm:items-center sm:p-4">
             <div className="flex max-h-[calc(100dvh-0.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-lg sm:max-h-[calc(100dvh-2rem)] sm:rounded-xl">
                 {/* Header */}
@@ -140,11 +143,15 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 {correction.attendanceRecord.checkInSelfieUrl && (
-                                    <a
-                                        href={correction.attendanceRecord.checkInSelfieUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="block overflow-hidden rounded-md border border-border"
+                                    <button
+                                        type="button"
+                                        className="block cursor-zoom-in overflow-hidden rounded-md border border-border"
+                                        onClick={() =>
+                                            setPreview({
+                                                src: correction.attendanceRecord.checkInSelfieUrl!,
+                                                name: "Check-in selfie",
+                                            })
+                                        }
                                     >
                                         <img
                                             src={correction.attendanceRecord.checkInSelfieUrl}
@@ -154,14 +161,18 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                                         <span className="block bg-muted px-1.5 py-0.5 text-center text-[10px] text-muted-foreground">
                                             In
                                         </span>
-                                    </a>
+                                    </button>
                                 )}
                                 {correction.attendanceRecord.checkOutSelfieUrl && (
-                                    <a
-                                        href={correction.attendanceRecord.checkOutSelfieUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="block overflow-hidden rounded-md border border-border"
+                                    <button
+                                        type="button"
+                                        className="block cursor-zoom-in overflow-hidden rounded-md border border-border"
+                                        onClick={() =>
+                                            setPreview({
+                                                src: correction.attendanceRecord.checkOutSelfieUrl!,
+                                                name: "Check-out selfie",
+                                            })
+                                        }
                                     >
                                         <img
                                             src={correction.attendanceRecord.checkOutSelfieUrl}
@@ -171,7 +182,7 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                                         <span className="block bg-muted px-1.5 py-0.5 text-center text-[10px] text-muted-foreground">
                                             Out
                                         </span>
-                                    </a>
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -296,5 +307,12 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                 </div>
             </div>
         </div>
+        <PhotoOverlay
+            open={Boolean(preview)}
+            onOpenChange={(open) => !open && setPreview(null)}
+            src={preview?.src}
+            name={preview?.name}
+        />
+        </>
     );
 }

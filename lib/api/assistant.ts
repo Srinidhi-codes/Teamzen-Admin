@@ -67,7 +67,14 @@ export const useAssistant = () => {
             const response = await fetch(`/api${API_ENDPOINTS.SMART_CHAT}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, latitude, longitude, context: 'admin' }),
+                body: JSON.stringify({
+                    query,
+                    latitude,
+                    longitude,
+                    context: 'admin',
+                    page_path:
+                        typeof window !== 'undefined' ? window.location.pathname : '',
+                }),
                 credentials: 'include',
             });
 

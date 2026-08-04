@@ -5,7 +5,6 @@ import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS } from "@/lib/graphql/notifications/queries";
 import { SEND_BROADCAST_NOTIFICATION } from "@/lib/graphql/notifications/mutations";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageHeader } from "@/components/common/PageHeader";
+import { FormTextarea } from "@/components/common/FormTextArea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Bell, Megaphone } from "lucide-react";
@@ -100,15 +100,13 @@ export default function NotificationsPage() {
             </p>
 
             <div className="mt-5 space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium">Message</label>
-                <Textarea
-                  placeholder="Write your announcement…"
-                  className="min-h-[140px]"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                />
-              </div>
+              <FormTextarea
+                label="Message"
+                placeholder="Write your announcement…"
+                rows={6}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+              />
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Channel</label>

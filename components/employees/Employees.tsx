@@ -3,6 +3,7 @@
 import { useCSVExport } from "@/lib/hooks/useCSVExport";
 import { CSVColumn } from "@/lib/utils/csvExport";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Download,
   UserPlus,
@@ -191,6 +192,12 @@ export default function EmployeesPage() {
         description="Directory of people in your organization."
         actions={
           <>
+            <Link
+              href="/onboarding"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              Start onboarding
+            </Link>
             <button
               onClick={handleExportCSV}
               className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
