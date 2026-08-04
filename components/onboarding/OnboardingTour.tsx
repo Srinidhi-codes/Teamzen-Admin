@@ -130,7 +130,7 @@ export function startHrOnboardingTour(variant: TourVariant = "board") {
       popover: {
         title: "Offer templates",
         description:
-          "Edit merge fields like {{employee_name}} and {{join_date}}. Use AI Polish for tone.",
+          "Edit the subject and HTML body. Tokens like employee_name and join_date are filled per hire. Use AI Polish for tone.",
         side: "left" as const,
       },
     },

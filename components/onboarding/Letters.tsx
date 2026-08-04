@@ -46,7 +46,7 @@ export default function LetterTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Offer letter templates"
-        description="Merge fields: {{employee_name}}, {{designation}}, {{department}}, {{join_date}}, {{company_name}}"
+        description="Write the offer once, then tokens are filled automatically for each hire."
         actions={
           <div className="flex flex-wrap gap-2">
             <HrOnboardingTourButton variant="letters" />
@@ -59,6 +59,28 @@ export default function LetterTemplatesPage() {
           </div>
         }
       />
+
+      <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Insert these tokens in subject or body
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {[
+            "employee_name",
+            "designation",
+            "department",
+            "join_date",
+            "company_name",
+          ].map((token) => (
+            <code
+              key={token}
+              className="rounded-md border border-border bg-background px-2 py-1 font-mono text-xs text-foreground"
+            >
+              {`{{${token}}}`}
+            </code>
+          ))}
+        </div>
+      </div>
 
       <OrganizationFilterSelect value={organizationId} onChange={setOrganizationId} />
 
