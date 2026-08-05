@@ -1,13 +1,16 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { X, Calendar, Building2, Cpu } from "lucide-react";
+import { X, Calendar, Building2 } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
+import { useChatTypewriter } from "./useChatTypewriter";
 import { InsightCard } from "./cards/InsightCard";
 import { PayrollCard } from "./cards/PayrollCard";
 import { CitationChips } from "./CitationChips";
 import { CorrectionCard } from "./cards/CorrectionCard";
 import { RouteCard } from "./cards/RouteCard";
+import { TypingIndicator } from "./TypingIndicator";
 import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
@@ -20,13 +23,19 @@ interface MessageRendererProps {
     sources?: PolicySource[];
 }
 
-const renderInlineFormatting = (text: string) => {
+const renderInlineFormatting = (text: string, onPrimary = false) => {
     const parts = text.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, idx) => {
         if (part.startsWith('**') && part.endsWith('**')) {
             const cleanBoldText = part.slice(2, -2);
             return (
-                <span key={idx} className="font-extrabold text-foreground">
+                <span
+                    key={idx}
+                    className={cn(
+                        "font-semibold",
+                        onPrimary ? "text-primary-foreground" : "text-foreground"
+                    )}
+                >
                     {cleanBoldText}
                 </span>
             );
@@ -35,7 +44,11 @@ const renderInlineFormatting = (text: string) => {
     });
 };
 
-const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode) => {
+const renderTextWithFormatting = (
+    text: string,
+    trailingCursor?: React.ReactNode,
+    onPrimary = false
+) => {
     let lines = text.split('\n');
     const processedLines: string[] = [];
     for (const line of lines) {
@@ -51,7 +64,7 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
     lines = processedLines;
 
     return (
-        <div className="space-y-2 w-full">
+        <div className="space-y-1.5 w-full">
             {lines.map((line, lineIdx) => {
                 const isLastLine = lineIdx === lines.length - 1;
                 let currentLine = line.trim();
@@ -60,51 +73,58 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
                     return <div key={lineIdx} className="h-1" />;
                 }
 
-                // A list item starts with a dash, asterisk, or bullet followed by space
                 const isOriginalListItem = /^[-*•]\s+/.test(line.trim());
-
-                // Safe bullet strip: only strip if followed by whitespace
                 currentLine = currentLine.replace(/^[-*•]\s+/, '');
 
-                // Check if it's a heading
                 const isHeading = line.trim().startsWith('###') || line.trim().startsWith('##') || line.trim().startsWith('#');
                 if (isHeading) {
                     const cleanText = line.trim().replace(/^#+\s*/, '');
                     return (
                         <h4 
                             key={lineIdx} 
-                            className="font-black text-sm uppercase tracking-widest text-primary border-b border-border pb-1.5 mb-2 mt-4 inline-block underline underline-offset-4 decoration-primary/40"
+                            className={cn(
+                                "font-semibold text-sm pb-1 mb-1 mt-2 border-b",
+                                onPrimary
+                                    ? "text-primary-foreground border-primary-foreground/25"
+                                    : "text-foreground border-border"
+                            )}
                         >
-                            {renderInlineFormatting(cleanText)}
+                            {renderInlineFormatting(cleanText, onPrimary)}
                             {isLastLine && trailingCursor}
                         </h4>
                     );
                 }
 
-                // Check if it's a subheader (ends with a colon but isn't a list item)
                 const isSubHeaderOnly = currentLine.endsWith(':') && !isOriginalListItem;
                 if (isSubHeaderOnly) {
                     return (
                         <div 
                             key={lineIdx} 
-                            className="font-extrabold text-sm text-foreground mt-3 mb-1 underline underline-offset-4 decoration-primary/30"
+                            className={cn(
+                                "font-semibold text-sm mt-2 mb-0.5",
+                                onPrimary ? "text-primary-foreground" : "text-foreground"
+                            )}
                         >
-                            {renderInlineFormatting(currentLine)}
+                            {renderInlineFormatting(currentLine, onPrimary)}
                             {isLastLine && trailingCursor}
                         </div>
                     );
                 }
                 
-                // Render list item with bullet dot
                 if (isOriginalListItem) {
                     return (
                         <div 
                             key={lineIdx} 
-                            className="flex items-start gap-2 text-sm leading-relaxed my-1 pl-2"
+                            className="flex items-start gap-2 text-sm leading-relaxed pl-0.5"
                         >
-                            <span className="text-primary mt-1.5 shrink-0 block w-1.5 h-1.5 rounded-full bg-primary/60" />
+                            <span
+                                className={cn(
+                                    "mt-2 shrink-0 block w-1 h-1 rounded-full",
+                                    onPrimary ? "bg-primary-foreground/70" : "bg-primary/70"
+                                )}
+                            />
                             <span className="flex-1">
-                                {renderInlineFormatting(currentLine)}
+                                {renderInlineFormatting(currentLine, onPrimary)}
                                 {isLastLine && trailingCursor}
                             </span>
                         </div>
@@ -113,7 +133,7 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
                 
                 return (
                     <p key={lineIdx} className="text-sm leading-relaxed">
-                        {renderInlineFormatting(currentLine)}
+                        {renderInlineFormatting(currentLine, onPrimary)}
                         {isLastLine && trailingCursor}
                     </p>
                 );
@@ -123,29 +143,44 @@ const renderTextWithFormatting = (text: string, trailingCursor?: React.ReactNode
 };
 
 export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming, activeTool, sources }: MessageRendererProps) => {
-    const parts = useMessageParser(content);
-    const showDots = isLast && isStreaming && role === 'assistant' && (parts.length === 0 || (parts.length === 1 && !parts[0].value.trim()));
+    const [typeSession, setTypeSession] = useState(false);
+    useEffect(() => {
+        if (isStreaming && role === "assistant" && isLast) {
+            setTypeSession(true);
+        }
+    }, [isStreaming, role, isLast]);
 
-    if (showDots) {
+    const typewriterOn = role === "assistant" && !!isLast && (isStreaming || typeSession);
+    const { revealed, isTyping, done } = useChatTypewriter(content, typewriterOn);
+
+    useEffect(() => {
+        if (done && !isStreaming && typeSession) {
+            setTypeSession(false);
+        }
+    }, [done, isStreaming, typeSession]);
+
+    useEffect(() => {
+        if (!isLast || role !== "assistant") {
+            setTypeSession(false);
+        }
+    }, [isLast, role]);
+
+    const parts = useMessageParser(revealed);
+    const waitingForFirstToken =
+        typewriterOn && !content.trim() && (isStreaming || !!activeTool);
+
+    if (waitingForFirstToken) {
         return (
-            <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex flex-col gap-2 w-max max-w-[85%] animate-in fade-in duration-300">
-                <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
-                </div>
-                {activeTool && activeTool.status === 'running' && (
-                    <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary/70 border-t border-border/50 pt-1.5 mt-0.5">
-                        <Cpu className="w-3.5 h-3.5 animate-pulse text-primary shrink-0" />
-                        <span>MCP: {activeTool.name.replace("teamzen__", "")}</span>
-                    </div>
-                )}
+            <div className="animate-in fade-in duration-300">
+                <TypingIndicator activeTool={activeTool} />
             </div>
         );
     }
 
+    const showCursor = typewriterOn && (isStreaming || isTyping);
+
     return (
-        <div className="space-y-3 w-full">
+        <div className="space-y-2.5 w-full">
             {parts.map((part, idx) => {
                 if (part.type === 'text') {
                     const text = part.value.trim();
@@ -153,18 +188,19 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     
                     if (!text) return null;
                     
-                    const cursor = isLast && isStreaming && isFinalPart ? (
-                        <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
+                    const isUser = role === 'user';
+                    const cursor = showCursor && isFinalPart ? (
+                        <span className="inline-block w-[2px] h-3.5 bg-current/70 ml-0.5 animate-pulse align-middle rounded-sm" />
                     ) : undefined;
                     
                     return (
                         <div key={idx} className={cn(
-                            "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
-                            role === 'user'
-                                ? "bg-primary text-primary-foreground rounded-tr-none ml-auto"
-                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90 w-full"
+                            "px-3.5 py-2.5 text-sm leading-relaxed relative shadow-sm",
+                            isUser
+                                ? "max-w-[min(100%,340px)] ml-auto rounded-2xl rounded-br-md bg-primary text-primary-foreground"
+                                : "w-full max-w-full rounded-2xl rounded-bl-md border border-border/70 bg-background/95 text-foreground"
                         )}>
-                            {renderTextWithFormatting(text, cursor)}
+                            {renderTextWithFormatting(text, cursor, isUser)}
                         </div>
                     );
                 } else if (part.type === 'balance') {
@@ -293,7 +329,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                 }
                 return null;
             })}
-            {role === 'assistant' && sources && sources.length > 0 && (
+            {role === 'assistant' && sources && sources.length > 0 && !isTyping && (
                 <CitationChips sources={sources} />
             )}
         </div>
