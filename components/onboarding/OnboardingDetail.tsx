@@ -19,7 +19,9 @@ import {
 import type {
   EmployeeDocument,
   OnboardingTask,
+  OfferLetter,
 } from "@/lib/graphql/onboarding/types";
+import { useStore } from "@/lib/store/useStore";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "—";
@@ -99,8 +101,118 @@ function getActivateWarning(
     description: `${parts.join(". ")}. You can still activate remaining work continues after day 1.`,
   };
 }
+
+type NextHrAction = {
+  title: string;
+  message: string;
+  cta: string;
+  scrollId?: string;
+  askQuery?: string;
+  primary?: "activate" | "invite";
+};
+
+function getNextHrActions(
+  onboarding: {
+    status: string;
+    progressPct: number;
+    offerLetter?: OfferLetter | null;
+    documents: EmployeeDocument[];
+    tasks: OnboardingTask[];
+    userName: string;
+  }
+): NextHrAction[] {
+  if (onboarding.status === "cancelled" || onboarding.status === "completed") {
+    return [];
+  }
+
+  const actions: NextHrAction[] = [];
+  const pendingDocs = onboarding.documents.filter(
+    (d) => d.verificationStatus === "pending"
+  );
+  const rejectedDocs = onboarding.documents.filter(
+    (d) => d.verificationStatus === "rejected"
+  );
+  const openTasks = onboarding.tasks.filter(
+    (t) => t.status !== "completed" && t.status !== "skipped"
+  );
+  const openHrTasks = openTasks.filter((t) =>
+    ["hr", "admin", "superadmin"].includes((t.assigneeRole || "").toLowerCase())
+  );
+
+  if (pendingDocs.length > 0) {
+    actions.push({
+      title: "Verify uploaded documents",
+      message: `${pendingDocs.length} document(s) awaiting review for ${onboarding.userName}.`,
+      cta: "Review documents",
+      scrollId: "onboarding-detail-docs",
+      askQuery:
+        "What documents are still pending verification for this hire and what should HR check?",
+    });
+  } else if (rejectedDocs.length > 0) {
+    actions.push({
+      title: "Follow up on rejected docs",
+      message: `${rejectedDocs.length} document(s) were rejected — confirm the candidate re-uploads.`,
+      cta: "View documents",
+      scrollId: "onboarding-detail-docs",
+      askQuery: "Which documents were rejected and how should we follow up?",
+    });
+  }
+
+  if (!onboarding.offerLetter) {
+    actions.push({
+      title: "Create offer letter",
+      message: "No offer PDF yet. Generate a branded letter or upload one.",
+      cta: "Open offer section",
+      scrollId: "onboarding-detail-offer",
+      askQuery: "Help me draft an offer letter for this hire.",
+    });
+  }
+
+  if (
+    onboarding.status !== "in_progress" &&
+    onboarding.status !== "completed"
+  ) {
+    actions.push({
+      title: "Ready to activate?",
+      message:
+        onboarding.progressPct >= 80
+          ? "Preboarding looks far along — activate when you're ready for day 1."
+          : "Activate when preboarding is ready; remaining tasks can continue after day 1.",
+      cta: "Activate employee",
+      primary: "activate",
+      askQuery: "Is this hire ready to activate? Summarize open blockers.",
+    });
+  }
+
+  if (openHrTasks.length > 0) {
+    const next = [...openHrTasks].sort(
+      (a, b) => a.sortOrder - b.sortOrder
+    )[0];
+    actions.push({
+      title: "HR checklist item",
+      message: `Next: ${next.title}`,
+      cta: "Open tasks",
+      scrollId: "onboarding-detail-tasks",
+      askQuery: `Explain the onboarding task "${next.title}" and how HR should complete it.`,
+    });
+  }
+
+  if (onboarding.status === "invited") {
+    actions.unshift({
+      title: "Resend invite",
+      message: "Candidate is still invited — resend if they haven't joined yet.",
+      cta: "Resend invite",
+      primary: "invite",
+      askQuery: "What's the invite status for this hire?",
+    });
+  }
+
+  return actions.slice(0, 2);
+}
+
 export default function OnboardingDetailPage({ id }: { id: string }) {
   const { onboarding, isLoading, error, refetch } = useOnboardingDetail(id);
+  const { setAssistantOpen, setAssistantQuery } = useStore();
   const {
     activate,
     cancel,
@@ -190,6 +302,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
     onboarding.tasks,
     onboarding.documents
   );
+  const nextHrActions = getNextHrActions(onboarding);
 
   async function handleGenerateOffer() {
     const ctcValue = annualCtc.trim() ? Number(annualCtc) : undefined;
@@ -325,6 +438,71 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
         }
       />
 
+      {nextHrActions.length > 0 && (
+        <section className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Next HR action
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {nextHrActions.map((action) => (
+              <div
+                key={action.title}
+                className="rounded-lg border border-border bg-card p-4"
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  {action.title}
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                  {action.message}
+                </p>
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-primary hover:underline"
+                    onClick={() => {
+                      if (action.primary === "activate") {
+                        setActivateModalOpen(true);
+                        return;
+                      }
+                      if (action.primary === "invite") {
+                        run(
+                          () =>
+                            sendInvite({ variables: { onboardingId: id } }),
+                          "Invite resent (offer PDF attached if available)"
+                        );
+                        return;
+                      }
+                      if (action.scrollId) {
+                        document
+                          .getElementById(action.scrollId)
+                          ?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          });
+                      }
+                    }}
+                  >
+                    {action.cta}
+                  </button>
+                  {action.askQuery ? (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setAssistantQuery(action.askQuery!);
+                        setAssistantOpen(true);
+                      }}
+                    >
+                      Ask assistant
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {message && (
         <div className="rounded-xl border border-border bg-muted/40 px-4 py-3 text-sm">
           {message}
@@ -362,7 +540,10 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
           </dl>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-4 lg:col-span-2">
+        <div
+          id="onboarding-detail-offer"
+          className="rounded-xl border border-border bg-card p-4 lg:col-span-2"
+        >
           <h3 className="mb-3 font-semibold">Offer letter</h3>
 
           <div className="mb-4 space-y-3 rounded-lg border border-border bg-muted/20 p-3 text-sm">

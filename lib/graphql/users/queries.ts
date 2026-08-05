@@ -56,6 +56,7 @@ export const GET_ME = gql`
         llmApiKey
         accent
         faceAttendanceEnabled
+        weekendDays
       }
       salaryDetails {
         id
