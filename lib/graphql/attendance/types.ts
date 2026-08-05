@@ -14,12 +14,28 @@ export interface AttendanceRecord {
   workedHours?: number | null;
 
   isWithinGeofence: boolean;
+  faceVerified?: boolean;
+  faceMatchScore?: number | null;
+  checkInSelfieUrl?: string | null;
+  checkOutSelfieUrl?: string | null;
   remarks?: string | null;
 
   correctionStatus?: string;
   correctionId?: string;
   correctionReason?: string;
   approvalComment?: string;
+
+  loginLatitude?: number | null;
+  loginLongitude?: number | null;
+  logoutLatitude?: number | null;
+  logoutLongitude?: number | null;
+  officeLocation?: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    geoRadiusMeters: number;
+  } | null;
 }
 
 export interface AttendanceCorrection {

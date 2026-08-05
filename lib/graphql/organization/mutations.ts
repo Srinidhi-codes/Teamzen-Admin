@@ -9,6 +9,7 @@ export const CREATE_ORGANIZATION = gql`
             panNumber
             headquartersAddress
             llmApiKey
+            accent
             isActive
             createdAt
             updatedAt
@@ -25,8 +26,34 @@ export const UPDATE_ORGANIZATION = gql`
             panNumber
             headquartersAddress
             llmApiKey
+            accent
+            faceAttendanceEnabled
+            weekendDays
+            plan
+            planExpiresAt
             isActive
             createdAt
+            updatedAt
+        }
+    }
+`;
+
+export const UPDATE_ORGANIZATION_PLAN = gql`
+    mutation UpdateOrganizationPlan(
+        $organizationId: ID!
+        $plan: String!
+        $durationDays: Int
+    ) {
+        updateOrganizationPlan(
+            organizationId: $organizationId
+            plan: $plan
+            durationDays: $durationDays
+        ) {
+            id
+            name
+            plan
+            planExpiresAt
+            daysUntilPlanExpiry
             updatedAt
         }
     }

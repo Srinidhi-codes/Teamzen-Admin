@@ -13,6 +13,12 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     llmApiKey?: string;
+    accent?: string;
+    faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
+    plan?: string;
+    planExpiresAt?: string | null;
+    daysUntilPlanExpiry?: number | null;
 }
 
 export interface OfficeLocation {
@@ -28,6 +34,11 @@ export interface OfficeLocation {
     latitude: number;
     longitude: number;
     geoRadiusMeters: number;
+    organizationId?: string;
+    organization?: {
+        id: string;
+        name: string;
+    };
     isActive: boolean;
     createdAt: string;
 }
@@ -59,6 +70,9 @@ export interface CreateOrganizationInput {
     headquartersAddress?: string;
     isActive: boolean;
     llmApiKey?: string;
+    accent?: string;
+    faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
 }
 
 export interface OrganizationInput {
@@ -71,6 +85,9 @@ export interface OrganizationInput {
     isActive: boolean;
     id: string;
     llmApiKey?: string;
+    accent?: string;
+    faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
 }
 
 export interface CreateOfficeLocationInput {

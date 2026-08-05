@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import { UPDATE_LOGIN_LOCATION } from "@/lib/graphql/users/mutations";
 import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
 import { SecurityLogResponse } from "@/lib/graphql/users/types";
-import { Globe, ShieldAlert, Sparkles, Loader2, X } from "lucide-react";
+import { Globe, ShieldAlert, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function LocationSyncBanner() {
@@ -85,13 +85,13 @@ export function LocationSyncBanner() {
                             <ShieldAlert className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                            <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-white/90">
-                                {isBlocked ? "Location Blocked" : "Security Action Required"}
+                            <p className="text-xs font-semibold text-white/95">
+                                {isBlocked ? "Location blocked" : "Location verification needed"}
                             </p>
-                            <p className="text-[9px] sm:text-[11px] font-medium text-white/80 leading-none">
+                            <p className="text-[11px] font-medium text-white/80 leading-snug">
                                 {isBlocked 
-                                    ? "Please click the Lock icon (🔒) in your address bar and Allow Location to sync."
-                                    : "Your login entry point is not yet verified. Sync location to secure your session."
+                                    ? "Allow location for this site in your browser settings, then try again."
+                                    : "Sync your location to verify this login session."
                                 }
                             </p>
                         </div>
@@ -102,8 +102,8 @@ export function LocationSyncBanner() {
                             onClick={handleSync}
                             disabled={isSyncing}
                             className={cn(
-                                "flex items-center gap-2 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95",
-                                "bg-white text-rose-600 hover:bg-rose-50 shadow-lg shadow-black/10 disabled:opacity-50"
+                                "inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors",
+                                "bg-white text-rose-700 hover:bg-rose-50 disabled:opacity-50"
                             )}
                         >
                             {isSyncing ? (
@@ -111,7 +111,7 @@ export function LocationSyncBanner() {
                             ) : (
                                 <Globe className="w-3 h-3" />
                             )}
-                            {isSyncing ? "Syncing..." : isBlocked ? "Retry Sync" : "Sync Location"}
+                            {isSyncing ? "Syncing…" : isBlocked ? "Retry" : "Sync location"}
                         </button>
                         <button
                             onClick={() => setIsVisible(false)}

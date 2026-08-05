@@ -19,13 +19,53 @@ export const INITIATE_PAYROLL_RUN = gql`
       month
       year
       status
+      totalGross
+      totalDeduction
+      totalNetPay
+    }
+  }
+`;
+
+export const CREATE_PAYROLL_RUN = gql`
+  mutation CreatePayrollRun($month: Int!, $year: Int!) {
+    createPayrollRun(month: $month, year: $year) {
+      id
+      month
+      year
+      status
+    }
+  }
+`;
+
+export const PROCESS_PAYROLL_RUN = gql`
+  mutation ProcessPayrollRun($payrollRunId: ID!) {
+    processPayrollRun(payrollRunId: $payrollRunId) {
+      id
+      status
+      totalGross
+      totalDeduction
+      totalNetPay
     }
   }
 `;
 
 export const CREATE_PAYROLL_ADJUSTMENT = gql`
-  mutation CreatePayrollAdjustment($userId: ID!, $month: Int!, $year: Int!, $amount: Decimal!, $reason: String!, $adjustmentType: String!) {
-    createPayrollAdjustment(userId: $userId, month: $month, year: $year, amount: $amount, reason: $reason, adjustmentType: $adjustmentType) {
+  mutation CreatePayrollAdjustment(
+    $userId: ID!
+    $month: Int!
+    $year: Int!
+    $amount: Decimal!
+    $reason: String!
+    $adjustmentType: String!
+  ) {
+    createPayrollAdjustment(
+      userId: $userId
+      month: $month
+      year: $year
+      amount: $amount
+      reason: $reason
+      adjustmentType: $adjustmentType
+    ) {
       id
       reason
       amount
@@ -51,16 +91,300 @@ export const CREATE_SALARY_COMPONENT = gql`
 `;
 
 export const CREATE_SALARY_STRUCTURE = gql`
-  mutation CreateSalaryStructure($name: String!, $description: String!, $components: [SalaryStructureComponentInput!]!) {
-    createSalaryStructure(name: $name, description: $description, components: $components) {
+  mutation CreateSalaryStructure(
+    $name: String!
+    $description: String!
+    $components: [SalaryStructureComponentInput!]!
+  ) {
+    createSalaryStructure(
+      name: $name
+      description: $description
+      components: $components
+    ) {
       id
       name
     }
   }
 `;
 
+export const UPDATE_SALARY_STRUCTURE = gql`
+  mutation UpdateSalaryStructure(
+    $structureId: ID!
+    $name: String!
+    $description: String!
+    $components: [SalaryStructureComponentInput!]!
+  ) {
+    updateSalaryStructure(
+      structureId: $structureId
+      name: $name
+      description: $description
+      components: $components
+    ) {
+      id
+      name
+    }
+  }
+`;
+
+export const DELETE_SALARY_STRUCTURE = gql`
+  mutation DeleteSalaryStructure($structureId: ID!) {
+    deleteSalaryStructure(structureId: $structureId)
+  }
+`;
+
 export const ASSIGN_SALARY_TO_EMPLOYEE = gql`
-  mutation AssignSalaryToEmployee($userId: ID!, $structureId: ID!, $annualCtc: Decimal!, $effectiveFrom: String!) {
-    assignSalaryToEmployee(userId: $userId, structureId: $structureId, annualCtc: $annualCtc, effectiveFrom: $effectiveFrom)
+  mutation AssignSalaryToEmployee(
+    $userId: ID!
+    $structureId: ID!
+    $annualCtc: Decimal!
+    $effectiveFrom: String!
+  ) {
+    assignSalaryToEmployee(
+      userId: $userId
+      structureId: $structureId
+      annualCtc: $annualCtc
+      effectiveFrom: $effectiveFrom
+    ) {
+      id
+      annualCtc
+      effectiveFrom
+      isActive
+    }
+  }
+`;
+
+export const CREATE_SALARY_ADVANCE = gql`
+  mutation CreateSalaryAdvance(
+    $userId: ID!
+    $amount: Decimal!
+    $installments: Int!
+    $reason: String
+    $grantedOn: String
+  ) {
+    createSalaryAdvance(
+      userId: $userId
+      amount: $amount
+      installments: $installments
+      reason: $reason
+      grantedOn: $grantedOn
+    ) {
+      id
+      amount
+      remainingBalance
+      status
+    }
+  }
+`;
+
+export const CANCEL_SALARY_ADVANCE = gql`
+  mutation CancelSalaryAdvance($advanceId: ID!) {
+    cancelSalaryAdvance(advanceId: $advanceId) {
+      id
+      status
+    }
+  }
+`;
+
+export const SAVE_EMPLOYEE_COMPONENT_OVERRIDES = gql`
+  mutation SaveEmployeeComponentOverrides(
+    $employeeSalaryId: ID!
+    $overrides: [ComponentOverrideInput!]!
+  ) {
+    saveEmployeeComponentOverrides(
+      employeeSalaryId: $employeeSalaryId
+      overrides: $overrides
+    ) {
+      id
+      component {
+        id
+        name
+        code
+      }
+      isExcluded
+      overrideValue
+    }
+  }
+`;
+
+export const UPDATE_PAYROLL_SETTINGS = gql`
+  mutation UpdatePayrollSettings(
+    $payrollCycleDay: Int!
+    $payrollAutoEnabled: Boolean!
+  ) {
+    updatePayrollSettings(
+      payrollCycleDay: $payrollCycleDay
+      payrollAutoEnabled: $payrollAutoEnabled
+    ) {
+      plan
+      payrollCycleDay
+      payrollAutoEnabled
+      canEnablePayrollAuto
+    }
+  }
+`;
+
+export const UPDATE_IMPORT_MAPPING = gql`
+  mutation UpdateImportMapping(
+    $jobId: ID!
+    $columnMapping: JSON!
+    $useAi: Boolean
+  ) {
+    updateImportMapping(
+      jobId: $jobId
+      columnMapping: $columnMapping
+      useAi: $useAi
+    ) {
+      id
+      status
+      columnMapping
+      mappingConfidence
+      headers
+      sampleRows
+      rowCount
+    }
+  }
+`;
+
+export const PREVIEW_DATA_IMPORT = gql`
+  mutation PreviewDataImport($jobId: ID!) {
+    previewDataImport(jobId: $jobId) {
+      id
+      status
+      previewResult
+      errorMessage
+    }
+  }
+`;
+
+export const COMMIT_DATA_IMPORT = gql`
+  mutation CommitDataImport(
+    $jobId: ID!
+    $updateExisting: Boolean
+    $assignCtc: Boolean
+    $sendWelcome: Boolean
+  ) {
+    commitDataImport(
+      jobId: $jobId
+      updateExisting: $updateExisting
+      assignCtc: $assignCtc
+      sendWelcome: $sendWelcome
+    ) {
+      id
+      status
+      commitResult
+      errorMessage
+    }
+  }
+`;
+
+export const SET_DEFAULT_PAYSLIP_TEMPLATE = gql`
+  mutation SetDefaultPayslipTemplate(
+    $templateId: ID!
+    $organizationId: ID
+  ) {
+    setDefaultPayslipTemplate(
+      templateId: $templateId
+      organizationId: $organizationId
+    ) {
+      id
+      name
+      slug
+      description
+      layoutKey
+      theme
+      source
+      previewNotes
+      isDefault
+      isActive
+      isSystem
+      organizationId
+      sourceFileUrl
+    }
+  }
+`;
+
+export const CREATE_PAYSLIP_TEMPLATE = gql`
+  mutation CreatePayslipTemplate(
+    $name: String!
+    $layoutKey: String
+    $description: String
+    $theme: JSON
+    $organizationId: ID
+    $setAsDefault: Boolean
+  ) {
+    createPayslipTemplate(
+      name: $name
+      layoutKey: $layoutKey
+      description: $description
+      theme: $theme
+      organizationId: $organizationId
+      setAsDefault: $setAsDefault
+    ) {
+      id
+      name
+      slug
+      description
+      layoutKey
+      theme
+      source
+      previewNotes
+      isDefault
+      isActive
+      isSystem
+      organizationId
+      sourceFileUrl
+    }
+  }
+`;
+
+export const UPDATE_PAYSLIP_TEMPLATE = gql`
+  mutation UpdatePayslipTemplate(
+    $templateId: ID!
+    $name: String
+    $description: String
+    $layoutKey: String
+    $theme: JSON
+    $isActive: Boolean
+  ) {
+    updatePayslipTemplate(
+      templateId: $templateId
+      name: $name
+      description: $description
+      layoutKey: $layoutKey
+      theme: $theme
+      isActive: $isActive
+    ) {
+      id
+      name
+      layoutKey
+      theme
+      isActive
+      isDefault
+    }
+  }
+`;
+
+export const DELETE_PAYSLIP_TEMPLATE = gql`
+  mutation DeletePayslipTemplate($templateId: ID!) {
+    deletePayslipTemplate(templateId: $templateId)
+  }
+`;
+
+export const ENSURE_FOUNDER_PAYROLL_SETUP = gql`
+  mutation EnsureFounderPayrollSetup($organizationId: ID) {
+    ensureFounderPayrollSetup(organizationId: $organizationId) {
+      defaultStructureId
+      defaultStructureName
+      checklist {
+        components
+        structures
+        employeesWithCtc
+        activeAdvances
+        ready
+        activeEmployees
+        employeesMissingCtc
+        employeesMissingBank
+      }
+    }
   }
 `;

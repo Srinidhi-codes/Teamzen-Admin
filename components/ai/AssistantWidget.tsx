@@ -1,361 +1,457 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
-    Send, X, Bot, User, MessageSquare, Trash2,
-    Sparkles, Loader2, Minimize2, Mic, MicOff, Cpu
-} from 'lucide-react';
+  Send,
+  X,
+  Bot,
+  Trash2,
+  Loader2,
+  Mic,
+  MicOff,
+  MessageCircle,
+  Sparkles,
+  ArrowUpRight,
+} from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useVoiceWhisper } from "@/lib/hooks/useVoiceWhisper";
 import { VoiceWave } from "./VoiceWave";
 import { useAssistant } from "@/lib/api/assistant";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import moment from "moment";
 import { MessageRenderer } from "./MessageRenderer";
+import { TypingIndicator } from "./TypingIndicator";
 import { useStore } from "@/lib/store/useStore";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 
+function suggestionsForPath(pathname: string): string[] {
+  if (pathname.startsWith("/onboarding")) {
+    return [
+      "What's left for this hire?",
+      "Suggest an onboarding checklist",
+      "How do I activate an employee?",
+    ];
+  }
+  if (pathname.startsWith("/leaves")) {
+    return [
+      "Are there any pending leave requests?",
+      "Show team leave this week",
+      "Who is on leave today?",
+    ];
+  }
+  if (pathname.startsWith("/attendance")) {
+    return [
+      "Show me attendance summary for today",
+      "Who has low attendance this month?",
+      "Any pending attendance corrections?",
+    ];
+  }
+  if (pathname.startsWith("/payroll")) {
+    return [
+      "Check payroll anomalies this month",
+      "Summarize team payroll issues",
+      "Explain common deduction spikes",
+    ];
+  }
+  if (pathname.startsWith("/employees")) {
+    return [
+      "What is the analysis of my team?",
+      "Show me attendance summary for today",
+      "Are there any pending leave requests?",
+    ];
+  }
+  return [
+    "What is the analysis of my team?",
+    "Show me attendance summary for today",
+    "Are there any pending leave requests?",
+  ];
+}
+
 export function AssistantWidget() {
-    const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
-    const [input, setInput] = useState("");
-    const {
-        messages,
-        setMessages,
-        sendMessage,
-        isLoading,
-        isStreaming,
-        clearHistory,
-        config
-    } = useAssistant();
-    const { isRecording, isProcessing: isVoiceProcessing, startRecording, stopRecording, error: voiceError } = useVoiceWhisper({
-        onTranscript: (text) => {
-            if (text) {
-                handleSend(undefined, text);
-            }
+  const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
+  const pathname = usePathname() || "/dashboard";
+  const suggestions = useMemo(() => suggestionsForPath(pathname), [pathname]);
+  const [input, setInput] = useState("");
+  const {
+    messages,
+    setMessages,
+    sendMessage,
+    isLoading,
+    isStreaming,
+    activeTool,
+    clearHistory,
+    config,
+  } = useAssistant();
+  const [isMicErrorModalOpen, setIsMicErrorModalOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const sendRef = useRef<(e?: React.FormEvent, customQuery?: string) => Promise<void>>(async () => {});
+
+  const handleSend = useCallback(
+    async (e?: React.FormEvent, customQuery?: string) => {
+      e?.preventDefault();
+      const query = customQuery || input;
+      if (!query.trim() || isLoading) return;
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: query, timestamp: new Date().toISOString() },
+      ]);
+      if (!customQuery) setInput("");
+
+      try {
+        let latitude: number | undefined;
+        let longitude: number | undefined;
+        if ("geolocation" in navigator) {
+          try {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject, {
+                timeout: 5000,
+                enableHighAccuracy: true,
+              });
+            });
+            latitude = position.coords.latitude;
+            longitude = position.coords.longitude;
+          } catch {
+            // optional
+          }
         }
+        await sendMessage({ query, latitude, longitude });
+      } catch (error) {
+        console.error("Failed to send message", error);
+      }
+    },
+    [input, isLoading, setMessages, sendMessage]
+  );
+
+  sendRef.current = handleSend;
+
+  const {
+    isRecording,
+    isProcessing: isVoiceProcessing,
+    startRecording,
+    stopRecording,
+    error: voiceError,
+  } = useVoiceWhisper({
+    onTranscript: (text) => {
+      if (text) void sendRef.current(undefined, text);
+    },
+  });
+
+  useEffect(() => {
+    if (voiceError === "device-not-found" || voiceError === "permission-denied") {
+      setIsMicErrorModalOpen(true);
+    }
+  }, [voiceError]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen, setIsOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !scrollRef.current) return;
+    const el = scrollRef.current;
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
     });
-    const [isMicErrorModalOpen, setIsMicErrorModalOpen] = useState(false);
+  }, [messages, isLoading, isStreaming, isOpen, activeTool]);
 
-    // Watch for mic errors
-    useEffect(() => {
-        if (voiceError === "device-not-found" || voiceError === "permission-denied") {
-            setIsMicErrorModalOpen(true);
-        }
-    }, [voiceError]);
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => inputRef.current?.focus(), 180);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
 
-    const scrollRef = useRef<HTMLDivElement>(null);
+  const handleVoiceToggle = async () => {
+    if (isRecording) await stopRecording();
+    else await startRecording();
+  };
 
-    // Body scroll lock on mobile
-    useEffect(() => {
-        if (isOpen && window.innerWidth < 768) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
+  const onComposerKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void handleSend();
+    }
+  };
 
-    // Snap to bottom
-    useEffect(() => {
-        if (isOpen && scrollRef.current) {
-            setTimeout(() => {
-                if (scrollRef.current) {
-                    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-                }
-            }, 0);
-        }
-    }, [messages, isLoading, isOpen]);
+  const statusLabel = isStreaming
+    ? "Thinking…"
+    : isLoading
+      ? "Working…"
+      : isRecording
+        ? "Listening…"
+        : "Ready";
 
-    const handleSend = async (e?: React.FormEvent, customQuery?: string) => {
-        e?.preventDefault();
-        const query = customQuery || input;
-
-        if (!query.trim() || isLoading) return;
-
-        // --- OPTIMISTIC UPDATE ---
-        setMessages(prev => [...prev, {
-            role: 'user',
-            content: query,
-            timestamp: new Date().toISOString()
-        }]);
-
-        if (!customQuery) {
-            setInput("");
-        }
-
-        try {
-            // Get Geolocation if available
-            let latitude: number | undefined;
-            let longitude: number | undefined;
-
-            if ("geolocation" in navigator) {
-                try {
-                    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                        navigator.geolocation.getCurrentPosition(resolve, reject, {
-                            timeout: 5000,
-                            enableHighAccuracy: true
-                        });
-                    });
-                    latitude = position.coords.latitude;
-                    longitude = position.coords.longitude;
-                } catch (geoError: any) {
-                    console.warn("Geolocation failed or denied", geoError);
-                }
-            }
-
-            await sendMessage({ query, latitude, longitude });
-        } catch (error) {
-            console.error("Failed to send message", error);
-        }
-    };
-
-    const handleVoiceToggle = async () => {
-        if (isRecording) {
-            await stopRecording();
-        } else {
-            await startRecording();
-        }
-    };
-
-    return (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-100 flex flex-col items-end transition-all duration-300">
-            {/* Chat Window */}
-            {isOpen && (
-                <div className="mb-4 w-[calc(100vw-2rem)] sm:w-[500px] h-[calc(100dvh-8rem)] sm:h-[650px] max-h-[85vh] sm:max-h-[700px] bg-card/95 backdrop-blur-xl border border-border/50 rounded-4xl sm:rounded-[2.5rem] shadow-3xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
-                    {/* Header */}
-                    <div className="p-4 sm:p-6 border-b border-border bg-muted/20 backdrop-blur-sm flex justify-between items-center group">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 relative overflow-hidden">
-                                <Bot className="w-6 h-6 text-primary-foreground relative z-10" />
-                                <div className="absolute inset-0 bg-linear-to-tr from-white/20 to-transparent opacity-50" />
-                            </div>
-                            <div>
-                                <h3 className="font-black tracking-tight text-sm leading-none mb-1">Admin Intelligence</h3>
-                                <div className="flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Command Center</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={clearHistory}
-                                className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all"
-                                title="Clear History"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="p-2 rounded-xl hover:bg-muted text-muted-foreground transition-all"
-                            >
-                                <Minimize2 className="w-4 h-4" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Messages */}
-                    <div
-                        ref={scrollRef}
-                        className="grow overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
-                    >
-                        {messages.length === 0 && (
-                            <div className="space-y-6 animate-in fade-in duration-700 delay-300">
-                                <div className="flex gap-3 flex-row">
-                                    <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 shadow-sm">
-                                        <Bot className="w-4 h-4" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 sm:p-6 text-sm leading-relaxed font-medium">
-                                            Welcome to the Command Center, {user?.firstName}. I can analyze team attendance, process leave approvals, and provide workforce insights. How can I assist you today?
-                                        </div>
-                                        <div className="text-[10px] text-muted-foreground/60 mt-2 pl-2 font-bold uppercase tracking-widest">
-                                            {moment().format("hh:mm A")}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-2 w-full pt-4">
-                                    {[
-                                        "What is the analysis of my team?",
-                                        "Show me attendance summary for today",
-                                        "Are there any pending leave requests?",
-                                    ].map((q) => (
-                                        <button
-                                            key={q}
-                                            onClick={() => handleSend(undefined, q)}
-                                            className="text-[10px] font-black uppercase tracking-widest p-4 rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all text-left flex items-center gap-3 group/btn"
-                                        >
-                                            <div className="w-1.5 h-1.5 rounded-full bg-primary/20 group-hover/btn:bg-primary transition-colors" />
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {messages.map((msg, i) => (
-                            <div
-                                key={i}
-                                className={cn(
-                                    "flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
-                                    msg.role === 'user' ? "flex-row-reverse" : "flex-row"
-                                )}
-                            >
-                                <div className={cn(
-                                    "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-sm",
-                                    msg.role === 'user' ? "bg-muted text-muted-foreground" : "bg-primary/10 text-primary"
-                                )}>
-                                    {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-                                </div>
-                                <div className="flex-1 w-full overflow-hidden">
-                                    <MessageRenderer
-                                        content={msg.content}
-                                        role={msg.role}
-                                        handleSend={handleSend}
-                                        isLast={i === messages.length - 1}
-                                        isStreaming={isStreaming}
-                                    />
-                                    <div className={cn(
-                                        "w-full text-xs text-muted-foreground/60 mt-1",
-                                        msg.role === 'user' ? "text-right pr-2" : "text-left pl-2"
-                                    )}>
-                                        {msg.timestamp ? moment(msg.timestamp).format("hh:mm A") : moment().format("hh:mm A")}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-
-                        {isLoading && !isStreaming && (
-                            <div className="flex gap-3 animate-in fade-in duration-300">
-                                <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                                    <Bot className="w-4 h-4" />
-                                </div>
-                                <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex items-center gap-2">
-                                    <div className="flex gap-1">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="p-4 sm:p-6 border-t border-border bg-card">
-                        <form
-                            onSubmit={handleSend}
-                            className="relative group"
-                        >
-                            <Input
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder={isRecording ? "Listening..." : "Execute command..."}
-                                className={cn(
-                                    "h-14 rounded-2xl bg-muted/30 border-border focus-visible:ring-primary/20 transition-all font-medium py-4 pl-6 pr-28",
-                                    isRecording && "animate-pulse border-primary/50 bg-primary/5"
-                                )}
-                                disabled={isLoading || isVoiceProcessing}
-                            />
-                            <div className="absolute right-2 top-2 flex items-center gap-1.5 z-20">
-                                <button
-                                    type="button"
-                                    onClick={handleVoiceToggle}
-                                    disabled={isLoading || isVoiceProcessing}
-                                    className={cn(
-                                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all active:scale-95 shadow-lg",
-                                        isRecording
-                                            ? "bg-destructive text-destructive-foreground shadow-destructive/20"
-                                            : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                                    )}
-                                >
-                                    {isVoiceProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isLoading || !input.trim() || isRecording || isVoiceProcessing}
-                                    className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all active:scale-95"
-                                >
-                                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                </button>
-                            </div>
-
-                            {/* Listening Overlay/Wave */}
-                            {(isRecording || isVoiceProcessing) && (
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                                    <VoiceWave isProcessing={isVoiceProcessing} />
-                                </div>
-                            )}
-                        </form>
-                        <div className="mt-3 flex items-center justify-between px-1">
-                            <div className="flex items-center gap-1.5 overflow-hidden">
-                                <Cpu className="w-3 h-3 text-muted-foreground/40 shrink-0" />
-                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 truncate">
-                                    Adaptive Intelligence: {config?.model_name || "GPT-4o Mini"}
-                                </span>
-                            </div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/30 shrink-0">
-                                Teamzen OS
-                            </p>
-                        </div>
-                    </div>
+  return (
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col items-end sm:bottom-6 sm:right-6">
+      {isOpen && (
+        <div
+          role="dialog"
+          aria-label="Teamzen assistant"
+          className={cn(
+            "mb-3 flex w-[calc(100vw-2rem)] flex-col overflow-hidden",
+            "h-[min(720px,calc(100dvh-5.5rem))] max-h-[85dvh] sm:w-[440px]",
+            "rounded-2xl border border-border/80 bg-card text-card-foreground",
+            "shadow-[0_24px_64px_-16px_rgba(15,23,42,0.28)]",
+            "animate-in fade-in slide-in-from-bottom-3 duration-300",
+            "dark:shadow-[0_24px_64px_-12px_rgba(0,0,0,0.55)]"
+          )}
+        >
+          <header className="relative shrink-0 border-b border-border/70 bg-gradient-to-b from-muted/50 to-card px-4 py-3.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-500" />
                 </div>
+                <div className="min-w-0">
+                  <h3 className="truncate text-[15px] font-semibold tracking-tight text-foreground">
+                    Teamzen Assistant
+                  </h3>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        isLoading || isStreaming || isRecording
+                          ? "animate-pulse bg-amber-500"
+                          : "bg-emerald-500"
+                      )}
+                    />
+                    {statusLabel}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={clearHistory}
+                  className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  title="Clear chat"
+                  aria-label="Clear chat"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  title="Close"
+                  aria-label="Close assistant"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div
+            ref={scrollRef}
+            className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain bg-[radial-gradient(ellipse_at_top,_var(--muted)_0%,_transparent_55%)] px-4 py-5"
+          >
+            {messages.length === 0 && (
+              <div className="flex h-full min-h-[280px] flex-col justify-center animate-in fade-in duration-500">
+                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-background/80 text-primary shadow-sm">
+                  <Bot className="h-7 w-7" />
+                </div>
+                <div className="mx-auto max-w-[320px] text-center">
+                  <h4 className="text-base font-semibold tracking-tight text-foreground">
+                    Hi{user?.firstName ? ` ${user.firstName}` : ""}
+                  </h4>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    Ask about team attendance, leave approvals, payroll, or onboarding — I can answer and open the right admin screen.
+                  </p>
+                </div>
+                <div className="mt-6 grid gap-2">
+                  {suggestions.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => void handleSend(undefined, q)}
+                      className={cn(
+                        "group flex items-center justify-between gap-3 rounded-xl border border-border/80 bg-background/90 px-3.5 py-3",
+                        "text-left text-[13px] font-medium text-foreground/85 shadow-sm",
+                        "transition-all hover:border-primary/35 hover:bg-primary/[0.04] hover:text-foreground",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      )}
+                    >
+                      <span className="leading-snug">{q}</span>
+                      <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
-            {/* Floating Trigger */}
-            <button
-                id="ai-assistant-trigger"
-                onClick={() => setIsOpen(!isOpen)}
+            {messages.map((msg, i) => (
+              <div
+                key={`${msg.timestamp ?? i}-${i}`}
                 className={cn(
-                    "w-16 h-16 rounded-[2rem] shadow-2xl flex items-center justify-center transition-all duration-500 hover:-translate-y-2 active:scale-90 group relative overflow-hidden",
-                    isOpen
-                        ? "bg-card border border-border text-foreground hover:bg-muted"
-                        : "bg-linear-to-tr from-primary via-primary to-violet-600 text-primary-foreground hover:shadow-primary/30"
+                  "flex animate-in fade-in slide-in-from-bottom-1 duration-300",
+                  msg.role === "user" ? "justify-end" : "justify-start"
                 )}
-            >
-                {/* Ambient Aura */}
-                {!isOpen && (
-                    <>
-                        <div className="absolute inset-0 rounded-[2rem] bg-primary/40 animate-ping opacity-20 scale-125" />
-                        <div className="absolute inset-0 rounded-[2rem] bg-linear-to-tr from-primary to-violet-600 blur-xl opacity-40 group-hover:opacity-80 transition-opacity animate-pulse-slow" />
-                    </>
-                )}
-
-                <div className="relative z-10">
-                    {isOpen ? (
-                        <X className="w-7 h-7 animate-in fade-in zoom-in spin-in-90 duration-500" />
-                    ) : (
-                        <div className="relative">
-                            <Sparkles className="w-7 h-7 animate-in fade-in zoom-in duration-500 group-hover:rotate-12 transition-transform" />
-                        </div>
+              >
+                <div
+                  className={cn(
+                    "min-w-0 max-w-[92%]",
+                    msg.role === "assistant" && "w-full max-w-full"
+                  )}
+                >
+                  <MessageRenderer
+                    content={msg.content}
+                    role={msg.role}
+                    handleSend={handleSend}
+                    isLast={i === messages.length - 1}
+                    isStreaming={isStreaming}
+                    activeTool={i === messages.length - 1 ? activeTool : null}
+                    sources={msg.sources}
+                  />
+                  <div
+                    className={cn(
+                      "mt-1.5 px-1 text-[10px] tabular-nums text-muted-foreground/70",
+                      msg.role === "user" ? "text-right" : "text-left"
                     )}
+                  >
+                    {msg.timestamp
+                      ? moment(msg.timestamp).format("h:mm A")
+                      : moment().format("h:mm A")}
+                  </div>
                 </div>
+              </div>
+            ))}
 
-                {/* Status Dot */}
-                {!isOpen && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 text-[10px] font-black text-white rounded-full flex items-center justify-center shadow-lg border-2 border-background animate-in slide-in-from-bottom-2 duration-700">
-                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                    </div>
+            {isLoading && !isStreaming && (
+              <div className="flex justify-start animate-in fade-in duration-200">
+                <TypingIndicator />
+              </div>
+            )}
+          </div>
+
+          <div className="shrink-0 border-t border-border/70 bg-card p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <form
+              onSubmit={(e) => void handleSend(e)}
+              className={cn(
+                "relative flex items-end gap-1.5 rounded-2xl border border-border bg-muted/35 p-1.5 shadow-inner",
+                "focus-within:border-primary/40 focus-within:ring-2 focus-within:ring-primary/15",
+                isRecording && "border-primary/45 bg-primary/[0.06]"
+              )}
+            >
+              <textarea
+                ref={inputRef}
+                rows={1}
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  const el = e.target;
+                  el.style.height = "auto";
+                  el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+                }}
+                onKeyDown={onComposerKeyDown}
+                placeholder={isRecording ? "Listening…" : "Ask anything…"}
+                disabled={isLoading || isVoiceProcessing}
+                className={cn(
+                  "max-h-[120px] min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2.5",
+                  "text-sm leading-snug text-foreground placeholder:text-muted-foreground/70",
+                  "outline-none disabled:opacity-60"
                 )}
-            </button>
-
-            {/* Mic Error Modal */}
-            <ConfirmationModal
-                isOpen={isMicErrorModalOpen}
-                onClose={() => setIsMicErrorModalOpen(false)}
-                onConfirm={() => setIsMicErrorModalOpen(false)}
-                title={voiceError === "permission-denied" ? "Microphone Access Denied" : "Microphone Not Found"}
-                description={
-                    voiceError === "permission-denied"
-                        ? "Please enable microphone permissions in your browser settings to use voice input."
-                        : "No microphone was detected. Please connect a recording device to use the voice assistant."
-                }
-                confirmText="Got it"
-                variant={voiceError === "permission-denied" ? "warning" : "destructive"}
-            />
+                aria-label="Message"
+              />
+              {(isRecording || isVoiceProcessing) && (
+                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2">
+                  <VoiceWave isProcessing={isVoiceProcessing} />
+                </div>
+              )}
+              <div className="flex shrink-0 items-center gap-1 pb-0.5 pr-0.5">
+                <button
+                  type="button"
+                  onClick={() => void handleVoiceToggle()}
+                  disabled={isLoading || isVoiceProcessing}
+                  aria-label={isRecording ? "Stop listening" : "Voice input"}
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isRecording
+                      ? "bg-destructive text-destructive-foreground"
+                      : "text-muted-foreground hover:bg-background hover:text-foreground"
+                  )}
+                >
+                  {isVoiceProcessing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : isRecording ? (
+                    <MicOff className="h-4 w-4" />
+                  ) : (
+                    <Mic className="h-4 w-4" />
+                  )}
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !input.trim() || isRecording || isVoiceProcessing}
+                  aria-label="Send message"
+                  className={cn(
+                    "flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground",
+                    "transition-all hover:opacity-90 active:scale-95",
+                    "disabled:pointer-events-none disabled:opacity-35",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  )}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </form>
+            <div className="mt-2 flex items-center justify-between px-1">
+              <p className="truncate text-[10px] text-muted-foreground/70">
+                {config?.model_name || "GPT-4o Mini"} 
+              </p>
+              <p className="text-[10px] font-medium text-muted-foreground/50">Admin</p>
+            </div>
+          </div>
         </div>
-    );
+      )}
+
+      <button
+        id="ai-assistant-trigger"
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? "Close assistant" : "Open assistant"}
+        aria-expanded={isOpen}
+        className={cn(
+          "flex h-[52px] w-[52px] items-center justify-center rounded-2xl transition-all duration-300",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "active:scale-95",
+          isOpen
+            ? "border border-border bg-card text-foreground shadow-lg hover:bg-muted"
+            : "bg-primary text-primary-foreground shadow-[0_12px_28px_-8px_oklch(0.45_0.09_200_/_0.55)] hover:brightness-105"
+        )}
+      >
+        {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+      </button>
+
+      <ConfirmationModal
+        isOpen={isMicErrorModalOpen}
+        onClose={() => setIsMicErrorModalOpen(false)}
+        onConfirm={() => setIsMicErrorModalOpen(false)}
+        title={
+          voiceError === "permission-denied"
+            ? "Microphone access denied"
+            : "Microphone not found"
+        }
+        description={
+          voiceError === "permission-denied"
+            ? "Enable microphone permissions in your browser settings to use voice input."
+            : "No microphone was detected. Connect a recording device to use voice."
+        }
+        confirmText="Got it"
+        variant={voiceError === "permission-denied" ? "warning" : "destructive"}
+      />
+    </div>
+  );
 }

@@ -3,19 +3,24 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useGraphQLLeaveTypes, useGraphQLLeaveMutations } from '@/lib/graphql/leaves/leavesHook'
 import { DataTable, Column } from '../common/DataTable'
 import { LeaveType } from '@/lib/graphql/leaves/types'
-import { Plus, X, Edit, Trash2, AlertCircle, RotateCcw } from 'lucide-react'
+import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react'
 import LeaveTypeModal from './LeaveTypeModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 import { useStore } from '@/lib/store/useStore'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { SearchInput } from '../common/SearchInput'
+import { OrganizationFilterSelect } from '@/components/common/OrganizationFilterSelect'
 
 
 const LeaveTypes = () => {
     const [searchTerm, setSearchTerm] = useState("");
+    const [organizationId, setOrganizationId] = useState("");
     const debouncedSearch = useDebounce(searchTerm, 500);
     const { user } = useStore();
-    const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes(debouncedSearch);
+    const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes(
+        debouncedSearch,
+        organizationId || undefined
+    );
     const { createLeaveType, updateLeaveType, deleteLeaveType } = useGraphQLLeaveMutations();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState<LeaveType | null>(null);
@@ -61,11 +66,11 @@ const LeaveTypes = () => {
             key: 'name',
             label: 'Name',
             render: (name, row) => (
-                <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner uppercase">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-medium text-xs uppercase">
                         {row.code}
                     </div>
-                    <span className="font-black text-foreground tracking-tight">
+                    <span className="font-medium text-foreground text-sm">
                         {name}
                     </span>
                 </div>
@@ -78,10 +83,9 @@ const LeaveTypes = () => {
             label: 'Status',
             render: (isActive: boolean) => (
                 <span
-                    className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${isActive === true
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5"
-                        : "bg-destructive/10 text-destructive border border-destructive/20 shadow-destructive/5"
-
+                    className={`rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize ${isActive === true
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-destructive/10 text-destructive"
                         }`}
                 >
                     {isActive ? 'Active' : 'Inactive'}
@@ -118,15 +122,15 @@ const LeaveTypes = () => {
                             });
                             setIsModalOpen(true);
                         }}
-                        className="p-3 bg-primary/10 text-primary rounded-xl hover:bg-primary hover:text-primary-foreground transition-all duration-300 shadow-lg shadow-primary/5 active:scale-90"
-                        title="Modify Protocol"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                        title="Edit"
                     >
                         <Edit className="w-4 h-4" />
                     </button>
                     <button
                         onClick={() => handleDelete(type.id)}
-                        className="p-3 bg-destructive/10 text-destructive rounded-xl hover:bg-destructive hover:text-white transition-all duration-300 shadow-lg shadow-destructive/5 active:scale-90"
-                        title="Decommission"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-colors"
+                        title="Delete"
                     >
                         <Trash2 className="w-4 h-4" />
                     </button>
@@ -214,20 +218,22 @@ const LeaveTypes = () => {
 
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center py-32 space-y-6">
-            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            <p className="text-premium-label animate-pulse">Synchronizing Policies Matrix...</p>
+        <div className="space-y-3" aria-busy="true" aria-label="Loading">
+            <div className="flex justify-end">
+                <div className="h-9 w-36 animate-pulse rounded-md bg-muted" />
+            </div>
+            <div className="space-y-2 rounded-xl border border-border bg-card p-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-14 animate-pulse rounded-md bg-muted" />
+                ))}
+            </div>
         </div>
     );
 
 
     if (error) return (
-        <div className="p-12 text-center bg-destructive/10 rounded-4xl border border-destructive/20 mx-auto max-w-2xl animate-in zoom-in-95 duration-500">
-            <div className="w-16 h-16 bg-destructive/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-destructive" />
-            </div>
-            <h3 className="text-xl font-black text-foreground tracking-tight mb-2">Policy Violation</h3>
-            <p className="text-muted-foreground font-medium text-sm leading-relaxed">{error.message}</p>
+        <div className="mx-auto max-w-md rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-10 text-center">
+            <p className="text-sm text-destructive">{error.message}</p>
         </div>
     );
 
@@ -235,19 +241,19 @@ const LeaveTypes = () => {
     const filteredLeaveTypes = leaveTypes || [];
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-10">
-                <div className="relative">
-                    <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
-                </div>
-
-                <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+        <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
                     <SearchInput
                         placeholder="Search leave types..."
                         value={searchTerm}
                         onChange={setSearchTerm}
                         containerClassName="flex-1 lg:w-64 min-w-[200px]"
-                        className="h-12"
+                        className="h-9"
+                    />
+                    <OrganizationFilterSelect
+                        value={organizationId}
+                        onChange={setOrganizationId}
                     />
                     <button
                         onClick={() => {
@@ -257,24 +263,25 @@ const LeaveTypes = () => {
                         }}
                         className="btn-primary flex-1 lg:flex-none"
                     >
-                        <Plus className="w-5 h-5 mr-3" />
-                        <span>Create Leave Type</span>
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        <span>Create leave type</span>
                     </button>
                     <button
                         onClick={() => refetch()}
-                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        title="Refresh"
                     >
-                        <RotateCcw className="w-5 h-5" />
+                        <RotateCcw className="w-4 h-4" />
                     </button>
                 </div>
-
             </div>
 
-            <DataTable
-                data={filteredLeaveTypes}
-                columns={columns}
-            />
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+                <DataTable
+                    data={filteredLeaveTypes}
+                    columns={columns}
+                />
+            </div>
 
 
             <div ref={formRef}>

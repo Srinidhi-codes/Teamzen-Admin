@@ -1,29 +1,39 @@
 "use client"
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useGraphQLLeaveBalances, useGraphQLLeaveMutations, useGraphQLLeaveTypes } from '@/lib/graphql/leaves/leavesHook'
-import { useUsers, useMe } from '@/lib/graphql/users/userHooks'
+import { useGraphQLUsers } from '@/lib/graphql/users/userHook'
+import { useMe } from '@/lib/graphql/users/userHooks'
 import { LeaveBalance as LeaveBalanceType } from '@/lib/graphql/leaves/types'
-import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react'
+import { Plus, RotateCcw } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { SearchInput } from '../common/SearchInput'
-
-
+import { OrganizationFilterSelect } from '@/components/common/OrganizationFilterSelect'
 import { DataTable, Column } from '../common/DataTable'
 import LeaveBalanceModal from './LeaveBalanceModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 
+const PAGE_SIZE = 10;
 
 const LeaveBalance = () => {
     const [searchQuery, setSearchQuery] = useState('');
+    const [organizationId, setOrganizationId] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
     const debouncedSearch = useDebounce(searchQuery, 500);
     const { me } = useMe();
-    const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances(debouncedSearch);
-    const { leaveTypes } = useGraphQLLeaveTypes();
-    const { users } = useUsers();
+    const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances(
+        debouncedSearch,
+        organizationId || undefined
+    );
+    const { leaveTypes } = useGraphQLLeaveTypes(undefined, organizationId || undefined);
+    // Modal user picker only — not used to drive the table (table comes from balances)
+    const { users } = useGraphQLUsers({
+        page: 1,
+        pageSize: 200,
+        filters: organizationId ? { organizationId } : undefined,
+    });
     const { createLeaveBalance, updateLeaveBalance, deleteLeaveBalance } = useGraphQLLeaveMutations();
 
-    // Role-based logic
     const isManager = me?.role === 'manager';
     const isAdmin = me?.role === 'admin' || me?.role === 'superadmin' || me?.role === 'hr';
 
@@ -47,54 +57,65 @@ const LeaveBalance = () => {
         }
     }, [isModalOpen]);
 
-    // --- Data Aggregation for the Portfolio Table ---
-    const aggregatedData = users.map(user => {
-        const userBalances = (leaveBalanceData || []).filter(b => b.user.id === user.id && b.isActive);
-        const row: any = {
-            id: user.id,
-            user: user,
-            employeeName: `${user.firstName} ${user.lastName}`,
-            departmentName: user.department?.name || '',
-            organizationName: user.organization?.name || '',
-        };
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch, organizationId]);
 
-        userBalances.forEach(b => {
+    // Aggregate from leave balances (not the paginated users list)
+    const aggregatedData = useMemo(() => {
+        const byUser = new Map<string, any>();
+
+        for (const b of leaveBalanceData || []) {
+            if (!b?.user?.id || b.isActive === false) continue;
+            if (isManager && b.user.manager?.id !== me?.id && b.user.id !== me?.id) {
+                continue;
+            }
+
+            let row = byUser.get(b.user.id);
+            if (!row) {
+                row = {
+                    id: b.user.id,
+                    user: b.user,
+                    employeeName: `${b.user.firstName || ""} ${b.user.lastName || ""}`.trim() || "Employee",
+                    departmentName: b.user.department?.name || "",
+                    organizationName: b.user.organization?.name || "",
+                };
+                byUser.set(b.user.id, row);
+            }
+
             row[b.leaveType.id] = {
                 id: b.id,
                 available: b.availableBalance,
                 total: b.totalAllocation,
                 leaveType: b.leaveType,
-                original: b
+                original: b,
             };
-        });
-
-        return row;
-    }).filter(row => {
-        // Only show rows that have at least one leave balance record
-        const hasBalances = Object.keys(row).some(key =>
-            !['id', 'user', 'employeeName', 'departmentName', 'organizationName'].includes(key)
-        );
-
-        if (isManager) {
-            return row.user.manager?.id === me?.id && hasBalances;
         }
-        return hasBalances;
-    });
+
+        return Array.from(byUser.values()).sort((a, b) =>
+            a.employeeName.localeCompare(b.employeeName)
+        );
+    }, [leaveBalanceData, isManager, me?.id]);
+
+    const totalRows = aggregatedData.length;
+    const pagedData = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return aggregatedData.slice(start, start + PAGE_SIZE);
+    }, [aggregatedData, currentPage]);
 
     const dynamicColumns: Column<any>[] = [
         {
             key: 'employeeName',
             label: 'Employee',
             render: (name) => (
-                <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner">
-                        {name.charAt(0)}
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-medium text-xs">
+                        {(name || "?").charAt(0)}
                     </div>
-                    <span className="font-black text-foreground tracking-tight">{name}</span>
+                    <span className="font-medium text-foreground text-sm">{name}</span>
                 </div>
             )
         },
-
         ...leaveTypes
             .filter(lt => {
                 if (isManager) {
@@ -107,7 +128,6 @@ const LeaveBalance = () => {
                 key: lt.id,
                 label: lt.name,
                 render: (val: any, row: any) => {
-                    const isSelf = row.user.id === me?.id;
                     const canEdit = isAdmin || (isManager && row.user.manager?.id === me?.id);
 
                     return val ? (
@@ -131,12 +151,12 @@ const LeaveBalance = () => {
                         >
                             <div className="flex items-baseline gap-1.5 mb-2">
                                 <span className={cn(
-                                    "text-xl font-black text-foreground transition-colors",
+                                    "text-lg font-semibold text-foreground transition-colors",
                                     canEdit && "group-hover:text-primary"
                                 )}>
                                     {val.available}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">/ {val.total}d</span>
+                                <span className="text-xs text-muted-foreground">/ {val.total}d</span>
                             </div>
                             <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div
@@ -151,16 +171,12 @@ const LeaveBalance = () => {
                         </div>
                     ) : (
                         <div className="flex items-center justify-center py-4">
-                            <span className="text-muted-foreground/30 text-[10px] font-black uppercase tracking-[0.2em]">—</span>
+                            <span className="text-muted-foreground/40 text-sm">—</span>
                         </div>
                     )
                 }
-
             }))
-
     ];
-
-    const filteredAggregated = aggregatedData;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -187,11 +203,6 @@ const LeaveBalance = () => {
         }
     };
 
-    const handleDelete = (id: string) => {
-        setDeleteId(id);
-        setIsConfirmOpen(true);
-    };
-
     const confirmDelete = async () => {
         if (!deleteId) return;
         try {
@@ -203,32 +214,45 @@ const LeaveBalance = () => {
         setDeleteId(null);
     };
 
-
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center py-32 space-y-6">
-            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest animate-pulse">Syncing Entitlements...</p>
+        <div className="space-y-3" aria-busy="true" aria-label="Loading">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="rounded-xl border border-border bg-card p-5">
+                        <div className="mb-3 h-4 w-28 animate-pulse rounded-md bg-muted" />
+                        <div className="mb-2 h-8 w-16 animate-pulse rounded-md bg-muted" />
+                        <div className="h-3 w-full animate-pulse rounded-md bg-muted" />
+                    </div>
+                ))}
+            </div>
         </div>
     );
-
 
     if (error) return (
-        <div className="p-8 text-center bg-destructive/10 rounded-3xl border border-destructive/20">
-            <p className="text-destructive font-black text-sm uppercase tracking-widest">Entitlement Breach: {error.message}</p>
+        <div className="mx-auto max-w-md rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-10 text-center">
+            <p className="text-sm text-destructive">{error.message}</p>
         </div>
     );
 
+    const modalUsers = (users || []).filter((u: any) => {
+        if (isManager) return u.manager?.id === me?.id;
+        return true;
+    });
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex flex-col lg:flex-row justify-end items-center gap-10">
-                <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 w-full lg:w-auto">
+        <div className="space-y-6">
+            <div className="flex flex-col lg:flex-row justify-end items-center gap-4">
+                <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
                     <SearchInput
                         placeholder="Search by name, department, or company..."
                         value={searchQuery}
                         onChange={setSearchQuery}
                         containerClassName="flex-1 sm:w-80"
-                        className="h-12"
+                        className="h-9"
+                    />
+                    <OrganizationFilterSelect
+                        value={organizationId}
+                        onChange={setOrganizationId}
                     />
                     <button
                         onClick={() => {
@@ -238,36 +262,36 @@ const LeaveBalance = () => {
                         }}
                         className="btn-primary w-full sm:w-auto"
                     >
-                        <Plus className="w-5 h-5 mr-3" />
-                        <span>Allocate Balance</span>
+                        <Plus className="w-4 h-4 mr-1.5" />
+                        <span>Allocate balance</span>
                     </button>
                     <button
                         onClick={() => refetch()}
-                        className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
-                        title="Synchronize Data"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        title="Refresh"
                     >
-                        <RotateCcw className="w-5 h-5" />
+                        <RotateCcw className="w-4 h-4" />
                     </button>
-
                 </div>
             </div>
 
-
-            <div className="bg-card rounded-4xl border border-border shadow-2xl shadow-primary/5 overflow-hidden p-2">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <DataTable
-                    data={filteredAggregated}
+                    data={pagedData}
                     columns={dynamicColumns}
+                    total={totalRows}
+                    currentPage={currentPage}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setCurrentPage}
+                    paginationLabel="employees"
                 />
             </div>
 
-
-            {filteredAggregated.length === 0 && (
-                <div className="text-center py-32 bg-muted/20 rounded-4xl border-2 border-dashed border-border animate-in fade-in duration-700">
-                    <div className="text-6xl mb-6 opacity-20">📭</div>
-                    <p className="text-muted-foreground font-black text-sm uppercase tracking-widest">No assets identified in the current perimeter.</p>
+            {totalRows === 0 && (
+                <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
+                    <p className="text-sm text-muted-foreground">No leave balances found.</p>
                 </div>
             )}
-
 
             <div ref={formRef}>
                 {isModalOpen && (
@@ -281,7 +305,7 @@ const LeaveBalance = () => {
                         formData={formData}
                         setFormData={setFormData}
                         editingBalance={!!editingBalance}
-                        users={isManager ? users.filter(u => u.manager?.id === me?.id) : users}
+                        users={modalUsers}
                         leaveTypes={isManager
                             ? leaveTypes.filter(lt => {
                                 const name = lt.name.toLowerCase();
@@ -289,7 +313,6 @@ const LeaveBalance = () => {
                             })
                             : leaveTypes
                         }
-
                     />
                 )}
             </div>
@@ -303,7 +326,6 @@ const LeaveBalance = () => {
                 confirmText="Deactivate"
                 variant="destructive"
             />
-
         </div>
     );
 }

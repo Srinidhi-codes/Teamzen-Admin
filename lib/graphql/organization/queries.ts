@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_ORGANIZATIONS = gql`
-    query organizations($search: String) {
-        organizations(search: $search) {
+    query organizations($search: String, $plan: String, $isActive: Boolean) {
+        organizations(search: $search, plan: $plan, isActive: $isActive) {
             id
             name
             logo{
@@ -15,6 +15,12 @@ export const GET_ORGANIZATIONS = gql`
             isActive
             registrationNumber
             llmApiKey
+            accent
+            faceAttendanceEnabled
+            weekendDays
+            plan
+            planExpiresAt
+            daysUntilPlanExpiry
             createdAt
             updatedAt
         }
@@ -36,6 +42,9 @@ export const GET_ORGANIZATION = gql`
             isActive
             registrationNumber
             llmApiKey
+            accent
+            faceAttendanceEnabled
+            weekendDays
             createdAt
             updatedAt
         }
@@ -43,8 +52,8 @@ export const GET_ORGANIZATION = gql`
 `
 
 export const GET_OFFICE_LOCATIONS = gql`
-    query Officelocations($search: String) {
-        officeLocations(search: $search) {
+    query Officelocations($search: String, $organizationId: ID, $isActive: Boolean) {
+        officeLocations(search: $search, organizationId: $organizationId, isActive: $isActive) {
             id
             name
             address
@@ -58,14 +67,18 @@ export const GET_OFFICE_LOCATIONS = gql`
             longitude
             geoRadiusMeters
             organizationId
+            organization {
+                id
+                name
+            }
             isActive
             createdAt
         }
     }
 `
 export const GET_DEPARTMENTS = gql`
-    query departments($search: String) {
-        departments(search: $search) {
+    query departments($search: String, $organizationId: ID, $isActive: Boolean) {
+        departments(search: $search, organizationId: $organizationId, isActive: $isActive) {
             id
             name
             organization {
@@ -80,8 +93,8 @@ export const GET_DEPARTMENTS = gql`
 `
 
 export const GET_DESIGNATIONS = gql`
-    query designations($search: String) {
-        designations(search: $search) {
+    query designations($search: String, $organizationId: ID, $isActive: Boolean) {
+        designations(search: $search, organizationId: $organizationId, isActive: $isActive) {
             id
             name
             organization {

@@ -21,10 +21,16 @@ export interface User {
 
   employeeId?: string | null;
   employmentType?: "full_time" | "contract" | "intern";
+  faceEnrolled?: boolean;
+  faceEnrolledAt?: string | null;
 
   organization?: {
     id: string;
     name: string;
+    plan?: "free" | "pro" | "elite" | string;
+    planExpiresAt?: string | null;
+    daysUntilPlanExpiry?: number | null;
+    accent?: string | null;
     logo?: {
       url: string;
     } | null;
@@ -32,6 +38,7 @@ export interface User {
 
   hasSeenOnboarding: boolean;
   hasSeenAiOnboarding: boolean;
+  emailLoginAlerts?: boolean;
 
   manager?: {
     id: string;
@@ -65,10 +72,27 @@ export interface User {
     salaryStructure: {
       id: string;
       name: string;
+      components?: {
+        id: string;
+        component: {
+          id: string;
+          name: string;
+          code: string;
+          componentType: string;
+        };
+        calculationType: string;
+        value: number;
+      }[];
     };
     annualCtc: number;
     effectiveFrom: string;
     isActive: boolean;
+    componentOverrides?: {
+      id: string;
+      component: { id: string; name: string; code: string };
+      isExcluded: boolean;
+      overrideValue: number | null;
+    }[];
   } | null;
 }
 
@@ -84,4 +108,4 @@ export interface SecurityLogResponse {
   mySecurityLogs: {
     results: SecurityLog[];
   };
-}
+}

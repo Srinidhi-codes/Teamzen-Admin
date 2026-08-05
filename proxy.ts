@@ -16,6 +16,11 @@ export async function proxy(request: NextRequest) {
     '/leaves',
     '/payroll',
     '/organizations',
+    '/reports',
+    '/performance',
+    '/policies',
+    '/settings',
+    '/notifications',
   ]
 
   const authPaths = ['/login', '/register', '/forgot-password']

@@ -91,44 +91,59 @@ export function useGraphQLLeaveMutations() {
     };
 }
 
-export function useGraphQLLeaveBalances(search?: string) {
+export function useGraphQLLeaveBalances(search?: string, organizationId?: string) {
     const { data, loading, error, refetch } = useQuery<GetLeaveBalanceResponse>(GET_LEAVE_BALANCE, {
-        variables: { allOrg: true, search },
-        fetchPolicy: 'network-only',
+        variables: {
+            allOrg: true,
+            search: search || undefined,
+            organizationId: organizationId || undefined,
+        },
     })
 
     return {
         leaveBalanceData: data?.leaveBalance ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
 }
 
-export function useGraphQLLeaveTypes(search?: string) {
+export function useGraphQLLeaveTypes(search?: string, organizationId?: string) {
     const { data, loading, error, refetch } = useQuery<GetLeavesResponse>(GET_LEAVES, {
-        variables: { search },
-        fetchPolicy: 'network-only',
+        variables: {
+            search: search || undefined,
+            organizationId: organizationId || undefined,
+        },
     })
 
     return {
         leaveTypes: data?.leaveTypes ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
 }
 
 
-export function useGraphQLLeaveRequests(approvalsOnly: boolean = true, search?: string) {
+export function useGraphQLLeaveRequests(
+    approvalsOnly: boolean = true,
+    search?: string,
+    organizationId?: string,
+) {
   const { data, loading, error, refetch } = useQuery<GetLeaveRequestResponse>(GET_LEAVE_REQUESTS, {
-    variables: { approvalsOnly, search },
-    fetchPolicy: 'network-only',
+    variables: {
+        approvalsOnly,
+        search: search || undefined,
+        organizationId: organizationId || undefined,
+    },
   })
 
     return {
         leaveRequestData: data?.getLeaveRequests ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
@@ -158,15 +173,18 @@ export function useGraphQLLeaveRequestProcess() {
 
 }
 
-export function useGraphQLCompanyHolidays(search?: string) {
+export function useGraphQLCompanyHolidays(search?: string, organizationId?: string) {
     const { data, loading, error, refetch } = useQuery<GetCompanyHolidaysResponse>(GET_COMPANY_HOLIDAYS, {
-        variables: { search },
-        fetchPolicy: 'network-only',
+        variables: {
+            search: search || undefined,
+            organizationId: organizationId || undefined,
+        },
     })
 
     return {
         companyHolidays: data?.companyHolidays ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetch
     }
