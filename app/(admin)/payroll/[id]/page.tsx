@@ -15,6 +15,7 @@ import {
   Settings2,
   RefreshCcw,
   Play,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { PayrollAdjustmentModal } from "@/components/payroll/PayrollAdjustmentModal";
@@ -25,12 +26,21 @@ import {
   EXECUTE_PAYROLL_PAYOUT,
 } from "@/lib/graphql/payroll/mutations";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Card } from "@/components/common/Card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/admin/DataTable";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
+import api from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 const monthNames = [
   "January",
@@ -47,6 +57,12 @@ const monthNames = [
   "December",
 ];
 
+const BANK_FORMATS = [
+  { value: "neft", label: "NEFT (generic)" },
+  { value: "imps", label: "IMPS (generic)" },
+  { value: "hdfc", label: "HDFC bulk" },
+  { value: "icici", label: "ICICI bulk" },
+] as const;
 function statusChip(status: string) {
   const map: Record<string, string> = {
     draft: "bg-muted text-muted-foreground",
@@ -84,6 +100,8 @@ export default function PayrollRunDetailsPage({
   const [processRun, { loading: processing }] = useMutation(PROCESS_PAYROLL_RUN);
 
   const [selectedUser, setSelectedUser] = React.useState<any>(null);
+  const [bankFormat, setBankFormat] = React.useState<string>("neft");
+  const [downloadingBank, setDownloadingBank] = React.useState(false);
   const run = data?.payrollRun;
 
   if (user && user.role !== "admin" && user.role !== "superadmin") {
@@ -183,6 +201,68 @@ export default function PayrollRunDetailsPage({
     }
   };
 
+  const handleDownloadBankFile = async () => {
+    setDownloadingBank(true);
+    try {
+      const res = await api.get(
+        API_ENDPOINTS.payrollBankExport(id, bankFormat),
+        { responseType: "blob" }
+      );
+      const contentType = res.headers?.["content-type"] || "";
+      if (contentType.includes("application/json")) {
+        const text = await (res.data as Blob).text();
+        let msg = "Download failed";
+        try {
+          msg = JSON.parse(text)?.error || msg;
+        } catch {
+          /* ignore */
+        }
+        throw new Error(msg);
+      }
+      const disposition = res.headers?.["content-disposition"] || "";
+      const match = /filename="?([^"]+)"?/i.exec(disposition);
+      const filename =
+        match?.[1] ||
+        `bank_payout_${bankFormat}_run${id}.csv`;
+      const blob = new Blob([res.data], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      const skipped = Number(res.headers?.["x-skipped-count"] || 0);
+      const included = Number(res.headers?.["x-included-count"] || 0);
+      if (skipped > 0) {
+        toast.success(
+          `Downloaded ${included} payouts · skipped ${skipped} without bank details`
+        );
+      } else {
+        toast.success(`Downloaded bank file (${included} employees)`);
+      }
+    } catch (err: any) {
+      const data = err?.response?.data;
+      if (data instanceof Blob) {
+        try {
+          const text = await data.text();
+          const parsed = JSON.parse(text);
+          toast.error(parsed?.error || err.message || "Download failed");
+        } catch {
+          toast.error(err.message || "Download failed");
+        }
+      } else {
+        toast.error(
+          data?.error || err.message || "Download failed"
+        );
+      }
+    } finally {
+      setDownloadingBank(false);
+    }
+  };
+
   const recoveries = advancePreview?.advanceRecoveryPreview || [];
 
   return (
@@ -275,7 +355,7 @@ export default function PayrollRunDetailsPage({
         </Card>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           id="payroll-process"
           onClick={handleProcess}
@@ -312,7 +392,42 @@ export default function PayrollRunDetailsPage({
           <DollarSign className="mr-2 h-4 w-4" />
           {paying ? "Processing…" : "Process payouts"}
         </Button>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-muted/30 p-1.5">
+          <Select value={bankFormat} onValueChange={setBankFormat}>
+            <SelectTrigger className="h-8 w-[150px] border-0 bg-transparent shadow-none">
+              <SelectValue placeholder="Format" />
+            </SelectTrigger>
+            <SelectContent>
+              {BANK_FORMATS.map((f) => (
+                <SelectItem key={f.value} value={f.value}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            id="payroll-bank-export"
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8"
+            disabled={downloadingBank || !hasPayslips}
+            onClick={handleDownloadBankFile}
+          >
+            {downloadingBank ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="mr-2 h-4 w-4" />
+            )}
+            {downloadingBank ? "Preparing…" : "Bank file"}
+          </Button>
+        </div>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Bank file exports NEFT/IMPS CSV for net banking upload. Skips employees
+        without account number or IFSC.
+      </p>
 
       <Card className="overflow-hidden p-0">
         <DataTable

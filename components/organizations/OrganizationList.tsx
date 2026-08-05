@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, Edit, Building2, FileText, CreditCard, Hash, Loader2 } from "lucide-react";
+import { Users, Building2, FileText, CreditCard, Hash, Loader2 } from "lucide-react";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store/useStore";
@@ -15,11 +15,10 @@ import { cn } from "@/lib/utils";
 
 interface Props {
   organizations: Organization[];
-  onEdit: (org: Organization) => void;
   onViewEmployees: (org: Organization) => void;
 }
 
-export default function OrganizationList({ organizations, onEdit, onViewEmployees }: Props) {
+export default function OrganizationList({ organizations, onViewEmployees }: Props) {
   const router = useRouter();
   const { activateOrganization } = useGraphQLActivateOrganizationMutation();
   const { suspendOrganization } = useGraphQLSuspendOrganizationMutation();
@@ -139,23 +138,13 @@ export default function OrganizationList({ organizations, onEdit, onViewEmployee
               Employees
             </button>
             {(user?.role === "admin" || user?.role === "superadmin") && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onEdit(org)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                  aria-label="Edit"
-                >
-                  <Edit className="h-3.5 w-3.5" />
-                </button>
-                <div className="flex h-8 items-center px-1">
-                  {togglingId === String(org.id) ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  ) : (
-                    <Switch checked={org.isActive} onCheckedChange={() => toggleStatus(org)} />
-                  )}
-                </div>
-              </>
+              <div className="flex h-8 items-center px-1">
+                {togglingId === String(org.id) ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                ) : (
+                  <Switch checked={org.isActive} onCheckedChange={() => toggleStatus(org)} />
+                )}
+              </div>
             )}
           </div>
         </div>

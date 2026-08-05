@@ -19,7 +19,7 @@ import {
   ReportError,
   ReportLoadingBlocks,
   ReportTableShell,
-  chartTooltipStyle,
+  chartTooltipProps,
 } from "./ReportShared";
 import type { WorkforceReport } from "@/lib/graphql/reports/types";
 
@@ -53,7 +53,7 @@ export function WorkforceReportView({
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-              <Tooltip contentStyle={chartTooltipStyle} />
+              <Tooltip {...chartTooltipProps} />
               <Legend />
               <Line
                 type="monotone"
@@ -107,7 +107,7 @@ export function WorkforceReportView({
                     <Cell key={d.name} fill={d.color || `hsl(${i * 40} 50% 50%)`} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={chartTooltipStyle} />
+                <Tooltip {...chartTooltipProps} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -132,7 +132,7 @@ export function WorkforceReportView({
                     <Cell key={d.name} fill={d.color || `hsl(${i * 50 + 20} 45% 55%)`} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={chartTooltipStyle} />
+                <Tooltip {...chartTooltipProps} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>

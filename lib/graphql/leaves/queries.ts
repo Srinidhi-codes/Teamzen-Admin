@@ -35,6 +35,14 @@ export const GET_LEAVE_BALANCE = gql`
     user{
         id
         firstName
+        lastName
+        manager {
+          id
+        }
+        department {
+          id
+          name
+        }
         organization {
           id
           name

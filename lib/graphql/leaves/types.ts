@@ -27,6 +27,10 @@ export interface LeaveBalance {
     user: {
         id: string;
         firstName: string;
+        lastName?: string;
+        manager?: { id: string } | null;
+        department?: { id: string; name: string } | null;
+        organization?: { id: string; name: string } | null;
     };
     leaveType: LeaveType;
     year: number;

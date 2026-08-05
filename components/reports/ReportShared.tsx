@@ -3,15 +3,35 @@
 import { cn } from "@/lib/utils";
 
 const chartTooltipStyle = {
-  backgroundColor: "var(--card)",
-  borderColor: "var(--border)",
+  backgroundColor: "var(--popover)",
+  border: "1px solid var(--border)",
   borderRadius: "8px",
   fontSize: "12px",
-  color: "var(--foreground)",
+  color: "var(--popover-foreground)",
   boxShadow: "none",
 };
 
-export { chartTooltipStyle };
+const chartTooltipItemStyle = {
+  color: "var(--popover-foreground)",
+};
+
+const chartTooltipLabelStyle = {
+  color: "var(--popover-foreground)",
+};
+
+/** Spread onto Recharts <Tooltip /> so dark-mode text stays readable. */
+const chartTooltipProps = {
+  contentStyle: chartTooltipStyle,
+  itemStyle: chartTooltipItemStyle,
+  labelStyle: chartTooltipLabelStyle,
+};
+
+export {
+  chartTooltipStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+  chartTooltipProps,
+};
 
 export function ChartPanel({
   title,

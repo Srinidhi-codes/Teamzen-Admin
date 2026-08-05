@@ -11,6 +11,7 @@ import {
   Users,
   UserCheck as UserCheckIcon,
   RotateCcw,
+  Upload,
 } from "lucide-react";
 import { Stat } from "@/components/common/Stats";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -205,6 +206,17 @@ export default function EmployeesPage() {
               <Download className="h-4 w-4" />
               Export
             </button>
+            <Link
+              href={
+                organizationId
+                  ? `/employees/import?organizationId=${encodeURIComponent(organizationId)}`
+                  : "/employees/import"
+              }
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <Upload className="h-4 w-4" />
+              Import
+            </Link>
             <button
               onClick={handleAdd}
               className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
@@ -311,7 +323,7 @@ export default function EmployeesPage() {
                 : "Create a new employee record in your organization."}
             </DialogDescription>
           </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
+          <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
             <EmployeeForm
               key={selectedEmployee?.id || "new-employee"}
               initialData={selectedEmployee}

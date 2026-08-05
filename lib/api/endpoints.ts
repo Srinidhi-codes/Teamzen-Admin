@@ -24,6 +24,12 @@ export const API_ENDPOINTS = {
   SALARY_STRUCTURES: "/payroll/salary-structures/",
   PAYROLL_RUNS: "/payroll/runs/",
   PAYROLL_RECORDS: "/payroll/records/",
+  PAYROLL_IMPORT_UPLOAD: "/payroll/import/upload/",
+  PAYSLIP_TEMPLATE_CLONE: "/payroll/payslip-templates/clone/",
+  payslipTemplateDemo: (id: string | number) =>
+    `/payroll/payslip-templates/${id}/demo/`,
+  payrollBankExport: (runId: string | number, format: string) =>
+    `/payroll/runs/${runId}/bank-export/?bank_format=${encodeURIComponent(format)}`,
 
   // AI Policies
   POLICIES: "/ai/policies/",

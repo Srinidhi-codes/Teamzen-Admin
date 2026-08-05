@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGraphQLUserMutations, useGraphQLUsers } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
-import { Loader2, Eye, EyeOff, Plus } from "lucide-react";
+import { Loader2, Eye, EyeOff, Plus, AlertCircle } from "lucide-react";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
@@ -20,10 +20,11 @@ import { FormSkeleton } from "../common/Skeleton";
 
 import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
 import { Switch as ToggleSwitch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import { Tabs, TabsContent } from "../ui/tabs";
 import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucide-react";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
+import { SegmentedTabs } from "@/components/common/SegmentedTabs";
 
 interface EmployeeFormProps {
     initialData?: User | null;
@@ -62,66 +63,142 @@ const employeeSchema = z.object({
     effectiveFrom: z.string().optional(),
 });
 
+type EmployeeTab = "identity" | "employment" | "financials" | "payroll";
+
+const FIELD_TAB_MAP: Record<string, EmployeeTab> = {
+    firstName: "identity",
+    lastName: "identity",
+    email: "identity",
+    password: "identity",
+    phoneNumber: "identity",
+    role: "identity",
+    dateOfBirth: "identity",
+    dateOfJoining: "employment",
+    dateOfExit: "employment",
+    employmentType: "employment",
+    departmentId: "employment",
+    designationId: "employment",
+    officeLocationId: "employment",
+    organizationId: "employment",
+    managerId: "employment",
+    bankAccountNumber: "financials",
+    bankIfscCode: "financials",
+    panNumber: "financials",
+    aadharNumber: "financials",
+    uanNumber: "financials",
+    salaryStructureId: "payroll",
+    annualCtc: "payroll",
+    effectiveFrom: "payroll",
+};
+
+const TAB_ORDER: EmployeeTab[] = ["identity", "employment", "financials", "payroll"];
+
+const TAB_LABELS: Record<EmployeeTab, string> = {
+    identity: "Identity",
+    employment: "Work",
+    financials: "Finance",
+    payroll: "Payroll",
+};
+
+function tabHasErrors(tab: EmployeeTab, fieldErrors: Record<string, string>): boolean {
+    return Object.keys(fieldErrors).some((field) => FIELD_TAB_MAP[field] === tab);
+}
+
+function countTabErrors(tab: EmployeeTab, fieldErrors: Record<string, string>): number {
+    return Object.keys(fieldErrors).filter((field) => FIELD_TAB_MAP[field] === tab).length;
+}
+
+function getFirstErrorTab(fieldErrors: Record<string, string>): EmployeeTab {
+    for (const tab of TAB_ORDER) {
+        if (tabHasErrors(tab, fieldErrors)) return tab;
+    }
+    return "identity";
+}
+
+function getErrorTabs(fieldErrors: Record<string, string>): EmployeeTab[] {
+    return TAB_ORDER.filter((tab) => tabHasErrors(tab, fieldErrors));
+}
+
+function buildEmployeeFormData(initialData?: User | null) {
+    return {
+        firstName: initialData?.firstName || "",
+        lastName: initialData?.lastName || "",
+        email: initialData?.email || "",
+        dateOfBirth: initialData?.dateOfBirth || "",
+        password: "",
+        phoneNumber: initialData?.phoneNumber || "",
+        role: initialData?.role || "employee",
+        dateOfJoining: initialData?.dateOfJoining || moment().format("YYYY-MM-DD"),
+        dateOfExit: initialData?.dateOfExit || "",
+        employmentType: initialData?.employmentType || "full_time",
+        isActive: initialData?.isActive !== false,
+        departmentId: initialData?.department?.id ? String(initialData.department.id) : "",
+        designationId: initialData?.designation?.id ? String(initialData.designation.id) : "",
+        officeLocationId: initialData?.officeLocation?.id ? String(initialData.officeLocation.id) : "",
+        isStaff: initialData?.isStaff !== false,
+        isVerified: initialData?.isVerified !== false,
+        managerId: initialData?.manager?.id ? String(initialData.manager.id) : "",
+        organizationId: initialData?.organization?.id ? String(initialData.organization.id) : "",
+        bankAccountNumber: initialData?.bankAccountNumber || "",
+        bankIfscCode: initialData?.bankIfscCode || "",
+        panNumber: initialData?.panNumber || "",
+        aadharNumber: initialData?.aadharNumber || "",
+        uanNumber: initialData?.uanNumber || "",
+        salaryStructureId: initialData?.salaryDetails?.salaryStructure?.id
+            ? String(initialData.salaryDetails.salaryStructure.id)
+            : "",
+        annualCtc: initialData?.salaryDetails?.annualCtc
+            ? String(initialData.salaryDetails.annualCtc)
+            : "",
+        effectiveFrom:
+            initialData?.salaryDetails?.effectiveFrom ||
+            moment().startOf("month").format("YYYY-MM-DD"),
+    };
+}
+
 export default function EmployeeForm({
     initialData,
     onSuccess,
     onCancel,
 }: EmployeeFormProps) {
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        dateOfBirth: "",
-        password: "",
-        phoneNumber: "",
-        role: "employee",
-        dateOfJoining: moment().format("YYYY-MM-DD"),
-        dateOfExit: "",
-        employmentType: "full_time",
-        isActive: true,
-        departmentId: "",
-        designationId: "",
-        officeLocationId: "",
-        isStaff: false,
-        isVerified: false,
-        managerId: "",
-        organizationId: "",
-        // Financials
-        bankAccountNumber: "",
-        bankIfscCode: "",
-        panNumber: "",
-        aadharNumber: "",
-        uanNumber: "",
-        // Payroll
-        salaryStructureId: "",
-        annualCtc: "",
-        effectiveFrom: moment().startOf('month').format("YYYY-MM-DD"),
-    });
+    const [formData, setFormData] = useState(() => buildEmployeeFormData(initialData));
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const errorBannerRef = useRef<HTMLDivElement>(null);
     const { user: storeUser } = useStore();
     const { user: graphqlUser } = useGraphQLUser();
     const currentUser = graphqlUser || storeUser;
     const { createUser, updateUser, isCreatingUser, isUpdatingUser } = useGraphQLUserMutations();
+
+    const optionsOrgId =
+        formData.organizationId ||
+        (initialData?.organization?.id ? String(initialData.organization.id) : undefined) ||
+        (currentUser?.organization?.id ? String(currentUser.organization.id) : undefined);
+
     const { users: orgUsers } = useGraphQLUsers({
         page: 1,
         pageSize: 200,
         filters: {
             isActive: true,
-            ...(formData.organizationId
-                ? { organizationId: formData.organizationId }
-                : currentUser?.organization?.id
-                  ? { organizationId: String(currentUser.organization.id) }
-                  : {}),
+            ...(optionsOrgId ? { organizationId: optionsOrgId } : {}),
         },
     });
-    const { organizations, isOrganizationsLoading } = useGraphQLOrganizations();
-    const { designations, isDesignationsLoading } = useGraphQLDesignations();
-    const { departments, isDepartmentsLoading } = useGraphQLDepartments();
-    const { officeLocations, isOfficeLocationsLoading } = useGraphQLOfficeLocations();
+    const { organizations } = useGraphQLOrganizations();
+    const { designations, isDesignationsLoading } = useGraphQLDesignations(
+        undefined,
+        optionsOrgId
+    );
+    const { departments, isDepartmentsLoading } = useGraphQLDepartments(
+        undefined,
+        optionsOrgId
+    );
+    const { officeLocations, isOfficeLocationsLoading } = useGraphQLOfficeLocations(
+        undefined,
+        optionsOrgId
+    );
     const { salaryStructures, isStructuresLoading } = usePayrollQueries();
     const { assignSalaryToEmployee, saveEmployeeComponentOverrides } = usePayrollMutations();
 
-    const [activeTab, setActiveTab] = useState("identity");
+    const [activeTab, setActiveTab] = useState<EmployeeTab>("identity");
     const [profilePicture, setProfilePicture] = useState<File | null>(null);
     const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(initialData?.profilePictureUrl || null);
     const [isPhotoOpen, setIsPhotoOpen] = useState(false);
@@ -132,106 +209,84 @@ export default function EmployeeForm({
         (isDesignationsLoading && !designations) ||
         (isOfficeLocationsLoading && !officeLocations);
 
-    // Get options helpers
-    const getDepartmentOptions = () => {
-        if (!departments) return [];
-        let filtered = departments;
-        if (formData.organizationId) {
-            filtered = departments.filter((d: any) => String(d.organization?.id) === formData.organizationId);
-        }
-        return filtered.map((d: any) => ({ label: d.name, value: String(d.id) }));
+    const matchesOrganization = (item: { organizationId?: string | number | null; organization?: { id?: string | number | null } | null }, orgId?: string) => {
+        if (!orgId) return true;
+        const itemOrgId = item?.organizationId ?? item?.organization?.id;
+        return itemOrgId != null && String(itemOrgId) === String(orgId);
     };
 
-    const getDesignationOptions = () => {
-        if (!designations) return [];
-        let filtered = designations;
-        if (formData.organizationId) {
-            filtered = designations.filter((d: any) => String(d.organization?.id) === formData.organizationId);
-        }
-        return filtered.map((d: any) => ({ label: d.name, value: String(d.id) }));
+    /** Radix Select blanks the trigger when value is missing from items — keep current selection visible. */
+    const ensureSelectedOption = (
+        options: { label: string; value: string }[],
+        selectedId?: string,
+        selectedLabel?: string | null
+    ) => {
+        if (!selectedId) return options;
+        if (options.some((o) => o.value === selectedId)) return options;
+        return [
+            { label: selectedLabel || "Current selection", value: selectedId },
+            ...options,
+        ];
     };
 
-    const getOfficeLocationOptions = () => {
-        if (!officeLocations) return [];
-        let filtered = officeLocations;
-        if (formData.organizationId) {
-            filtered = officeLocations.filter((o: any) => String(o.organizationId) === formData.organizationId);
-        }
-        return filtered.map((o: any) => ({ label: o.name, value: String(o.id) }));
-    };
-
-    const getOrganizationOptions = () => {
-        if (!organizations) return [];
-        return organizations.map((o: any) => ({ label: o.name, value: String(o.id) }));
-    };
-
-    const getManagerOptions = () => {
+    const departmentOptions = ensureSelectedOption(
+        (departments || [])
+            .filter((d) => matchesOrganization(d, optionsOrgId))
+            .map((d) => ({ label: d.name, value: String(d.id) })),
+        formData.departmentId,
+        initialData?.department?.name
+    );
+    const designationOptions = ensureSelectedOption(
+        (designations || [])
+            .filter((d) => matchesOrganization(d, optionsOrgId))
+            .map((d) => ({ label: d.name, value: String(d.id) })),
+        formData.designationId,
+        initialData?.designation?.name
+    );
+    const officeLocationOptions = ensureSelectedOption(
+        (officeLocations || [])
+            .filter((o) => matchesOrganization(o, optionsOrgId))
+            .map((o) => ({ label: o.name, value: String(o.id) })),
+        formData.officeLocationId,
+        initialData?.officeLocation?.name
+    );
+    const organizationOptions = (organizations || []).map((o) => ({
+        label: o.name,
+        value: String(o.id),
+    }));
+    const managerOptions = (() => {
         if (!orgUsers) return [];
         const selfId = initialData?.id ? String(initialData.id) : "";
         return orgUsers
-            .filter((u: any) => {
+            .filter((u) => {
                 if (selfId && String(u.id) === selfId) return false;
-                // Prefer people who can manage; still allow any active colleague as fallback
-                return ["manager", "admin", "hr", "superadmin", "employee"].includes(
+                return ["manager", "admin", "hr", "superadmin"].includes(
                     (u.role || "").toLowerCase()
                 );
             })
-            .filter((u: any) =>
-                ["manager", "admin", "hr", "superadmin"].includes((u.role || "").toLowerCase())
-            )
-            .map((u: any) => ({
+            .map((u) => ({
                 label: `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email,
                 value: String(u.id),
             }));
-    };
-
-    const departmentOptions = getDepartmentOptions();
-    const designationOptions = getDesignationOptions();
-    const officeLocationOptions = getOfficeLocationOptions();
-    const organizationOptions = getOrganizationOptions();
-    const managerOptions = getManagerOptions();
+    })();
+    const managerSelectOptions = ensureSelectedOption(
+        [{ label: "No manager", value: "none" }, ...managerOptions],
+        formData.managerId || "none",
+        initialData?.manager
+            ? `${initialData.manager.firstName || ""} ${initialData.manager.lastName || ""}`.trim()
+            : "No manager"
+    );
 
     useEffect(() => {
         const orgId = currentUser?.organization?.id;
         if (!initialData && orgId && !formData.organizationId) {
-            setFormData(prev => ({ ...prev, organizationId: String(orgId) }));
+            setFormData((prev) => ({ ...prev, organizationId: String(orgId) }));
         }
     }, [currentUser, initialData, formData.organizationId]);
 
     useEffect(() => {
         if (!initialData) return;
-
-        setFormData({
-            firstName: initialData.firstName || "",
-            lastName: initialData.lastName || "",
-            email: initialData.email || "",
-            dateOfBirth: initialData.dateOfBirth || "",
-            password: "",
-            phoneNumber: initialData.phoneNumber || "",
-            role: initialData.role || "employee",
-            dateOfJoining: initialData.dateOfJoining || "",
-            dateOfExit: initialData.dateOfExit || "",
-            employmentType: initialData.employmentType || "full_time",
-            isActive: initialData.isActive !== false,
-            departmentId: initialData.department?.id ? String(initialData.department.id) : "",
-            designationId: initialData.designation?.id ? String(initialData.designation.id) : "",
-            officeLocationId: initialData.officeLocation?.id ? String(initialData.officeLocation.id) : "",
-            isStaff: initialData.isStaff !== false,
-            isVerified: initialData.isVerified !== false,
-            managerId: initialData.manager?.id ? String(initialData.manager.id) : "",
-            organizationId: initialData.organization?.id ? String(initialData.organization.id) : "",
-            // Financials
-            bankAccountNumber: initialData.bankAccountNumber || "",
-            bankIfscCode: initialData.bankIfscCode || "",
-            panNumber: initialData.panNumber || "",
-            aadharNumber: initialData.aadharNumber || "",
-            uanNumber: initialData.uanNumber || "",
-            // Payroll
-            salaryStructureId: initialData.salaryDetails?.salaryStructure?.id ? String(initialData.salaryDetails.salaryStructure.id) : "",
-            annualCtc: initialData.salaryDetails?.annualCtc ? String(initialData.salaryDetails.annualCtc) : "",
-            effectiveFrom: initialData.salaryDetails?.effectiveFrom || moment().startOf('month').format("YYYY-MM-DD"),
-        });
-        // Populate component overrides
+        setFormData(buildEmployeeFormData(initialData));
         if (initialData.salaryDetails?.componentOverrides) {
             const ovrs: Record<string, { isExcluded: boolean; overrideValue: string }> = {};
             for (const o of initialData.salaryDetails.componentOverrides) {
@@ -242,6 +297,7 @@ export default function EmployeeForm({
             }
             setComponentOverrides(ovrs);
         }
+        setProfilePicturePreview(initialData.profilePictureUrl || null);
     }, [initialData]);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -300,6 +356,30 @@ export default function EmployeeForm({
             
             return newData;
         });
+        if (errors[name]) {
+            setErrors((prev) => {
+                const next = { ...prev };
+                delete next[name];
+                return next;
+            });
+        }
+    };
+
+    const focusFirstError = (fieldErrors: Record<string, string>, tab: EmployeeTab) => {
+        const firstField =
+            Object.keys(fieldErrors).find((field) => FIELD_TAB_MAP[field] === tab) ||
+            Object.keys(fieldErrors)[0];
+        if (!firstField) return;
+
+        window.setTimeout(() => {
+            errorBannerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            const byName = document.querySelector<HTMLElement>(`[name="${firstField}"]`);
+            const byData = document.querySelector<HTMLElement>(`[data-field="${firstField}"]`);
+            const el = byName || byData;
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            const focusable = el?.querySelector<HTMLElement>("button, input, [tabindex]") || el;
+            focusable?.focus?.();
+        }, 80);
     };
 
     const handleSwitchChange = (name: string, checked: boolean) => {
@@ -373,16 +453,34 @@ export default function EmployeeForm({
                     if (path) fieldErrors[path] = issue.message;
                 });
                 setErrors(fieldErrors);
-                toast.error("Please fix validation errors across all tabs");
+                const errorTab = getFirstErrorTab(fieldErrors);
+                setActiveTab(errorTab);
+                const errorTabs = getErrorTabs(fieldErrors);
+                const firstMessage = Object.values(fieldErrors)[0]?.trim();
+                const errorCount = Object.keys(fieldErrors).length;
+                toast.error(
+                    errorTabs.length > 1
+                        ? `${firstMessage} (+${errorCount - 1} more) — check ${errorTabs.map((t) => TAB_LABELS[t]).join(", ")}`
+                        : `${firstMessage}${errorCount > 1 ? ` (+${errorCount - 1} more)` : ""} — switched to ${TAB_LABELS[errorTab]}`
+                );
+                focusFirstError(fieldErrors, errorTab);
                 return;
             }
 
+            setErrors({});
             let savedUser: any = null;
             if (initialData) {
                 const { password, salaryStructureId, annualCtc, effectiveFrom, ...updateData } = formData;
                 const result = await updateUser(initialData.id, {
                     ...updateData,
+                    organizationId: formData.organizationId || null,
+                    departmentId: formData.departmentId || null,
+                    designationId: formData.designationId || null,
+                    officeLocationId: formData.officeLocationId || null,
                     managerId: formData.managerId || null,
+                    dateOfBirth: formData.dateOfBirth || null,
+                    dateOfJoining: formData.dateOfJoining || null,
+                    dateOfExit: formData.dateOfExit || null,
                 });
                 if (result?.success) {
                     savedUser = initialData;
@@ -410,12 +508,17 @@ export default function EmployeeForm({
                 if (!formData.password || formData.password.length < 6) {
                     toast.error("Temporary password is required (min 6 characters)");
                     setActiveTab("identity");
+                    setErrors({ password: "Temporary password is required (min 6 characters)" });
                     return;
                 }
                 const { salaryStructureId, annualCtc, effectiveFrom, ...createData } = formData;
                 const result = await createUser({
                     ...createData,
                     managerId: formData.managerId || null,
+                    departmentId: formData.departmentId || null,
+                    designationId: formData.designationId || null,
+                    officeLocationId: formData.officeLocationId || null,
+                    organizationId: formData.organizationId || null,
                 });
                 if (result?.success) {
                     savedUser = result.user;
@@ -479,40 +582,65 @@ export default function EmployeeForm({
 
     return (
         <>
-        <form onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }} className="flex min-h-full flex-col">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
-                <TabsList className="mb-4 grid h-auto w-full shrink-0 grid-cols-4 gap-0 rounded-none border-b border-border bg-transparent p-0">
-                    <TabsTrigger
-                        value="identity"
-                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+        <form noValidate onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }} className="flex min-h-0 flex-1 flex-col">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EmployeeTab)} className="flex min-h-0 flex-1 flex-col gap-0">
+                {Object.keys(errors).length > 0 && (
+                    <div
+                        ref={errorBannerRef}
+                        className="mb-3 flex shrink-0 items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
                     >
-                        <UserIcon className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Identity</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="employment"
-                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Briefcase className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Work</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="financials"
-                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Landmark className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Finance</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                        value="payroll"
-                        className="rounded-none border-b-2 border-transparent py-2.5 text-sm data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-                    >
-                        <Wallet className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Payroll</span>
-                    </TabsTrigger>
-                </TabsList>
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <div>
+                            <p className="font-medium">
+                                {Object.keys(errors).length} validation{" "}
+                                {Object.keys(errors).length === 1 ? "error" : "errors"}
+                            </p>
+                            <p className="mt-0.5 text-xs text-destructive/80">
+                                Check{" "}
+                                {getErrorTabs(errors)
+                                    .map((t) => TAB_LABELS[t])
+                                    .join(", ")}
+                            </p>
+                        </div>
+                    </div>
+                )}
+                <SegmentedTabs
+                    className="mb-4 shrink-0"
+                    value={activeTab}
+                    onChange={(id) => setActiveTab(id as EmployeeTab)}
+                    tabs={[
+                        {
+                            id: "identity",
+                            label: "Identity",
+                            icon: UserIcon,
+                            count: countTabErrors("identity", errors),
+                            tone: tabHasErrors("identity", errors) ? "destructive" : "default",
+                        },
+                        {
+                            id: "employment",
+                            label: "Work",
+                            icon: Briefcase,
+                            count: countTabErrors("employment", errors),
+                            tone: tabHasErrors("employment", errors) ? "destructive" : "default",
+                        },
+                        {
+                            id: "financials",
+                            label: "Finance",
+                            icon: Landmark,
+                            count: countTabErrors("financials", errors),
+                            tone: tabHasErrors("financials", errors) ? "destructive" : "default",
+                        },
+                        {
+                            id: "payroll",
+                            label: "Payroll",
+                            icon: Wallet,
+                            count: countTabErrors("payroll", errors),
+                            tone: tabHasErrors("payroll", errors) ? "destructive" : "default",
+                        },
+                    ]}
+                />
 
-                <div className="relative min-h-[360px] flex-1">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
                 <TabsContent value="identity" forceMount className={cn("mt-0 space-y-6 data-[state=inactive]:hidden")}>
                     {/* Profile Picture Upload Section */}
                     <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-4">
@@ -561,8 +689,10 @@ export default function EmployeeForm({
                         <DatePickerSimple label="Date of Birth" value={formData.dateOfBirth} onChange={(date) => handleDateChange("dateOfBirth", date)} error={errors.dateOfBirth} />
                         <FormSelect
                             label="Role"
+                            name="role"
                             value={formData.role}
                             onValueChange={(v) => handleSelectChange("role", v)}
+                            error={errors.role}
                             options={[
                                 { label: "Employee", value: "employee" },
                                 { label: "Manager", value: "manager" },
@@ -575,28 +705,66 @@ export default function EmployeeForm({
 
                 <TabsContent value="employment" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
                     <div className="grid grid-cols-2 gap-4">
-                        <DatePickerSimple label="Date of Joining" value={formData.dateOfJoining} onChange={(date) => handleDateChange("dateOfJoining", date)} />
+                        <DatePickerSimple label="Date of Joining" value={formData.dateOfJoining} onChange={(date) => handleDateChange("dateOfJoining", date)} error={errors.dateOfJoining} />
                         <DatePickerSimple label="Date of Exit" value={formData.dateOfExit} onChange={(date) => handleDateChange("dateOfExit", date)} />
                         
                         {currentUser?.role === 'superadmin' && (
-                            <FormSelect label="Organization" required value={formData.organizationId} onValueChange={(v) => handleSelectChange("organizationId", v)} options={organizationOptions} />
+                            <FormSelect
+                                label="Organization"
+                                name="organizationId"
+                                required
+                                value={formData.organizationId}
+                                onValueChange={(v) => handleSelectChange("organizationId", v)}
+                                options={organizationOptions}
+                                error={errors.organizationId}
+                            />
                         )}
                         
-                        <FormSelect label="Department" required value={formData.departmentId} onValueChange={(v) => handleSelectChange("departmentId", v)} options={departmentOptions} />
-                        <FormSelect label="Designation" required value={formData.designationId} onValueChange={(v) => handleSelectChange("designationId", v)} options={designationOptions} />
-                        <FormSelect label="Employment Type" required value={formData.employmentType} onValueChange={(v) => handleSelectChange("employmentType", v)} options={[{ label: "Full Time", value: "full_time" }, { label: "Contract", value: "contract" }, { label: "Intern", value: "intern" }]} />
-                        <FormSelect label="Office Location" value={formData.officeLocationId} onValueChange={(v) => handleSelectChange("officeLocationId", v)} options={officeLocationOptions} />
+                        <FormSelect
+                            label="Department"
+                            name="departmentId"
+                            required
+                            value={formData.departmentId}
+                            onValueChange={(v) => handleSelectChange("departmentId", v)}
+                            options={departmentOptions}
+                            error={errors.departmentId}
+                        />
+                        <FormSelect
+                            label="Designation"
+                            name="designationId"
+                            required
+                            value={formData.designationId}
+                            onValueChange={(v) => handleSelectChange("designationId", v)}
+                            options={designationOptions}
+                            error={errors.designationId}
+                        />
+                        <FormSelect
+                            label="Employment Type"
+                            name="employmentType"
+                            required
+                            value={formData.employmentType}
+                            onValueChange={(v) => handleSelectChange("employmentType", v)}
+                            options={[{ label: "Full Time", value: "full_time" }, { label: "Contract", value: "contract" }, { label: "Intern", value: "intern" }]}
+                            error={errors.employmentType}
+                        />
+                        <FormSelect
+                            label="Office Location"
+                            name="officeLocationId"
+                            value={formData.officeLocationId}
+                            onValueChange={(v) => handleSelectChange("officeLocationId", v)}
+                            options={officeLocationOptions}
+                            error={errors.officeLocationId}
+                        />
                         <FormSelect
                             label="Reporting Manager"
+                            name="managerId"
                             value={formData.managerId || "none"}
                             onValueChange={(v) =>
                                 handleSelectChange("managerId", v === "none" ? "" : v)
                             }
-                            options={[
-                                { label: "No manager", value: "none" },
-                                ...managerOptions,
-                            ]}
+                            options={managerSelectOptions}
                             placeholder="Select manager"
+                            error={errors.managerId}
                         />
                     </div>
                 </TabsContent>
@@ -624,9 +792,17 @@ export default function EmployeeForm({
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormSelect
                                 label="Salary Structure"
+                                name="salaryStructureId"
                                 value={formData.salaryStructureId}
                                 onValueChange={(v) => handleSelectChange("salaryStructureId", v)}
-                                options={salaryStructures.map((s: any) => ({ label: s.name, value: String(s.id) }))}
+                                options={ensureSelectedOption(
+                                    (salaryStructures || []).map((s: { id: string | number; name: string }) => ({
+                                        label: s.name,
+                                        value: String(s.id),
+                                    })),
+                                    formData.salaryStructureId,
+                                    initialData?.salaryDetails?.salaryStructure?.name
+                                )}
                             />
                             <Input
                                 label="Annual CTC (₹)"
