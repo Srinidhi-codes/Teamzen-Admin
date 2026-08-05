@@ -4,6 +4,7 @@ import {
   useGraphQLOrganization,
   useGraphQLUpdateOrganizationMutation,
 } from "@/lib/graphql/organization/organizationsHook";
+import type { OrganizationInput } from "@/lib/graphql/organization/types";
 import {
   Building2,
   MapPin,
@@ -17,6 +18,7 @@ import {
   Save,
   X,
   ScanFace,
+  CalendarDays,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
@@ -28,9 +30,29 @@ import { useStore } from "@/lib/store/useStore";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import moment from "moment";
-import { cn } from "@/lib/utils";
 import { AccentPicker, COMPANY_ACCENTS } from "./AccentPicker";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
+
+const WEEKDAY_OPTIONS: { value: number; label: string; short: string }[] = [
+  { value: 0, label: "Monday", short: "Mon" },
+  { value: 1, label: "Tuesday", short: "Tue" },
+  { value: 2, label: "Wednesday", short: "Wed" },
+  { value: 3, label: "Thursday", short: "Thu" },
+  { value: 4, label: "Friday", short: "Fri" },
+  { value: 5, label: "Saturday", short: "Sat" },
+  { value: 6, label: "Sunday", short: "Sun" },
+];
+
+function formatWeekendDays(days?: number[] | null) {
+  const list = Array.isArray(days) ? days : [6];
+  if (list.length === 0) return "None (7-day week)";
+  return list
+    .slice()
+    .sort((a, b) => a - b)
+    .map((d) => WEEKDAY_OPTIONS.find((o) => o.value === d)?.label || String(d))
+    .join(", ");
+}
 
 interface OrganizationProfileProps {
   id: string;
@@ -74,6 +96,9 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       llmApiKey: organization.llmApiKey || "",
       accent: organization.accent || "teal",
       faceAttendanceEnabled: organization.faceAttendanceEnabled ?? false,
+      weekendDays: Array.isArray(organization.weekendDays)
+        ? [...organization.weekendDays]
+        : [6],
     });
     setIsEditing(true);
   };
@@ -90,6 +115,17 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       llmApiKey: "",
       accent: "teal",
       faceAttendanceEnabled: false,
+      weekendDays: [6],
+    });
+  };
+
+  const toggleWeekendDay = (day: number) => {
+    setFormData((prev: OrganizationInput & { weekendDays?: number[] }) => {
+      const current = Array.isArray(prev.weekendDays) ? [...prev.weekendDays] : [];
+      const next = current.includes(day)
+        ? current.filter((d) => d !== day)
+        : [...current, day].sort((a, b) => a - b);
+      return { ...prev, weekendDays: next };
     });
   };
 
@@ -399,6 +435,75 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       }
                     />
                   </div>
+                  <div className="md:col-span-2 space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <CalendarDays className="h-4 w-4 text-primary" />
+                        Weekly offs (weekends)
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Selected days are excluded from leave duration and shown as weekend
+                        on the employee dashboard. Toggle Saturday for a 5-day week, or add
+                        more days as needed.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {WEEKDAY_OPTIONS.map((day) => {
+                        const selected = (formData.weekendDays || []).includes(day.value);
+                        return (
+                          <button
+                            key={day.value}
+                            type="button"
+                            onClick={() => toggleWeekendDay(day.value)}
+                            className={cn(
+                              "rounded-md border px-3 py-1.5 text-xs font-medium transition-colors",
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border bg-background text-muted-foreground hover:bg-muted"
+                            )}
+                            aria-pressed={selected}
+                          >
+                            {day.short}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() =>
+                          setFormData({ ...formData, weekendDays: [6] })
+                        }
+                      >
+                        Sun only
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() =>
+                          setFormData({ ...formData, weekendDays: [5, 6] })
+                        }
+                      >
+                        Sat + Sun
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() =>
+                          setFormData({ ...formData, weekendDays: [4, 5] })
+                        }
+                      >
+                        Fri + Sat
+                      </Button>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
@@ -458,6 +563,11 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                   icon={ScanFace}
                   label="Face attendance"
                   value={organization.faceAttendanceEnabled ? "Enabled" : "Disabled"}
+                />
+                <DataBox
+                  icon={CalendarDays}
+                  label="Weekly offs"
+                  value={formatWeekendDays(organization.weekendDays)}
                 />
               </div>
 

@@ -15,6 +15,7 @@ export interface Organization {
     llmApiKey?: string;
     accent?: string;
     faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
     plan?: string;
     planExpiresAt?: string | null;
     daysUntilPlanExpiry?: number | null;
@@ -71,6 +72,7 @@ export interface CreateOrganizationInput {
     llmApiKey?: string;
     accent?: string;
     faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
 }
 
 export interface OrganizationInput {
@@ -85,6 +87,7 @@ export interface OrganizationInput {
     llmApiKey?: string;
     accent?: string;
     faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
 }
 
 export interface CreateOfficeLocationInput {

@@ -28,6 +28,7 @@ export const UPDATE_ORGANIZATION = gql`
             llmApiKey
             accent
             faceAttendanceEnabled
+            weekendDays
             plan
             planExpiresAt
             isActive

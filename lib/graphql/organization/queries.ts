@@ -17,6 +17,7 @@ export const GET_ORGANIZATIONS = gql`
             llmApiKey
             accent
             faceAttendanceEnabled
+            weekendDays
             plan
             planExpiresAt
             daysUntilPlanExpiry
@@ -43,6 +44,7 @@ export const GET_ORGANIZATION = gql`
             llmApiKey
             accent
             faceAttendanceEnabled
+            weekendDays
             createdAt
             updatedAt
         }
