@@ -352,14 +352,12 @@ export default function LeaveRequests() {
                                 onClick={() => handleReject(selectedRequest.id)}
                                 className="btn-destructive"
                             >
-                                <XCircle className="w-4 h-4 mr-1.5" />
                                 Reject
                             </button>
                             <button
                                 onClick={() => handleApprove(selectedRequest.id)}
-                                className="btn-primary"
+                                className="btn-primary bg-emerald-600 hover:bg-emerald-700"
                             >
-                                <CheckCircle2 className="w-4 h-4 mr-1.5" />
                                 Approve
                             </button>
                         </div>

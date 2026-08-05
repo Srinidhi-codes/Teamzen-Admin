@@ -3,12 +3,13 @@
 import React, { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/common/Card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/common/DataTable";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { SegmentedTabs } from "@/components/common/SegmentedTabs";
 import {
   GET_PAYROLL_RUNS,
   GET_SALARY_COMPONENTS,
@@ -42,7 +43,10 @@ import {
   Circle,
   Banknote,
   Pencil,
+  FileText,
 } from "lucide-react";
+import { PayslipTemplatesPanel } from "@/components/payroll/PayslipTemplatesPanel";
+import { FounderPayrollMode } from "@/components/payroll/FounderPayrollMode";
 import {
   Dialog,
   DialogContent,
@@ -91,55 +95,96 @@ export default function PayrollPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("runs");
   const [organizationId, setOrganizationId] = useState("");
+  const [uiMode, setUiMode] = useState<"founder" | "advanced">("founder");
   const orgVars = { organizationId: organizationId || undefined };
   const skipPayroll = !!(user && user.role !== "admin" && user.role !== "superadmin");
+  const isAdvanced = uiMode === "advanced";
+  const skipAdvanced = skipPayroll || !isAdvanced;
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("payrollUiMode");
+      if (stored === "advanced" || stored === "founder") {
+        setUiMode(stored);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const switchMode = (mode: "founder" | "advanced") => {
+    setUiMode(mode);
+    try {
+      localStorage.setItem("payrollUiMode", mode);
+    } catch {
+      /* ignore */
+    }
+  };
 
   const { data: runsData, loading: runsLoading, refetch: refetchRuns } = useQuery(
     GET_PAYROLL_RUNS,
-    { skip: skipPayroll, variables: orgVars }
+    {
+      skip: skipAdvanced,
+      variables: orgVars,
+      fetchPolicy: "cache-first",
+      nextFetchPolicy: "cache-first",
+    }
   ) as any;
   const {
     data: componentsData,
     loading: componentsLoading,
     refetch: refetchComponents,
   } = useQuery(GET_SALARY_COMPONENTS, {
-    skip: skipPayroll,
+    skip: skipAdvanced,
     variables: orgVars,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
   }) as any;
   const {
     data: structuresData,
     loading: structuresLoading,
     refetch: refetchStructures,
   } = useQuery(GET_SALARY_STRUCTURES, {
-    skip: skipPayroll,
+    skip: skipAdvanced,
     variables: orgVars,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
   }) as any;
   const { data: checklistData, refetch: refetchChecklist } = useQuery(
     GET_PAYROLL_SETUP_CHECKLIST,
-    { skip: skipPayroll, variables: orgVars }
+    {
+      skip: skipAdvanced,
+      variables: orgVars,
+      fetchPolicy: "cache-first",
+      nextFetchPolicy: "cache-first",
+    }
   ) as any;
   const {
     data: advancesData,
     loading: advancesLoading,
     refetch: refetchAdvances,
   } = useQuery(GET_SALARY_ADVANCES, {
-    skip: skipPayroll || !canAdvances,
+    skip: skipAdvanced || !canAdvances,
     variables: orgVars,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
   }) as any;
   const {
     data: settingsData,
     loading: settingsLoading,
     refetch: refetchSettings,
   } = useQuery(GET_PAYROLL_SETTINGS, {
-    skip: skipPayroll,
+    skip: skipAdvanced,
     variables: orgVars,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
   }) as any;
   const { data: usersData } = useQuery(GET_ALL_USERS, {
     variables: {
       pageSize: 200,
       filters: organizationId ? { organizationId } : undefined,
     },
-    skip: skipPayroll,
+    skip: skipAdvanced,
   }) as any;
 
   const [createPayrollRun] = useMutation(CREATE_PAYROLL_RUN) as any;
@@ -201,6 +246,7 @@ export default function PayrollPage() {
     },
     { id: "components", label: "Components", icon: Settings, domId: "payroll-tab-components" },
     { id: "structures", label: "Structures", icon: Users, domId: "payroll-tab-structures" },
+    { id: "templates", label: "Payslips", icon: FileText, domId: "payroll-tab-templates" },
     { id: "settings", label: "Settings", icon: Banknote, domId: undefined as string | undefined },
   ];
 
@@ -357,8 +403,8 @@ export default function PayrollPage() {
           label: "Employees with CTC",
           done: checklist.employeesWithCtc > 0,
           detail: `${checklist.employeesWithCtc} assigned`,
-          href: "/employees",
-          actionLabel: "Assign CTC",
+          href: "/employees/import",
+          actionLabel: "Import employees",
         },
         {
           key: "activeAdvances",
@@ -376,19 +422,48 @@ export default function PayrollPage() {
       <PageHeader
         eyebrow="Compensation"
         title="Payroll"
-        description="Run payroll, manage salary components, and salary structures."
+        description={
+          isAdvanced
+            ? "Run payroll, manage salary components, and salary structures."
+            : "Add people, set CTC, run payroll, and download a bank file."
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <OrganizationFilterSelect
               value={organizationId}
               onChange={setOrganizationId}
             />
-            <PayrollTourButton variant="list" />
-            <CreateMonthlyRunDialog onConfirm={handleCreateRun} />
+            {isAdvanced ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => switchMode("founder")}
+                >
+                  Quick Payroll
+                </Button>
+                <PayrollTourButton variant="list" />
+                <CreateMonthlyRunDialog onConfirm={handleCreateRun} />
+              </>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => switchMode("advanced")}
+              >
+                Advanced payroll
+              </Button>
+            )}
           </div>
         }
       />
 
+      {!isAdvanced ? (
+        <FounderPayrollMode organizationId={organizationId || undefined} />
+      ) : (
+        <>
       {checklist && (
         <Card id="payroll-setup-checklist" className="mb-4">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
@@ -448,45 +523,23 @@ export default function PayrollPage() {
         </Card>
       )}
 
-      <div className="flex flex-wrap gap-1 rounded-lg border border-border bg-muted/40 p-1">
-        {payrollTabs.map((tab) => {
-          const Icon = tab.icon;
-          const active = activeTab === tab.id;
-          const locked = Boolean((tab as { locked?: boolean }).locked);
-          return (
-            <button
-              key={tab.id}
-              id={tab.domId}
-              type="button"
-              onClick={() => {
-                setActiveTab(tab.id);
-              }}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
-                active
-                  ? "bg-background font-medium text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {tab.label}
-              {locked ? (
-                <span className="rounded bg-muted px-1 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
-                  Pro
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
+      <SegmentedTabs
+        tabs={payrollTabs.map((tab) => ({
+          id: tab.id,
+          label: tab.label,
+          icon: tab.icon,
+          domId: tab.domId,
+          badge: (tab as { locked?: boolean }).locked ? "Pro" : undefined,
+        }))}
+        value={activeTab}
+        onChange={setActiveTab}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="hidden" />
-
         <TabsContent value="runs" className="mt-0">
           <Card className="overflow-hidden p-0">
             <DataTable
-              isLoading={runsLoading}
+              isLoading={runsLoading && !runsData}
               data={runsData?.payrollRuns || []}
               columns={[
                 {
@@ -597,7 +650,7 @@ export default function PayrollPage() {
           </div>
           <Card className="overflow-hidden p-0">
             <DataTable
-              isLoading={advancesLoading}
+              isLoading={advancesLoading && !advancesData}
               data={advancesData?.salaryAdvances || []}
               columns={[
                 {
@@ -752,7 +805,7 @@ export default function PayrollPage() {
             </Card>
             <Card className="overflow-hidden p-0 lg:col-span-2">
               <DataTable
-                isLoading={componentsLoading}
+                isLoading={componentsLoading && !componentsData}
                 data={componentsData?.salaryComponents || []}
                 columns={[
                   {
@@ -817,7 +870,7 @@ export default function PayrollPage() {
               }}
             />
           </div>
-          {structuresLoading ? (
+          {structuresLoading && !structuresData ? (
             <div className="flex min-h-[20vh] items-center justify-center text-sm text-muted-foreground">
               Loading structures…
             </div>
@@ -896,6 +949,10 @@ export default function PayrollPage() {
           />
         </TabsContent>
 
+        <TabsContent value="templates" className="mt-0">
+          <PayslipTemplatesPanel organizationId={organizationId || undefined} />
+        </TabsContent>
+
         <TabsContent value="settings" className="mt-0">
           <PlanGate
             allowed={canAutoRun}
@@ -909,7 +966,7 @@ export default function PayrollPage() {
             <p className="mb-4 text-xs text-muted-foreground">
               Schedule monthly draft calculation. Publish and payout stay manual.
             </p>
-            {settingsLoading ? (
+            {settingsLoading && !settingsData ? (
               <p className="text-sm text-muted-foreground">Loading settings…</p>
             ) : (
               <div className="space-y-4">
@@ -990,6 +1047,8 @@ export default function PayrollPage() {
         confirmText="Delete"
         cancelText="Cancel"
       />
+        </>
+      )}
     </div>
   );
 }

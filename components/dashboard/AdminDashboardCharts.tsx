@@ -15,14 +15,34 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 
-const chartTooltipStyle = {
-  backgroundColor: "var(--card)",
-  borderColor: "var(--border)",
-  borderRadius: "8px",
-  fontSize: "12px",
-  color: "var(--foreground)",
-  boxShadow: "none",
-};
+/** Recharts defaults item text to black — use a themed custom tooltip instead. */
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number | string; color?: string }>;
+  label?: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const item = payload[0];
+  const title = label || item.name;
+  return (
+    <div className="rounded-lg border border-border bg-popover px-2.5 py-1.5 text-xs text-popover-foreground shadow-md">
+      <div className="flex items-center gap-2">
+        {item.color ? (
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: item.color }}
+          />
+        ) : null}
+        <span className="font-medium">{title}</span>
+        <span className="tabular-nums text-muted-foreground">{item.value}</span>
+      </div>
+    </div>
+  );
+}
 
 function Panel({
   title,
@@ -78,7 +98,7 @@ export function AdminDashboardCharts({
                 tickLine={false}
                 tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
               />
-              <Tooltip contentStyle={chartTooltipStyle} />
+              <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--border)" }} />
               <Area
                 type="monotone"
                 dataKey="value"
@@ -106,26 +126,32 @@ export function AdminDashboardCharts({
                       outerRadius={80}
                       paddingAngle={3}
                       dataKey="value"
+                      nameKey="name"
                     >
                       {departmentData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={chartTooltipStyle} />
+                    <Tooltip content={<ChartTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="max-h-[220px] w-full space-y-2 overflow-y-auto sm:w-1/2">
+              <ul className="custom-scrollbar max-h-[220px] w-full space-y-2 overflow-y-auto pr-1 sm:w-1/2">
                 {departmentData.map((entry, index) => (
-                  <li key={`${entry.name}-${index}`} className="flex items-center justify-between gap-3 text-sm">
+                  <li
+                    key={`${entry.name}-${index}`}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
                     <span className="flex min-w-0 items-center gap-2">
                       <span
                         className="h-2.5 w-2.5 shrink-0 rounded-full"
                         style={{ backgroundColor: entry.color }}
                       />
-                      <span className="truncate text-muted-foreground">{entry.name}</span>
+                      <span className="truncate text-foreground/85">{entry.name}</span>
                     </span>
-                    <span className="shrink-0 tabular-nums text-foreground">{entry.value}</span>
+                    <span className="shrink-0 tabular-nums text-foreground">
+                      {entry.value}
+                    </span>
                   </li>
                 ))}
               </ul>

@@ -37,7 +37,7 @@ import type {
   PerformanceGoal,
   PerformanceReview,
 } from "@/lib/graphql/performance/types";
-import { chartTooltipStyle } from "@/components/reports/ReportShared";
+import { chartTooltipProps } from "@/components/reports/ReportShared";
 import { Download, Plus, Trash2, Users } from "lucide-react";
 
 const COLORS = [
@@ -123,7 +123,7 @@ function OverviewTab({ organizationId }: { organizationId: string }) {
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={chartTooltipStyle} />
+                    <Tooltip {...chartTooltipProps} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -147,7 +147,7 @@ function OverviewTab({ organizationId }: { organizationId: string }) {
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis unit="%" tick={{ fontSize: 12 }} />
-                    <Tooltip contentStyle={chartTooltipStyle} />
+                    <Tooltip {...chartTooltipProps} />
                     <Bar dataKey="value" fill="var(--primary)" name="Attainment %" />
                   </BarChart>
                 </ResponsiveContainer>

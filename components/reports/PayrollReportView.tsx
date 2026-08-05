@@ -19,7 +19,7 @@ import {
   ReportError,
   ReportLoadingBlocks,
   ReportTableShell,
-  chartTooltipStyle,
+  chartTooltipProps,
 } from "./ReportShared";
 import type { PayrollReport } from "@/lib/graphql/reports/types";
 
@@ -61,7 +61,7 @@ export function PayrollReportView({
                 tickFormatter={(v) => `${Math.round(v / 1000)}k`}
               />
               <Tooltip
-                contentStyle={chartTooltipStyle}
+                {...chartTooltipProps}
                 formatter={(v) => formatInr(Number(v))}
               />
               <Legend />
@@ -108,7 +108,7 @@ export function PayrollReportView({
                 tickFormatter={(v) => `${Math.round(v / 1000)}k`}
               />
               <Tooltip
-                contentStyle={chartTooltipStyle}
+                {...chartTooltipProps}
                 formatter={(v) => formatInr(Number(v))}
               />
               <Bar dataKey="value" fill="var(--primary)" name="Net cost" />

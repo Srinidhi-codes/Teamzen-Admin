@@ -19,7 +19,7 @@ import {
   ReportError,
   ReportLoadingBlocks,
   ReportTableShell,
-  chartTooltipStyle,
+  chartTooltipProps,
 } from "./ReportShared";
 import type { LeaveReport } from "@/lib/graphql/reports/types";
 
@@ -63,7 +63,7 @@ export function LeaveReportView({
                     <Cell key={d.name} fill={d.color || `hsl(${i * 40} 50% 50%)`} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={chartTooltipStyle} />
+                <Tooltip {...chartTooltipProps} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -76,7 +76,7 @@ export function LeaveReportView({
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 12 }} unit="%" />
-                <Tooltip contentStyle={chartTooltipStyle} />
+                <Tooltip {...chartTooltipProps} />
                 <Bar dataKey="value" fill="var(--primary)" name="Used %" />
               </BarChart>
             </ResponsiveContainer>
@@ -91,7 +91,7 @@ export function LeaveReportView({
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-              <Tooltip contentStyle={chartTooltipStyle} />
+              <Tooltip {...chartTooltipProps} />
               <Legend />
               <Bar dataKey="approved" fill="oklch(0.6 0.14 150)" name="Approved" />
               <Bar dataKey="pending" fill="oklch(0.7 0.15 70)" name="Pending" />

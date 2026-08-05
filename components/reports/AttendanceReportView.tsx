@@ -19,7 +19,7 @@ import {
   ReportError,
   ReportLoadingBlocks,
   ReportTableShell,
-  chartTooltipStyle,
+  chartTooltipProps,
 } from "./ReportShared";
 import type { AttendanceReport } from "@/lib/graphql/reports/types";
 
@@ -53,7 +53,7 @@ export function AttendanceReportView({
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="day" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
               <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-              <Tooltip contentStyle={chartTooltipStyle} />
+              <Tooltip {...chartTooltipProps} />
               <Legend />
               <Bar dataKey="present" fill="oklch(0.6 0.14 150)" name="Present" stackId="a" />
               <Bar dataKey="late" fill="oklch(0.7 0.15 70)" name="Late" stackId="a" />
@@ -80,7 +80,7 @@ export function AttendanceReportView({
                     <Cell key={d.name} fill={d.color || `hsl(${i * 45} 50% 50%)`} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={chartTooltipStyle} />
+                <Tooltip {...chartTooltipProps} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -98,7 +98,7 @@ export function AttendanceReportView({
                   width={100}
                   tick={{ fontSize: 11 }}
                 />
-                <Tooltip contentStyle={chartTooltipStyle} />
+                <Tooltip {...chartTooltipProps} />
                 <Bar dataKey="value" fill="var(--primary)" name="Records" />
               </BarChart>
             </ResponsiveContainer>

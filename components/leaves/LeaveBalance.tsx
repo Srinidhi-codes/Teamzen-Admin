@@ -1,23 +1,24 @@
 "use client"
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useGraphQLLeaveBalances, useGraphQLLeaveMutations, useGraphQLLeaveTypes } from '@/lib/graphql/leaves/leavesHook'
-import { useUsers, useMe } from '@/lib/graphql/users/userHooks'
+import { useGraphQLUsers } from '@/lib/graphql/users/userHook'
+import { useMe } from '@/lib/graphql/users/userHooks'
 import { LeaveBalance as LeaveBalanceType } from '@/lib/graphql/leaves/types'
-import { Plus, Edit, Trash2, RotateCcw } from 'lucide-react'
+import { Plus, RotateCcw } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { SearchInput } from '../common/SearchInput'
 import { OrganizationFilterSelect } from '@/components/common/OrganizationFilterSelect'
-
-
 import { DataTable, Column } from '../common/DataTable'
 import LeaveBalanceModal from './LeaveBalanceModal'
 import ConfirmationModal from '../common/ConfirmationModal'
 
+const PAGE_SIZE = 10;
 
 const LeaveBalance = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [organizationId, setOrganizationId] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
     const debouncedSearch = useDebounce(searchQuery, 500);
     const { me } = useMe();
     const { leaveBalanceData, isLoading, error, refetch } = useGraphQLLeaveBalances(
@@ -25,10 +26,14 @@ const LeaveBalance = () => {
         organizationId || undefined
     );
     const { leaveTypes } = useGraphQLLeaveTypes(undefined, organizationId || undefined);
-    const { users } = useUsers();
+    // Modal user picker only — not used to drive the table (table comes from balances)
+    const { users } = useGraphQLUsers({
+        page: 1,
+        pageSize: 200,
+        filters: organizationId ? { organizationId } : undefined,
+    });
     const { createLeaveBalance, updateLeaveBalance, deleteLeaveBalance } = useGraphQLLeaveMutations();
 
-    // Role-based logic
     const isManager = me?.role === 'manager';
     const isAdmin = me?.role === 'admin' || me?.role === 'superadmin' || me?.role === 'hr';
 
@@ -52,39 +57,51 @@ const LeaveBalance = () => {
         }
     }, [isModalOpen]);
 
-    // --- Data Aggregation for the Portfolio Table ---
-    const aggregatedData = users.map(user => {
-        const userBalances = (leaveBalanceData || []).filter(b => b.user.id === user.id && b.isActive);
-        const row: any = {
-            id: user.id,
-            user: user,
-            employeeName: `${user.firstName} ${user.lastName}`,
-            departmentName: user.department?.name || '',
-            organizationName: user.organization?.name || '',
-        };
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearch, organizationId]);
 
-        userBalances.forEach(b => {
+    // Aggregate from leave balances (not the paginated users list)
+    const aggregatedData = useMemo(() => {
+        const byUser = new Map<string, any>();
+
+        for (const b of leaveBalanceData || []) {
+            if (!b?.user?.id || b.isActive === false) continue;
+            if (isManager && b.user.manager?.id !== me?.id && b.user.id !== me?.id) {
+                continue;
+            }
+
+            let row = byUser.get(b.user.id);
+            if (!row) {
+                row = {
+                    id: b.user.id,
+                    user: b.user,
+                    employeeName: `${b.user.firstName || ""} ${b.user.lastName || ""}`.trim() || "Employee",
+                    departmentName: b.user.department?.name || "",
+                    organizationName: b.user.organization?.name || "",
+                };
+                byUser.set(b.user.id, row);
+            }
+
             row[b.leaveType.id] = {
                 id: b.id,
                 available: b.availableBalance,
                 total: b.totalAllocation,
                 leaveType: b.leaveType,
-                original: b
+                original: b,
             };
-        });
-
-        return row;
-    }).filter(row => {
-        // Only show rows that have at least one leave balance record
-        const hasBalances = Object.keys(row).some(key =>
-            !['id', 'user', 'employeeName', 'departmentName', 'organizationName'].includes(key)
-        );
-
-        if (isManager) {
-            return row.user.manager?.id === me?.id && hasBalances;
         }
-        return hasBalances;
-    });
+
+        return Array.from(byUser.values()).sort((a, b) =>
+            a.employeeName.localeCompare(b.employeeName)
+        );
+    }, [leaveBalanceData, isManager, me?.id]);
+
+    const totalRows = aggregatedData.length;
+    const pagedData = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return aggregatedData.slice(start, start + PAGE_SIZE);
+    }, [aggregatedData, currentPage]);
 
     const dynamicColumns: Column<any>[] = [
         {
@@ -93,13 +110,12 @@ const LeaveBalance = () => {
             render: (name) => (
                 <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-medium text-xs">
-                        {name.charAt(0)}
+                        {(name || "?").charAt(0)}
                     </div>
                     <span className="font-medium text-foreground text-sm">{name}</span>
                 </div>
             )
         },
-
         ...leaveTypes
             .filter(lt => {
                 if (isManager) {
@@ -112,7 +128,6 @@ const LeaveBalance = () => {
                 key: lt.id,
                 label: lt.name,
                 render: (val: any, row: any) => {
-                    const isSelf = row.user.id === me?.id;
                     const canEdit = isAdmin || (isManager && row.user.manager?.id === me?.id);
 
                     return val ? (
@@ -160,12 +175,8 @@ const LeaveBalance = () => {
                         </div>
                     )
                 }
-
             }))
-
     ];
-
-    const filteredAggregated = aggregatedData;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -192,11 +203,6 @@ const LeaveBalance = () => {
         }
     };
 
-    const handleDelete = (id: string) => {
-        setDeleteId(id);
-        setIsConfirmOpen(true);
-    };
-
     const confirmDelete = async () => {
         if (!deleteId) return;
         try {
@@ -207,7 +213,6 @@ const LeaveBalance = () => {
         }
         setDeleteId(null);
     };
-
 
     if (isLoading) return (
         <div className="space-y-3" aria-busy="true" aria-label="Loading">
@@ -223,13 +228,16 @@ const LeaveBalance = () => {
         </div>
     );
 
-
     if (error) return (
         <div className="mx-auto max-w-md rounded-xl border border-destructive/20 bg-destructive/5 px-6 py-10 text-center">
             <p className="text-sm text-destructive">{error.message}</p>
         </div>
     );
 
+    const modalUsers = (users || []).filter((u: any) => {
+        if (isManager) return u.manager?.id === me?.id;
+        return true;
+    });
 
     return (
         <div className="space-y-6">
@@ -269,17 +277,21 @@ const LeaveBalance = () => {
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <DataTable
-                    data={filteredAggregated}
+                    data={pagedData}
                     columns={dynamicColumns}
+                    total={totalRows}
+                    currentPage={currentPage}
+                    pageSize={PAGE_SIZE}
+                    onPageChange={setCurrentPage}
+                    paginationLabel="employees"
                 />
             </div>
 
-            {filteredAggregated.length === 0 && (
+            {totalRows === 0 && (
                 <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
                     <p className="text-sm text-muted-foreground">No leave balances found.</p>
                 </div>
             )}
-
 
             <div ref={formRef}>
                 {isModalOpen && (
@@ -293,7 +305,7 @@ const LeaveBalance = () => {
                         formData={formData}
                         setFormData={setFormData}
                         editingBalance={!!editingBalance}
-                        users={isManager ? users.filter(u => u.manager?.id === me?.id) : users}
+                        users={modalUsers}
                         leaveTypes={isManager
                             ? leaveTypes.filter(lt => {
                                 const name = lt.name.toLowerCase();
@@ -301,7 +313,6 @@ const LeaveBalance = () => {
                             })
                             : leaveTypes
                         }
-
                     />
                 )}
             </div>
@@ -315,7 +326,6 @@ const LeaveBalance = () => {
                 confirmText="Deactivate"
                 variant="destructive"
             />
-
         </div>
     );
 }

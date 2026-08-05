@@ -66,7 +66,6 @@ export default function OrganizationsPage() {
   );
 
   const [activeForm, setActiveForm] = useState<FormKey>(null);
-  const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
   const [editingOffLoc, setEditingOffLoc] = useState<OfficeLocation | null>(null);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [editingDesig, setEditingDesig] = useState<Designation | null>(null);
@@ -82,7 +81,6 @@ export default function OrganizationsPage() {
 
   const closeForm = () => {
     setActiveForm(null);
-    setEditingOrg(null);
     setEditingOffLoc(null);
     setEditingDept(null);
     setEditingDesig(null);
@@ -134,10 +132,6 @@ export default function OrganizationsPage() {
 
   const handleViewEmployees = (org: Organization) =>
     router.push(`/employees?organizationId=${org.id}`);
-  const handleEditOrg = (org: Organization) => {
-    setEditingOrg(org);
-    setActiveForm("organization");
-  };
   const handleEditOffLoc = (office: OfficeLocation) => {
     setEditingOffLoc(office);
     setActiveForm("office");
@@ -187,9 +181,7 @@ export default function OrganizationsPage() {
 
   const dialogTitle =
     activeForm === "organization"
-      ? editingOrg
-        ? "Edit organization"
-        : "Add organization"
+      ? "Add organization"
       : activeForm === "office"
         ? editingOffLoc
           ? "Edit office"
@@ -299,7 +291,6 @@ export default function OrganizationsPage() {
           {activeTab === "organizations" && (
             <OrganizationList
               organizations={organizations || []}
-              onEdit={handleEditOrg}
               onViewEmployees={handleViewEmployees}
             />
           )}
@@ -332,7 +323,6 @@ export default function OrganizationsPage() {
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
             {activeForm === "organization" && (
               <CreateOrganizationForm
-                orgEditData={editingOrg}
                 onCancel={closeForm}
                 onSubmit={async () => closeForm()}
               />

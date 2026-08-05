@@ -2,7 +2,8 @@ import type { InMemoryCacheConfig } from "@apollo/client";
 
 /**
  * Apollo cache field policies for admin GraphQL.
- * Enables cache-and-network: show cached data instantly, refresh in background.
+ * Default: cache-first so route changes reuse cached data without a loading flash.
+ * Queries that need fresh data can opt into cache-and-network locally.
  */
 export const apolloCacheConfig: InMemoryCacheConfig = {
   typePolicies: {
@@ -57,13 +58,28 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
           keyArgs: ["level"],
         },
         salaryStructures: {
-          keyArgs: false,
+          keyArgs: ["organizationId"],
         },
         salaryComponents: {
-          keyArgs: false,
+          keyArgs: ["organizationId"],
         },
         payrollRuns: {
-          keyArgs: false,
+          keyArgs: ["organizationId"],
+        },
+        salaryAdvances: {
+          keyArgs: ["status", "organizationId"],
+        },
+        payrollSettings: {
+          keyArgs: ["organizationId"],
+        },
+        payrollSetupChecklist: {
+          keyArgs: ["organizationId"],
+        },
+        payslipTemplates: {
+          keyArgs: ["organizationId"],
+          merge(_existing, incoming) {
+            return incoming;
+          },
         },
       },
     },
@@ -76,15 +92,21 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
     AttendanceCorrection: {
       keyFields: ["id"],
     },
+    PayslipTemplate: {
+      keyFields: ["id"],
+    },
   },
 };
 
 export const apolloDefaultOptions = {
   watchQuery: {
-    fetchPolicy: "cache-and-network" as const,
+    fetchPolicy: "cache-first" as const,
     nextFetchPolicy: "cache-first" as const,
   },
+  query: {
+    fetchPolicy: "cache-first" as const,
+  },
   mutate: {
-    awaitRefetchQueries: true,
+    awaitRefetchQueries: false,
   },
 };

@@ -1,5 +1,55 @@
 import { gql } from "@apollo/client";
 
+export const GET_IMPORT_TARGET_FIELDS = gql`
+  query GetImportTargetFields {
+    importTargetFields {
+      key
+      label
+      required
+    }
+  }
+`;
+
+export const GET_DATA_IMPORT_JOB = gql`
+  query GetDataImportJob($id: ID!) {
+    dataImportJob(id: $id) {
+      id
+      status
+      sourceType
+      fileName
+      headers
+      sampleRows
+      columnMapping
+      mappingConfidence
+      previewResult
+      commitResult
+      errorMessage
+      rowCount
+      createdAt
+    }
+  }
+`;
+
+export const GET_PAYSLIP_TEMPLATES = gql`
+  query GetPayslipTemplates($organizationId: ID) {
+    payslipTemplates(organizationId: $organizationId) {
+      id
+      name
+      slug
+      description
+      layoutKey
+      theme
+      source
+      previewNotes
+      isDefault
+      isActive
+      isSystem
+      organizationId
+      sourceFileUrl
+    }
+  }
+`;
+
 export const GET_SALARY_COMPONENTS = gql`
   query GetSalaryComponents($organizationId: ID) {
     salaryComponents(organizationId: $organizationId) {
@@ -156,6 +206,9 @@ export const GET_PAYROLL_SETUP_CHECKLIST = gql`
       employeesWithCtc
       activeAdvances
       ready
+      activeEmployees
+      employeesMissingCtc
+      employeesMissingBank
     }
   }
 `;
