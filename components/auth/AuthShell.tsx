@@ -5,6 +5,8 @@ interface AuthShellProps {
   children: React.ReactNode;
   title: string;
   description?: string;
+  sideImage?: string;
+  sideImageAlt?: string;
 }
 
 function BrandMark({ dark = false }: { dark?: boolean }) {
@@ -18,7 +20,7 @@ function BrandMark({ dark = false }: { dark?: boolean }) {
         }
       >
         <Image
-          src="/images/teamzen_zoomed.png"
+          src="/images/teamzen_zoomed.webp"
           alt="Teamzen"
           width={36}
           height={36}
@@ -39,42 +41,41 @@ function BrandMark({ dark = false }: { dark?: boolean }) {
   );
 }
 
-export function AuthShell({ children, title, description }: AuthShellProps) {
+export function AuthShell({
+  children,
+  title,
+  description,
+  sideImage = "/images/auth/login-admin.webp",
+  sideImageAlt = "Teamzen admin workspace illustration",
+}: AuthShellProps) {
   return (
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-2">
-      <aside className="relative hidden overflow-hidden bg-[oklch(0.28_0.04_200)] px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div
-          className="pointer-events-none absolute inset-0 opacity-40"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle at 20% 20%, oklch(0.55 0.09 200 / 0.45), transparent 45%), radial-gradient(circle at 80% 80%, oklch(0.4 0.06 220 / 0.35), transparent 40%)",
-          }}
+      <aside className="relative hidden overflow-hidden bg-[#e8eef4] lg:flex lg:flex-col lg:justify-between">
+        <Image
+          src={sideImage}
+          alt={sideImageAlt}
+          fill
+          priority
+          sizes="50vw"
+          className="object-cover object-center"
         />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/25" />
 
-        <div className="relative z-10">
+        <div className="relative z-10 px-10 pt-12">
           <BrandMark dark />
         </div>
 
-        <div className="relative z-10 max-w-md space-y-4">
-          <h1 className="text-3xl font-semibold tracking-tight text-balance">
+        <div className="relative z-10 max-w-md space-y-4 px-10 pb-12">
+          <h1 className="text-3xl font-semibold tracking-tight text-balance text-white">
             Workforce and payroll administration
           </h1>
-          <p className="text-sm leading-relaxed text-white/70">
+          <p className="text-sm leading-relaxed text-white/75">
             Manage employees, attendance, leave, and payroll from one admin workspace.
           </p>
+          <p className="text-xs text-white/45">
+            © {new Date().getFullYear()} Teamzen Pvt. Ltd.
+          </p>
         </div>
-
-        <p className="relative z-10 text-xs text-white/45">
-          © {new Date().getFullYear()} Teamzen Pvt. Ltd.
-        </p>
       </aside>
 
       <div className="flex min-h-screen flex-col justify-center px-4 py-12 sm:px-6 lg:px-12">
@@ -85,9 +86,9 @@ export function AuthShell({ children, title, description }: AuthShellProps) {
 
           <div className="mb-8 space-y-1.5">
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
-            {description && (
+            {description ? (
               <p className="text-sm text-muted-foreground">{description}</p>
-            )}
+            ) : null}
           </div>
 
           {children}

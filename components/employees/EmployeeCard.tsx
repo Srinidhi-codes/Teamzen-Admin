@@ -1,7 +1,7 @@
 "use client";
 
 import { User } from "@/lib/graphql/users/types";
-import { Mail, Phone, Building2, Edit, MapPin } from "lucide-react";
+import { Mail, Phone, Building2, Edit, MapPin, ClipboardList, Loader2 } from "lucide-react";
 import { Switch } from "../ui/switch";
 import Image from "next/image";
 import { useState } from "react";
@@ -13,15 +13,24 @@ interface EmployeeCardProps {
   employee: User;
   onEdit: (employee: User) => void;
   onStatusToggle: (userId: string, newStatus: boolean) => void;
+  onStartOnboarding?: (employee: User) => void | Promise<void>;
+  startingOnboardingId?: string | null;
 }
 
-export default function EmployeeCard({ employee, onEdit, onStatusToggle }: EmployeeCardProps) {
+export default function EmployeeCard({
+  employee,
+  onEdit,
+  onStatusToggle,
+  onStartOnboarding,
+  startingOnboardingId,
+}: EmployeeCardProps) {
   const [isPhotoOpen, setIsPhotoOpen] = useState(false);
   const { user: currentUser } = useStore();
   const isAdminOrHr =
     currentUser?.role === "admin" ||
     currentUser?.role === "hr" ||
     currentUser?.role === "superadmin";
+  const isStarting = startingOnboardingId === employee.id;
 
   return (
     <>
@@ -135,6 +144,22 @@ export default function EmployeeCard({ employee, onEdit, onStatusToggle }: Emplo
                   })
                 : "—"}
             </span>
+            {onStartOnboarding && (
+              <button
+                type="button"
+                disabled={isStarting}
+                onClick={() => void onStartOnboarding(employee)}
+                className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
+                title="Start or open onboarding"
+              >
+                {isStarting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ClipboardList className="h-3.5 w-3.5" />
+                )}
+                Onboard
+              </button>
+            )}
             <button
               onClick={() => onEdit(employee)}
               className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"

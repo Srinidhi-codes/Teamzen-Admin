@@ -8,6 +8,19 @@ export const START_PREBOARDING = gql`
       error
       inviteToken
       inviteUrl
+      onboardingId
+    }
+  }
+`;
+
+export const START_ONBOARDING_FOR_EMPLOYEE = gql`
+  mutation StartOnboardingForEmployee($input: StartOnboardingForEmployeeInput!) {
+    startOnboardingForEmployee(input: $input) {
+      success
+      error
+      inviteToken
+      inviteUrl
+      onboardingId
     }
   }
 `;

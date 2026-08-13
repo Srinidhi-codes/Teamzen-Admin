@@ -176,7 +176,7 @@ export default function OnboardingPage() {
     <div className="space-y-6">
       <PageHeader
         title="Onboarding"
-        description="Preboarding, document verification, and checklists"
+        description="New joiners: offer, preboarding portal, docs, then activate. Already on the roster? Add them under Employees, then use Onboard on their card."
         actions={
           <div className="flex flex-wrap gap-2">
             <HrOnboardingTourButton variant="board" />
@@ -380,6 +380,12 @@ export default function OnboardingPage() {
                 ✕
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Creates an inactive hire, checklist, and optional offer + magic-link
+              portal. For people already active in Employees, close this and use{" "}
+              <span className="font-medium text-foreground">Onboard</span> on
+              their card instead.
+            </p>
             <fieldset disabled={startBusy} className="space-y-4 disabled:opacity-70">
             {formError && (
               <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">

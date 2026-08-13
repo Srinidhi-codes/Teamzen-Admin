@@ -4,6 +4,7 @@ import { useCSVExport } from "@/lib/hooks/useCSVExport";
 import { CSVColumn } from "@/lib/utils/csvExport";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Download,
   UserPlus,
@@ -39,9 +40,12 @@ import {
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 import { useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store/useStore";
+import { useOnboardingMutations } from "@/lib/graphql/onboarding/onboardingHook";
+import { toast } from "sonner";
 
 export default function EmployeesPage() {
   const { user } = useStore();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,6 +54,9 @@ export default function EmployeesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [organizationId, setOrganizationId] = useState(
     () => searchParams.get("organizationId") || ""
+  );
+  const [startingOnboardingId, setStartingOnboardingId] = useState<string | null>(
+    null
   );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
@@ -67,6 +74,7 @@ export default function EmployeesPage() {
   useGraphQLDesignations(undefined, organizationId || undefined);
   useGraphQLOfficeLocations(undefined, organizationId || undefined);
   const { updateUserStatus } = useGraphQLUserStatusMutations();
+  const { startOnboardingForEmployee } = useOnboardingMutations();
   const { exportData } = useCSVExport<User>();
 
   const handleStatusToggle = async (userId: string, newStatus: boolean) => {
@@ -75,6 +83,36 @@ export default function EmployeesPage() {
       refetchUsers();
     } catch (err) {
       console.error("Error updating user status:", err);
+    }
+  };
+
+  const handleStartOnboarding = async (employee: User) => {
+    setStartingOnboardingId(employee.id);
+    try {
+      const result = await startOnboardingForEmployee({
+        variables: {
+          input: {
+            userId: employee.id,
+            generateOffer: false,
+            sendInvite: false,
+          },
+        },
+      });
+      const payload = result.data?.startOnboardingForEmployee;
+      if (payload?.onboardingId) {
+        if (payload.success) {
+          toast.success(`Onboarding started for ${employee.firstName}`);
+        } else {
+          toast.message(payload.error || "Opening existing onboarding");
+        }
+        router.push(`/onboarding/${payload.onboardingId}`);
+        return;
+      }
+      toast.error(payload?.error || "Could not start onboarding");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not start onboarding");
+    } finally {
+      setStartingOnboardingId(null);
     }
   };
 
@@ -190,14 +228,14 @@ export default function EmployeesPage() {
     <div className="page-shell">
       <PageHeader
         title="Employees"
-        description="Directory of people in your organization."
+        description="Directory of people already on your roster. For new joiners with offer & documents, use Onboarding → Start hire."
         actions={
           <>
             <Link
               href="/onboarding"
               className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
             >
-              Start onboarding
+              Start hire
             </Link>
             <button
               onClick={handleExportCSV}
@@ -292,6 +330,8 @@ export default function EmployeesPage() {
                 employee={employee}
                 onEdit={handleEdit}
                 onStatusToggle={handleStatusToggle}
+                onStartOnboarding={handleStartOnboarding}
+                startingOnboardingId={startingOnboardingId}
               />
             ))}
           </div>
@@ -320,7 +360,7 @@ export default function EmployeesPage() {
             <DialogDescription>
               {isEditing
                 ? "Update this employee’s profile and employment details."
-                : "Create a new employee record in your organization."}
+                : "Create a roster record for someone already joining or on payroll. New candidates with offer letters should use Onboarding → Start hire."}
             </DialogDescription>
           </DialogHeader>
           <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
