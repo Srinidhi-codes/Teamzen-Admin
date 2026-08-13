@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useGraphQLUserMutations, useGraphQLUsers } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
@@ -25,6 +26,8 @@ import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucid
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
 import { SegmentedTabs } from "@/components/common/SegmentedTabs";
+import { useOnboardingMutations } from "@/lib/graphql/onboarding/onboardingHook";
+import Link from "next/link";
 
 interface EmployeeFormProps {
     initialData?: User | null;
@@ -161,13 +164,17 @@ export default function EmployeeForm({
     onSuccess,
     onCancel,
 }: EmployeeFormProps) {
+    const router = useRouter();
     const [formData, setFormData] = useState(() => buildEmployeeFormData(initialData));
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [alsoStartOnboarding, setAlsoStartOnboarding] = useState(false);
+    const [startingOnboarding, setStartingOnboarding] = useState(false);
     const errorBannerRef = useRef<HTMLDivElement>(null);
     const { user: storeUser } = useStore();
     const { user: graphqlUser } = useGraphQLUser();
     const currentUser = graphqlUser || storeUser;
     const { createUser, updateUser, isCreatingUser, isUpdatingUser } = useGraphQLUserMutations();
+    const { startOnboardingForEmployee } = useOnboardingMutations();
 
     const optionsOrgId =
         formData.organizationId ||
@@ -203,7 +210,7 @@ export default function EmployeeForm({
     const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(initialData?.profilePictureUrl || null);
     const [isPhotoOpen, setIsPhotoOpen] = useState(false);
     const [componentOverrides, setComponentOverrides] = useState<Record<string, { isExcluded: boolean; overrideValue: string }>>({});
-    const isSubmitting = isCreatingUser || isUpdatingUser;
+    const isSubmitting = isCreatingUser || isUpdatingUser || startingOnboarding;
     const formMetaLoading =
         (isDepartmentsLoading && !departments) ||
         (isDesignationsLoading && !designations) ||
@@ -570,6 +577,44 @@ export default function EmployeeForm({
                 }
             }
 
+            // Optional: attach onboarding after create (bridge from Add employee)
+            if (!initialData && alsoStartOnboarding && savedUser?.id) {
+                setStartingOnboarding(true);
+                try {
+                    const obResult = await startOnboardingForEmployee({
+                        variables: {
+                            input: {
+                                userId: savedUser.id,
+                                generateOffer: false,
+                                sendInvite: false,
+                            },
+                        },
+                    });
+                    const payload = obResult.data?.startOnboardingForEmployee;
+                    if (payload?.onboardingId) {
+                        if (payload.success) {
+                            toast.success("Onboarding checklist started");
+                        } else {
+                            toast.message(payload.error || "Opened existing onboarding");
+                        }
+                        onSuccess();
+                        router.push(`/onboarding/${payload.onboardingId}`);
+                        return;
+                    }
+                    toast.error(
+                        payload?.error ||
+                            "Employee created, but onboarding could not be started"
+                    );
+                } catch (err: any) {
+                    toast.error(
+                        err?.message ||
+                            "Employee created, but onboarding could not be started"
+                    );
+                } finally {
+                    setStartingOnboarding(false);
+                }
+            }
+
             onSuccess();
         } catch (error: any) {
             toast.error(error.message || "An error occurred");
@@ -767,6 +812,49 @@ export default function EmployeeForm({
                             error={errors.managerId}
                         />
                     </div>
+
+                    {!initialData && (
+                        <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-sm font-medium text-foreground">
+                                        Also start onboarding
+                                    </p>
+                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                        Attach a checklist after creating this roster record.
+                                        For new joiners with offer letters and a magic-link portal,
+                                        prefer{" "}
+                                        <Link
+                                            href="/onboarding"
+                                            className="font-medium text-primary underline-offset-2 hover:underline"
+                                        >
+                                            Onboarding → Start hire
+                                        </Link>
+                                        .
+                                    </p>
+                                </div>
+                                <Switch
+                                    checked={alsoStartOnboarding}
+                                    onCheckedChange={setAlsoStartOnboarding}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {initialData && (
+                        <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
+                            Need docs or a checklist for this person? Use{" "}
+                            <span className="font-medium text-foreground">Start onboarding</span>{" "}
+                            on their employee card, or open{" "}
+                            <Link
+                                href="/onboarding"
+                                className="font-medium text-primary underline-offset-2 hover:underline"
+                            >
+                                Onboarding
+                            </Link>
+                            .
+                        </div>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="financials" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>

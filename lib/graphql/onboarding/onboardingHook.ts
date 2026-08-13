@@ -17,6 +17,7 @@ import {
   REORDER_TASK_DEFINITIONS,
   SEND_OFFER_LETTER_EMAIL,
   SEND_PREBOARDING_INVITE,
+  START_ONBOARDING_FOR_EMPLOYEE,
   START_PREBOARDING,
   SUGGEST_ONBOARDING_TASKS,
   POLISH_OFFER_LETTER,
@@ -121,6 +122,9 @@ export function useLetterTemplates(organizationId?: string, letterType?: string)
 
 export function useOnboardingMutations() {
   const [startPreboarding, startState] = useMutation<any>(START_PREBOARDING);
+  const [startOnboardingForEmployee, startForEmpState] = useMutation<any>(
+    START_ONBOARDING_FOR_EMPLOYEE
+  );
   const [sendInvite, sendState] = useMutation<any>(SEND_PREBOARDING_INVITE);
   const [activate, activateState] = useMutation<any>(ACTIVATE_ONBOARDING);
   const [cancel, cancelState] = useMutation<any>(CANCEL_ONBOARDING);
@@ -140,6 +144,7 @@ export function useOnboardingMutations() {
 
   return {
     startPreboarding,
+    startOnboardingForEmployee,
     sendInvite,
     activate,
     cancel,
@@ -157,6 +162,7 @@ export function useOnboardingMutations() {
     createLetter,
     updateLetter,
     startPreboardingLoading: startState.loading,
+    startOnboardingForEmployeeLoading: startForEmpState.loading,
     sendInviteLoading: sendState.loading,
     activateLoading: activateState.loading,
     cancelLoading: cancelState.loading,
@@ -175,6 +181,7 @@ export function useOnboardingMutations() {
     updateLetterLoading: updateLetterState.loading,
     loading:
       startState.loading ||
+      startForEmpState.loading ||
       sendState.loading ||
       activateState.loading ||
       cancelState.loading ||

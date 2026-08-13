@@ -127,7 +127,7 @@ export function AdminSidebar({
             <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 px-1" onClick={() => isMobileOpen && closeMobile()}>
               <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white ring-1 ring-border">
                 <Image
-                  src="/images/teamzen_zoomed.png"
+                  src="/images/teamzen_zoomed.webp"
                   alt="Teamzen"
                   width={28}
                   height={28}
