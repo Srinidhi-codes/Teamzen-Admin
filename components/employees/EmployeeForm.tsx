@@ -22,12 +22,13 @@ import { FormSkeleton } from "../common/Skeleton";
 import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
 import { Switch as ToggleSwitch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "../ui/tabs";
-import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase } from "lucide-react";
+import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase, FileText } from "lucide-react";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
 import { SegmentedTabs } from "@/components/common/SegmentedTabs";
 import { useOnboardingMutations } from "@/lib/graphql/onboarding/onboardingHook";
 import Link from "next/link";
+import EmployeeDocumentsPanel from "./EmployeeDocumentsPanel";
 
 interface EmployeeFormProps {
     initialData?: User | null;
@@ -60,13 +61,14 @@ const employeeSchema = z.object({
     panNumber: z.string().optional(),
     aadharNumber: z.string().optional(),
     uanNumber: z.string().optional(),
+    residentialAddress: z.string().optional(),
     // Payroll
     salaryStructureId: z.string().optional(),
     annualCtc: z.string().optional(),
     effectiveFrom: z.string().optional(),
 });
 
-type EmployeeTab = "identity" | "employment" | "financials" | "payroll";
+type EmployeeTab = "identity" | "employment" | "financials" | "payroll" | "documents";
 
 const FIELD_TAB_MAP: Record<string, EmployeeTab> = {
     firstName: "identity",
@@ -89,18 +91,20 @@ const FIELD_TAB_MAP: Record<string, EmployeeTab> = {
     panNumber: "financials",
     aadharNumber: "financials",
     uanNumber: "financials",
+    residentialAddress: "financials",
     salaryStructureId: "payroll",
     annualCtc: "payroll",
     effectiveFrom: "payroll",
 };
 
-const TAB_ORDER: EmployeeTab[] = ["identity", "employment", "financials", "payroll"];
+const TAB_ORDER: EmployeeTab[] = ["identity", "employment", "financials", "payroll", "documents"];
 
 const TAB_LABELS: Record<EmployeeTab, string> = {
     identity: "Identity",
     employment: "Work",
     financials: "Finance",
     payroll: "Payroll",
+    documents: "Documents",
 };
 
 function tabHasErrors(tab: EmployeeTab, fieldErrors: Record<string, string>): boolean {
@@ -148,6 +152,7 @@ function buildEmployeeFormData(initialData?: User | null) {
         panNumber: initialData?.panNumber || "",
         aadharNumber: initialData?.aadharNumber || "",
         uanNumber: initialData?.uanNumber || "",
+        residentialAddress: (initialData as any)?.residentialAddress || "",
         salaryStructureId: initialData?.salaryDetails?.salaryStructure?.id
             ? String(initialData.salaryDetails.salaryStructure.id)
             : "",
@@ -448,6 +453,9 @@ export default function EmployeeForm({
         e?.preventDefault();
 
         try {
+            if (initialData && activeTab === "documents") {
+                return;
+            }
             if (initialData && activeTab === "payroll") {
                 await handlePayrollOnlySave();
                 return;
@@ -683,6 +691,15 @@ export default function EmployeeForm({
                             count: countTabErrors("payroll", errors),
                             tone: tabHasErrors("payroll", errors) ? "destructive" : "default",
                         },
+                        ...(initialData?.id
+                            ? [
+                                  {
+                                      id: "documents" as const,
+                                      label: "Documents",
+                                      icon: FileText,
+                                  },
+                              ]
+                            : []),
                     ]}
                 />
 
@@ -866,6 +883,16 @@ export default function EmployeeForm({
                         <Input label="Aadhar Number" name="aadharNumber" value={formData.aadharNumber} onChange={handleChange} />
                         <Input label="UAN Number" name="uanNumber" value={formData.uanNumber} onChange={handleChange} />
                     </div>
+                    <div>
+                        <label className="mb-1.5 block text-sm font-medium">Residential address</label>
+                        <textarea
+                            name="residentialAddress"
+                            className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                            placeholder="Used on Form 16 and letters"
+                            value={formData.residentialAddress}
+                            onChange={handleChange}
+                        />
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="payroll" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
@@ -977,14 +1004,41 @@ export default function EmployeeForm({
                         );
                     })()}
                 </TabsContent>
+
+                {initialData?.id && (
+                    <TabsContent
+                        value="documents"
+                        forceMount
+                        className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}
+                    >
+                        <div>
+                            <h3 className="text-sm font-medium text-foreground">Documents vault</h3>
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                Issue Form 16 and certificates, request uploads, and review employee submissions.
+                            </p>
+                        </div>
+                        <EmployeeDocumentsPanel
+                            userId={String(initialData.id)}
+                            employeeName={`${initialData.firstName || ""} ${initialData.lastName || ""}`.trim()}
+                        />
+                    </TabsContent>
+                )}
                 </div>
             </Tabs>
 
             <div className="mt-6 flex shrink-0 justify-end gap-2 border-t border-border pt-4">
-                <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary gap-2" disabled={isSubmitting || (activeTab === "payroll" && isStructuresLoading)}>
-                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (initialData ? "Save changes" : "Create employee")}
-                </button>
+                {activeTab === "documents" ? (
+                    <button type="button" onClick={onCancel} className="btn-primary">
+                        Done
+                    </button>
+                ) : (
+                    <>
+                        <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>
+                        <button type="submit" className="btn-primary gap-2" disabled={isSubmitting || (activeTab === "payroll" && isStructuresLoading)}>
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (initialData ? "Save changes" : "Create employee")}
+                        </button>
+                    </>
+                )}
             </div>
         </form>
         <PhotoOverlay

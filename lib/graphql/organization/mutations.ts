@@ -7,6 +7,8 @@ export const CREATE_ORGANIZATION = gql`
             name
             gstNumber
             panNumber
+            tanNumber
+            citTdsOffice
             headquartersAddress
             llmApiKey
             accent
@@ -24,6 +26,8 @@ export const UPDATE_ORGANIZATION = gql`
             name
             gstNumber
             panNumber
+            tanNumber
+            citTdsOffice
             headquartersAddress
             llmApiKey
             accent

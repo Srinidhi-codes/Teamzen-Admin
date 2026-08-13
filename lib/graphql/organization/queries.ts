@@ -11,6 +11,8 @@ export const GET_ORGANIZATIONS = gql`
             gstNumber
             employeeCount
             panNumber
+            tanNumber
+            citTdsOffice
             headquartersAddress
             isActive
             registrationNumber
@@ -38,6 +40,8 @@ export const GET_ORGANIZATION = gql`
             gstNumber
             employeeCount
             panNumber
+            tanNumber
+            citTdsOffice
             headquartersAddress
             isActive
             registrationNumber

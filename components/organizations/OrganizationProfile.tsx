@@ -78,6 +78,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
     name: "",
     gstNumber: "",
     panNumber: "",
+    tanNumber: "",
+    citTdsOffice: "",
     registrationNumber: "",
     headquartersAddress: "",
     logo: "",
@@ -92,6 +94,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       name: organization.name,
       gstNumber: organization.gstNumber || "",
       panNumber: organization.panNumber || "",
+      tanNumber: organization.tanNumber || "",
+      citTdsOffice: organization.citTdsOffice || "",
       registrationNumber: organization.registrationNumber || "",
       headquartersAddress: organization.headquartersAddress || "",
       isActive: organization.isActive,
@@ -397,6 +401,12 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                     value={formData.panNumber}
                     onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
                   />
+                  <Input
+                    label="TAN number"
+                    placeholder="TAN (Form 16)"
+                    value={formData.tanNumber}
+                    onChange={(e) => setFormData({ ...formData, tanNumber: e.target.value })}
+                  />
                   <div className="md:col-span-2">
                     <Input
                       label="Headquarters"
@@ -404,6 +414,19 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       value={formData.headquartersAddress}
                       onChange={(e) =>
                         setFormData({ ...formData, headquartersAddress: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
+                      CIT (TDS) office
+                    </label>
+                    <textarea
+                      className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      placeholder="Commissioner of Income Tax (TDS) address for Form 16"
+                      value={formData.citTdsOffice}
+                      onChange={(e) =>
+                        setFormData({ ...formData, citTdsOffice: e.target.value })
                       }
                     />
                   </div>
@@ -554,6 +577,13 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                 />
                 <DataBox icon={FileText} label="GST number" value={organization.gstNumber} />
                 <DataBox icon={CreditCard} label="PAN number" value={organization.panNumber} />
+                <DataBox icon={CreditCard} label="TAN number" value={organization.tanNumber} />
+                {organization.citTdsOffice ? (
+                  <div className="md:col-span-2 rounded-xl border border-border bg-muted/20 p-4 text-sm">
+                    <p className="text-xs text-muted-foreground">CIT (TDS)</p>
+                    <p className="mt-1 whitespace-pre-wrap">{organization.citTdsOffice}</p>
+                  </div>
+                ) : null}
                 <DataBox
                   icon={Hash}
                   label="LLM API key"
