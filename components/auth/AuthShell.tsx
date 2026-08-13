@@ -7,6 +7,7 @@ interface AuthShellProps {
   description?: string;
   sideImage?: string;
   sideImageAlt?: string;
+  wide?: boolean;
 }
 
 function BrandMark({ dark = false }: { dark?: boolean }) {
@@ -47,6 +48,7 @@ export function AuthShell({
   description,
   sideImage = "/images/auth/login-admin.webp",
   sideImageAlt = "Teamzen admin workspace illustration",
+  wide = false,
 }: AuthShellProps) {
   return (
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-2">
@@ -79,13 +81,13 @@ export function AuthShell({
       </aside>
 
       <div className="flex min-h-screen flex-col justify-center px-4 py-12 sm:px-6 lg:px-12">
-        <div className="mx-auto w-full max-w-100">
+        <div className={`mx-auto w-full ${wide ? "max-w-lg" : "max-w-md"}`}>
           <div className="mb-8 lg:hidden">
             <BrandMark />
           </div>
 
-          <div className="mb-8 space-y-1.5">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
+          <div className="mb-8 space-y-2">
+            <h2 className="text-3xl font-semibold tracking-tight text-foreground">{title}</h2>
             {description ? (
               <p className="text-sm text-muted-foreground">{description}</p>
             ) : null}

@@ -139,7 +139,8 @@ function buildEmployeeFormData(initialData?: User | null) {
         designationId: initialData?.designation?.id ? String(initialData.designation.id) : "",
         officeLocationId: initialData?.officeLocation?.id ? String(initialData.officeLocation.id) : "",
         isStaff: initialData?.isStaff !== false,
-        isVerified: initialData?.isVerified !== false,
+        // Verified only after required onboarding tasks/docs complete
+        isVerified: Boolean(initialData?.isVerified),
         managerId: initialData?.manager?.id ? String(initialData.manager.id) : "",
         organizationId: initialData?.organization?.id ? String(initialData.organization.id) : "",
         bankAccountNumber: initialData?.bankAccountNumber || "",

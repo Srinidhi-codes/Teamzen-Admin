@@ -4,13 +4,10 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   Send,
   X,
-  Bot,
   Trash2,
   Loader2,
   Mic,
   MicOff,
-  MessageCircle,
-  Sparkles,
   ArrowUpRight,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -207,9 +204,14 @@ export function AssistantWidget() {
           <header className="relative shrink-0 border-b border-border/70 bg-gradient-to-b from-muted/50 to-card px-4 py-3.5">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                  <Sparkles className="h-4 w-4" />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card bg-emerald-500" />
+                <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-[#e8eef4] shadow-sm">
+                  <Image
+                    src="/images/icons/assistant-mark.webp"
+                    alt=""
+                    fill
+                    sizes="40px"
+                    className="object-contain p-0.5"
+                  />
                 </div>
                 <div className="min-w-0">
                   <h3 className="truncate text-[15px] font-semibold tracking-tight text-foreground">
@@ -433,15 +435,25 @@ export function AssistantWidget() {
         aria-label={isOpen ? "Close assistant" : "Open assistant"}
         aria-expanded={isOpen}
         className={cn(
-          "flex h-[52px] w-[52px] items-center justify-center rounded-2xl transition-all duration-300",
+          "relative flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-2xl transition-all duration-300",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           "active:scale-95",
           isOpen
             ? "border border-border bg-card text-foreground shadow-lg hover:bg-muted"
-            : "bg-primary text-primary-foreground shadow-[0_12px_28px_-8px_oklch(0.45_0.09_200_/_0.55)] hover:brightness-105"
+            : "shadow-[0_12px_28px_-8px_oklch(0.45_0.09_200_/_0.55)] hover:brightness-105"
         )}
       >
-        {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+        {isOpen ? (
+          <X className="h-5 w-5" />
+        ) : (
+          <Image
+            src="/images/icons/assistant-chat.webp"
+            alt=""
+            fill
+            sizes="52px"
+            className="object-cover"
+          />
+        )}
       </button>
 
       <ConfirmationModal

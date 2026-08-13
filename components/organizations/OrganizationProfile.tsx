@@ -27,6 +27,8 @@ import { Button } from "../ui/button";
 import { Input } from "../common/Input";
 import { PageHeader } from "../common/PageHeader";
 import { useStore } from "@/lib/store/useStore";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
+import { planLabel } from "@/lib/plans";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import moment from "moment";
@@ -61,6 +63,8 @@ interface OrganizationProfileProps {
 export default function OrganizationProfile({ id }: OrganizationProfileProps) {
   const router = useRouter();
   const { user } = useStore();
+  const { can, requiredPlan } = useOrgPlan();
+  const canFaceAttendance = can("face_attendance");
   const {
     organization,
     isOrganizationLoading,
@@ -425,14 +429,18 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                         Face attendance
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Require face verification for check-in/out on web and mobile.
+                        {canFaceAttendance
+                          ? "Require face verification for check-in/out on web and mobile."
+                          : `Requires the ${planLabel(requiredPlan("face_attendance"))} plan. Upgrade in Settings → Plan & billing.`}
                       </p>
                     </div>
                     <Switch
-                      checked={!!formData.faceAttendanceEnabled}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, faceAttendanceEnabled: checked })
-                      }
+                      checked={canFaceAttendance && !!formData.faceAttendanceEnabled}
+                      disabled={!canFaceAttendance}
+                      onCheckedChange={(checked) => {
+                        if (!canFaceAttendance) return;
+                        setFormData({ ...formData, faceAttendanceEnabled: checked });
+                      }}
                     />
                   </div>
                   <div className="md:col-span-2 space-y-3 rounded-xl border border-border bg-muted/20 p-4">
@@ -562,7 +570,13 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                 <DataBox
                   icon={ScanFace}
                   label="Face attendance"
-                  value={organization.faceAttendanceEnabled ? "Enabled" : "Disabled"}
+                  value={
+                    !canFaceAttendance
+                      ? `Unavailable (${planLabel(requiredPlan("face_attendance"))}+)`
+                      : organization.faceAttendanceEnabled
+                        ? "Enabled"
+                        : "Disabled"
+                  }
                 />
                 <DataBox
                   icon={CalendarDays}

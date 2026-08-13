@@ -6,9 +6,17 @@ import { useStore } from "@/lib/store/useStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "../common/Input";
-import { Eye, EyeOff, LoaderCircle, Lock, Mail, MapPin } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { AuthShell } from "./AuthShell";
-import { cn } from "@/lib/utils";
+import { AUTH_INPUT_CLASS, AuthFooterLink, AuthSubmitButton } from "./auth-ui";
+
+function markLocationSyncNeeded() {
+  try {
+    sessionStorage.setItem("teamzen_sync_location", "1");
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -19,63 +27,17 @@ export default function LoginForm() {
   const { login } = useAuth();
   const { loginUser } = useStore();
 
-  const [isLocating, setIsLocating] = useState(false);
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const [locationError, setLocationError] = useState("");
-
-  const requestLocation = async (): Promise<{ latitude: number; longitude: number } | null> => {
-    setIsLocating(true);
-    setLocationError("");
-
-    return new Promise((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setIsLocating(false);
-          setShowLocationModal(false);
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (err) => {
-          setIsLocating(false);
-          if (err.code === 1) {
-            setLocationError(
-              "Location access is blocked. Allow location for this site in your browser settings, then try again."
-            );
-          } else {
-            setLocationError("We couldn't get your location. Please try again.");
-          }
-          setShowLocationModal(true);
-          resolve(null);
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-      );
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const coords = await requestLocation();
-    if (coords) {
-      performLogin(coords.latitude, coords.longitude);
-    }
-  };
-
-  const performLogin = async (lat?: number, lon?: number) => {
     try {
-      const response = await login.mutateAsync({
-        email,
-        password,
-        latitude: lat ? parseFloat(lat.toFixed(10)) : (undefined as any),
-        longitude: lon ? parseFloat(lon.toFixed(10)) : (undefined as any),
-      });
+      const response = await login.mutateAsync({ email, password });
 
       if (response && response.user) {
         loginUser(response.user);
       }
 
-      router.push("/dashboard");
+      markLocationSyncNeeded();
+      router.replace("/dashboard");
       router.refresh();
     } catch (error: any) {
       alert(error.message || "Login failed");
@@ -95,6 +57,7 @@ export default function LoginForm() {
           placeholder="admin@company.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className={AUTH_INPUT_CLASS}
         />
 
         <div className="space-y-2">
@@ -120,6 +83,7 @@ export default function LoginForm() {
             placeholder="Enter your password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className={AUTH_INPUT_CLASS}
             suffix={
               <button
                 type="button"
@@ -143,87 +107,12 @@ export default function LoginForm() {
           <span className="text-sm text-muted-foreground">Remember me</span>
         </label>
 
-        <button
-          type="submit"
-          disabled={login.isPending || isLocating}
-          className={cn(
-            "inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90",
-            "disabled:cursor-not-allowed disabled:opacity-60"
-          )}
-        >
-          {isLocating ? (
-            <>
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-              Checking location…
-            </>
-          ) : login.isPending ? (
-            <>
-              <LoaderCircle className="h-4 w-4 animate-spin" />
-              Signing in…
-            </>
-          ) : (
-            "Sign in"
-          )}
-        </button>
+        <AuthSubmitButton type="submit" disabled={login.isPending} loading={login.isPending}>
+          {login.isPending ? "Signing in…" : "Sign in"}
+        </AuthSubmitButton>
       </form>
 
-      {showLocationModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="location-dialog-title"
-            className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-lg"
-          >
-            <div className="space-y-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <MapPin className="h-5 w-5" />
-              </div>
-              <div className="space-y-1.5">
-                <h3 id="location-dialog-title" className="text-base font-semibold text-foreground">
-                  Location required
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Sign-in records your approximate location for security. Allow location access to continue, or skip if your browser blocks it.
-                </p>
-              </div>
-
-              {locationError && (
-                <div className="rounded-md border border-destructive/20 bg-destructive/5 px-3 py-2">
-                  <p className="text-xs text-destructive">{locationError}</p>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => requestLocation().then((coords) => {
-                    if (coords) performLogin(coords.latitude, coords.longitude);
-                  })}
-                  disabled={isLocating}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-                >
-                  {isLocating ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Allow location"
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLocationModal(false);
-                    performLogin();
-                  }}
-                  className="inline-flex h-10 items-center justify-center rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                >
-                  Skip and sign in
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AuthFooterLink prompt="New here?" href="/register" label="Create an account" />
     </AuthShell>
   );
 }

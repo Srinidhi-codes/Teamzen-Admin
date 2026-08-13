@@ -3,8 +3,15 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/api/hooks";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { User, Mail, Lock, UserPlus, FileText, Check } from "lucide-react";
+import { User, Mail, Lock, FileText } from "lucide-react";
+import { Input } from "../common/Input";
+import { AuthShell } from "./AuthShell";
+import {
+    AUTH_INPUT_CLASS,
+    AuthFooterLink,
+    AuthSubmitButton,
+    PasswordChecklist,
+} from "./auth-ui";
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -58,212 +65,100 @@ export default function RegisterForm() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-24 -left-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse-slow"></div>
-                <div className="absolute top-1/2 -right-24 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute -bottom-24 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '4s' }}></div>
-            </div>
-
-            <div className="max-w-xl w-full space-y-8 relative z-10">
-                <div className="animate-fade-in text-center">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-linear-to-tr from-primary to-primary/60 shadow-lg shadow-primary/20 mb-6 transform hover:rotate-6 transition-transform duration-300">
-                        <UserPlus className="w-10 h-10 text-primary-foreground" />
+        <AuthShell
+            title="Create account"
+            description="Join your organization's admin workspace."
+            wide
+        >
+            <form className="space-y-5" onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                    <Input
+                        label="Email"
+                        type="email"
+                        placeholder="you@company.com"
+                        required
+                        icon={<Mail className="h-4 w-4" />}
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        className={AUTH_INPUT_CLASS}
+                    />
+                    <Input
+                        label="Username"
+                        type="text"
+                        placeholder="Username"
+                        required
+                        icon={<User className="h-4 w-4" />}
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        className={AUTH_INPUT_CLASS}
+                    />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <Input
+                            label="First name"
+                            type="text"
+                            placeholder="First name"
+                            required
+                            icon={<FileText className="h-4 w-4" />}
+                            value={formData.first_name}
+                            onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                            className={AUTH_INPUT_CLASS}
+                        />
+                        <Input
+                            label="Last name"
+                            type="text"
+                            placeholder="Last name"
+                            required
+                            icon={<FileText className="h-4 w-4" />}
+                            value={formData.last_name}
+                            onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                            className={AUTH_INPUT_CLASS}
+                        />
                     </div>
-                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">Create account</h2>
-                    <p className="mt-2 text-sm text-muted-foreground">Join our premium payroll management ecosystem</p>
+                    <Input
+                        label="Password"
+                        type="password"
+                        placeholder="Password"
+                        required
+                        icon={<Lock className="h-4 w-4" />}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className={AUTH_INPUT_CLASS}
+                    />
+                    <Input
+                        label="Confirm password"
+                        type="password"
+                        placeholder="Confirm password"
+                        required
+                        icon={<Lock className="h-4 w-4" />}
+                        value={formData.password2}
+                        onChange={(e) => setFormData({ ...formData, password2: e.target.value })}
+                        className={AUTH_INPUT_CLASS}
+                    />
                 </div>
 
+                <PasswordChecklist criteria={passwordCriteria} />
 
-                <div className="glass p-8 rounded-3xl animate-slide-up">
-                    <form className="space-y-5" onSubmit={handleSubmit}>
-                        <div className="space-y-4">
-                            {/* Email Field */}
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <input
-                                    type="email"
-                                    placeholder="Email address"
-                                    required
-                                    value={formData.email}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, email: e.target.value })
-                                    }
-                                    className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                                />
-                            </div>
-
-                            {/* Username Field */}
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <User className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <input
-                                    type="text"
-                                    placeholder="Username"
-                                    required
-                                    value={formData.username}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, username: e.target.value })
-                                    }
-                                    className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                                />
-                            </div>
-
-                            {/* Name Fields Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                        <FileText className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="First Name"
-                                        required
-                                        value={formData.first_name}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, first_name: e.target.value })
-                                        }
-                                        className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                                    />
-                                </div>
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                        <FileText className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        placeholder="Last Name"
-                                        required
-                                        value={formData.last_name}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, last_name: e.target.value })
-                                        }
-                                        className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Password Field */}
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <input
-                                    type="password"
-                                    placeholder="Password"
-                                    required
-                                    value={formData.password}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, password: e.target.value })
-                                    }
-                                    className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                                />
-                            </div>
-
-                            {/* Confirm Password Field */}
-                            <div className="relative group">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                </div>
-                                <input
-                                    type="password"
-                                    placeholder="Confirm Password"
-                                    required
-                                    value={formData.password2}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, password2: e.target.value })
-                                    }
-                                    className="block w-full pl-11 pr-4 py-3 bg-card border border-border rounded-xl text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
-                                />
-                            </div>
-                        </div>
-
-
-                        {/* Password Validation Checklist */}
-                        <div className="bg-muted/30 rounded-2xl p-4 space-y-3 border border-border">
-                            <p className="text-sm text-muted-foreground mb-2">Password requirements</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                <div className={`flex items-center space-x-2.5 transition-colors duration-200 ${passwordCriteria.length ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"}`}>
-                                    <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center border transition-all ${passwordCriteria.length ? "bg-emerald-500/10 border-emerald-500/20" : "bg-muted/50 border-border"}`}>
-                                        <Check className={`w-3 h-3 transition-opacity ${passwordCriteria.length ? "opacity-100" : "opacity-0"}`} />
-                                    </div>
-                                    <span className="font-bold">8+ Characters</span>
-                                </div>
-                                <div className={`flex items-center space-x-2.5 transition-colors duration-200 ${passwordCriteria.number ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"}`}>
-                                    <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center border transition-all ${passwordCriteria.number ? "bg-emerald-500/10 border-emerald-500/20" : "bg-muted/50 border-border"}`}>
-                                        <Check className={`w-3 h-3 transition-opacity ${passwordCriteria.number ? "opacity-100" : "opacity-0"}`} />
-                                    </div>
-                                    <span className="font-bold">Include Numeric</span>
-                                </div>
-                                <div className={`flex items-center space-x-2.5 transition-colors duration-200 ${passwordCriteria.special ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"}`}>
-                                    <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center border transition-all ${passwordCriteria.special ? "bg-emerald-500/10 border-emerald-500/20" : "bg-muted/50 border-border"}`}>
-                                        <Check className={`w-3 h-3 transition-opacity ${passwordCriteria.special ? "opacity-100" : "opacity-0"}`} />
-                                    </div>
-                                    <span className="font-bold">Special Character</span>
-                                </div>
-                                <div className={`flex items-center space-x-2.5 transition-colors duration-200 ${passwordCriteria.uppercase ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground/60"}`}>
-                                    <div className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center border transition-all ${passwordCriteria.uppercase ? "bg-emerald-500/10 border-emerald-500/20" : "bg-muted/50 border-border"}`}>
-                                        <Check className={`w-3 h-3 transition-opacity ${passwordCriteria.uppercase ? "opacity-100" : "opacity-0"}`} />
-                                    </div>
-                                    <span className="font-bold">Uppercase Letter</span>
-                                </div>
-                            </div>
-                        </div>
-
-
-
-                        {Object.keys(errors).length > 0 && (
-                            <div className="rounded-2xl bg-destructive/5 p-4 border border-destructive/10 animate-slide-up">
-                                <div className="flex">
-                                    <div className="ml-3">
-                                        <h3 className="text-sm font-medium text-destructive">
-                                            Registration failed
-                                        </h3>
-                                        <div className="mt-2 text-sm text-destructive/80 font-medium">
-                                            <ul className="list-disc pl-5 space-y-1">
-                                                {Object.values(errors).map((err: any, i) => (
-                                                    <li key={i}>
-                                                        {typeof err === "string" ? err : JSON.stringify(err)}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={register.isPending}
-                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            {register.isPending ? "Creating account…" : "Create account"}
-                        </button>
-                    </form>
-
-                    <div className="mt-8 pt-6 border-t border-border text-center">
-                        <p className="text-sm text-muted-foreground font-medium">
-                            Already have an account?{" "}
-                            <Link
-                                href="/login"
-                                className="font-medium text-primary hover:underline"
-                            >
-                                Sign in
-                            </Link>
+                {Object.keys(errors).length > 0 && (
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+                        <p className="mb-1.5 text-sm font-medium text-destructive">
+                            Please fix the following
                         </p>
+                        <ul className="list-disc space-y-1 pl-5 text-sm text-destructive/80">
+                            {Object.values(errors).map((err: any, i) => (
+                                <li key={i}>
+                                    {typeof err === "string" ? err : JSON.stringify(err)}
+                                </li>
+                            ))}
+                        </ul>
                     </div>
-                </div>
+                )}
 
-                <p className="text-center text-[10px] font-black text-muted-foreground/30 uppercase tracking-[0.2em]">
-                    &copy; 2025 Payroll Professional. Enterprise Identity v1.0.
-                </p>
-            </div>
-        </div>
+                <AuthSubmitButton type="submit" disabled={register.isPending} loading={register.isPending}>
+                    {register.isPending ? "Creating account…" : "Create account"}
+                </AuthSubmitButton>
+            </form>
+
+            <AuthFooterLink prompt="Already have an account?" href="/login" label="Sign in" />
+        </AuthShell>
     );
-
 }
