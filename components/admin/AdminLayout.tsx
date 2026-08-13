@@ -2,10 +2,12 @@
 
 import { AdminSidebar } from "./AdminSidebar";
 import { Navbar } from "../common/Navbar";
+import { LocationSyncBanner } from "../common/LocationSyncBanner";
 import { PlanExpiryBanner } from "../common/PlanExpiryBanner";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 
 const AssistantWidget = dynamic(() => import("../ai"), {
   ssr: false,
@@ -27,6 +29,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     sidebarMobileOpen: isMobileOpen,
     setSidebarMobileOpen: setIsMobileOpen,
   } = useStore();
+  const { can } = useOrgPlan();
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={{ scrollbarGutter: "stable" }}>
@@ -44,11 +47,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         )}
       >
         <PlanExpiryBanner />
+        <LocationSyncBanner />
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
         <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
 
-      <AssistantWidget />
+      {can("ai_assistant") && <AssistantWidget />}
       <OnboardingTour />
     </div>
   );

@@ -7,18 +7,20 @@ export type PlanFeature =
   | "org_llm_key"
   | "advanced_analytics"
   | "ai_assistant"
-  | "policies";
+  | "policies"
+  | "face_attendance";
 
 export const PLAN_ORDER: PlanId[] = ["free", "pro", "elite"];
 
 const PLAN_FEATURES: Record<PlanId, PlanFeature[]> = {
-  free: ["payroll_basic", "ai_assistant", "policies"],
+  free: ["payroll_basic", "policies"],
   pro: [
     "payroll_basic",
     "ai_assistant",
     "policies",
     "payroll_auto_run",
     "salary_advances",
+    "face_attendance",
   ],
   elite: [
     "payroll_basic",
@@ -26,6 +28,7 @@ const PLAN_FEATURES: Record<PlanId, PlanFeature[]> = {
     "policies",
     "payroll_auto_run",
     "salary_advances",
+    "face_attendance",
     "org_llm_key",
     "advanced_analytics",
   ],
@@ -126,16 +129,18 @@ export const PLAN_CATALOG: {
     monthlyPrice: 0,
     yearlyPrice: 0,
     blurb: "Core HR for small teams getting started.",
-    features: ["Attendance & leaves", "Basic payroll", "Teamzen AI (shared)", "Policies"],
+    features: ["Attendance & leaves", "Basic payroll", "Policies"],
   },
   {
     id: "pro",
     name: "Pro",
-    monthlyPrice: 999,
-    yearlyPrice: 9990,
-    blurb: "Automation and payroll auto-run for growing orgs.",
+    monthlyPrice: 3999,
+    yearlyPrice: 39990,
+    blurb: "Automation and AI for growing orgs.",
     features: [
       "Everything in Free",
+      "AI assistant",
+      "Face attendance",
       "Payroll auto-run",
       "Salary advances",
       "Priority support",
@@ -144,13 +149,13 @@ export const PLAN_CATALOG: {
   {
     id: "elite",
     name: "Elite",
-    monthlyPrice: 2499,
-    yearlyPrice: 24990,
+    monthlyPrice: 14999,
+    yearlyPrice: 149990,
     blurb: "Full control for multi-site and advanced ops.",
     features: [
       "Everything in Pro",
       "Org LLM keys",
-      "Advanced analytics & reports",
+      "Performance & analytics",
       "Dedicated onboarding",
     ],
   },
