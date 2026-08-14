@@ -16,7 +16,7 @@ export default function DocumentsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Documents"
-        description="Request uploads from employees, track fulfillments, and manage Form 16 bulk publish or Part B generation."
+        description="Request uploads from employees, track fulfillments, and publish official TRACES Form 16 PDFs."
       />
 
       <SegmentedTabs

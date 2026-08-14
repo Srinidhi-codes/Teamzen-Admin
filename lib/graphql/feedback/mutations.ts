@@ -50,3 +50,24 @@ export const UPDATE_FEEDBACK_STATUS = gql`
     }
   }
 `;
+
+export const ESCALATE_FEEDBACK = gql`
+  mutation EscalateFeedback($input: EscalateFeedbackInput!) {
+    escalateFeedback(input: $input) {
+      success
+      error
+      feedback {
+        id
+        status
+        escalatedToPlatform
+        escalatedAt
+        escalationNote
+        escalatedBy {
+          id
+          firstName
+          lastName
+        }
+      }
+    }
+  }
+`;

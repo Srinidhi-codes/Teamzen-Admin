@@ -7,6 +7,7 @@ export type PlanFeature =
   | "org_llm_key"
   | "advanced_analytics"
   | "ai_assistant"
+  | "custom_accent"
   | "policies"
   | "face_attendance";
 
@@ -17,6 +18,7 @@ const PLAN_FEATURES: Record<PlanId, PlanFeature[]> = {
   pro: [
     "payroll_basic",
     "ai_assistant",
+    "custom_accent",
     "policies",
     "payroll_auto_run",
     "salary_advances",
@@ -25,6 +27,7 @@ const PLAN_FEATURES: Record<PlanId, PlanFeature[]> = {
   elite: [
     "payroll_basic",
     "ai_assistant",
+    "custom_accent",
     "policies",
     "payroll_auto_run",
     "salary_advances",
@@ -98,6 +101,15 @@ export function hasPlanFeature(
   return PLAN_FEATURES[active].includes(feature);
 }
 
+export function effectiveAccent(
+  accent?: string | null,
+  plan?: string | null,
+  expiresAt?: string | null
+): string {
+  if (!hasPlanFeature(plan, expiresAt, "custom_accent")) return "teal";
+  return accent || "teal";
+}
+
 export function minPlanForFeature(feature: PlanFeature): PlanId {
   if (PLAN_FEATURES.free.includes(feature)) return "free";
   if (PLAN_FEATURES.pro.includes(feature)) return "pro";
@@ -140,6 +152,8 @@ export const PLAN_CATALOG: {
     features: [
       "Everything in Free",
       "AI assistant",
+      "AI write",
+      "Company color themes",
       "Face attendance",
       "Payroll auto-run",
       "Salary advances",

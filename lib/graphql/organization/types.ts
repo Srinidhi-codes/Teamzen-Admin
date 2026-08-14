@@ -16,6 +16,7 @@ export interface Organization {
     updatedAt: string;
     llmApiKey?: string;
     accent?: string;
+    canCustomizeAccent?: boolean;
     faceAttendanceEnabled?: boolean;
     weekendDays?: number[];
     plan?: string;

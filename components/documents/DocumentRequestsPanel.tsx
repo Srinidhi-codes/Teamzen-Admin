@@ -8,6 +8,8 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { FormSelect } from "@/components/common/FormSelect";
+import { DatePickerSimple } from "@/components/ui/datePicker";
 import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
@@ -44,7 +46,7 @@ export default function DocumentRequestsPanel() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
   const [busy, setBusy] = useState(false);
 
-  const { users, isUsersLoading } = useGraphQLUsers({
+  const { users } = useGraphQLUsers({
     page: 1,
     pageSize: 300,
     filters: {
@@ -151,51 +153,37 @@ export default function DocumentRequestsPanel() {
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Employee
-            </label>
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              disabled={isUsersLoading}
-            >
-              <option value="">Select employee…</option>
-              {employeeList.map((u: any) => (
-                <option key={u.id} value={u.id}>
-                  {u.firstName} {u.lastName} · {u.email}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              Category
-            </label>
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <FormSelect
+            label="Employee"
+            value={userId}
+            onValueChange={setUserId}
+            placeholder="Select employee…"
+            options={employeeList.map((u: any) => ({
+              value: u.id,
+              label: `${u.firstName} ${u.lastName} · ${u.email}`,
+            }))}
+            className="h-9 rounded-md px-3 py-2"
+          />
+          <FormSelect
+            label="Category"
+            value={category}
+            onValueChange={setCategory}
+            options={CATEGORIES}
+            className="h-9 rounded-md px-3 py-2"
+          />
           <Input
             label="Title"
             placeholder="e.g. Aadhaar soft copy"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <Input
+          <DatePickerSimple
             label="Due date (optional)"
-            type="date"
             value={dueAt}
-            onChange={(e) => setDueAt(e.target.value)}
+            allowFuture
+            onChange={(date) =>
+              setDueAt(date ? moment(date).format("YYYY-MM-DD") : "")
+            }
           />
         </div>
         <Input

@@ -888,7 +888,7 @@ export default function EmployeeForm({
                         <textarea
                             name="residentialAddress"
                             className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                            placeholder="Used on Form 16 and letters"
+                            placeholder="Permanent / residential address"
                             value={formData.residentialAddress}
                             onChange={handleChange}
                         />

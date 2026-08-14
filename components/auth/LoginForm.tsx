@@ -30,7 +30,11 @@ export default function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await login.mutateAsync({ email, password });
+      const response = await login.mutateAsync({
+        email,
+        password,
+        remember_me: rememberMe,
+      });
 
       if (response && response.user) {
         loginUser(response.user);

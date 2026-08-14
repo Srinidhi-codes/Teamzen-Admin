@@ -1,12 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { FilePicker } from "@/components/ui/file-picker";
+import { FormSelect } from "@/components/common/FormSelect";
 import {
   EMPLOYEE_DOCUMENT_REQUESTS,
   EMPLOYEE_ISSUED_DOCUMENTS,
@@ -18,13 +19,26 @@ interface Props {
   employeeName?: string;
 }
 
+function fyStartYear(d = new Date()) {
+  return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+}
+
+function fyLabel(startYear: number) {
+  return `${startYear}-${String(startYear + 1).slice(-2)}`;
+}
+
+function financialYearOptions() {
+  const current = fyStartYear();
+  return Array.from({ length: 8 }, (_, i) => fyLabel(current + 1 - i));
+}
+
 export default function EmployeeDocumentsPanel({ userId }: Props) {
   const [title, setTitle] = useState("Form 16");
-  const [fy, setFy] = useState("2025-26");
+  const [fy, setFy] = useState(fyLabel(fyStartYear()));
   const [category, setCategory] = useState("form_16");
   const [reqTitle, setReqTitle] = useState("");
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const [picked, setPicked] = useState<File[]>([]);
 
   const issued = useQuery(EMPLOYEE_ISSUED_DOCUMENTS, {
     variables: { userId },
@@ -54,12 +68,12 @@ export default function EmployeeDocumentsPanel({ userId }: Props) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Publish failed");
       toast.success("Document published to employee vault");
+      setPicked([]);
       await issued.refetch();
     } catch (e: any) {
       toast.error(e.message || "Failed");
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -94,7 +108,7 @@ export default function EmployeeDocumentsPanel({ userId }: Props) {
     <div className="space-y-4">
       <Card className="space-y-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="font-medium">Publish to vault (Form 16 / certificates)</h3>
+          <h3 className="font-medium">Publish to vault (official Form 16 / certificates)</h3>
           <Link
             href="/documents"
             className="text-xs font-medium text-primary underline"
@@ -108,29 +122,39 @@ export default function EmployeeDocumentsPanel({ userId }: Props) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <Input
-            placeholder="FY e.g. 2025-26"
+          <FormSelect
+            label="Financial year"
             value={fy}
-            onChange={(e) => setFy(e.target.value)}
+            onValueChange={setFy}
+            options={financialYearOptions().map((year) => ({
+              label: `FY ${year}`,
+              value: year,
+            }))}
+            className="h-9 rounded-md px-3 py-2"
           />
-          <select
-            className="rounded-md border border-input bg-background px-3 text-sm"
+          <FormSelect
+            label="Category"
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          >
-            <option value="form_16">Form 16</option>
-            <option value="salary_certificate">Salary certificate</option>
-            <option value="experience">Experience</option>
-            <option value="relieving">Relieving</option>
-            <option value="other">Other</option>
-          </select>
+            onValueChange={setCategory}
+            options={[
+              { value: "form_16", label: "Form 16" },
+              { value: "salary_certificate", label: "Salary certificate" },
+              { value: "experience", label: "Experience" },
+              { value: "relieving", label: "Relieving" },
+              { value: "other", label: "Other" },
+            ]}
+            className="h-9 rounded-md px-3 py-2"
+          />
         </div>
-        <input
-          ref={fileRef}
-          type="file"
+        <FilePicker
           accept=".pdf,.jpg,.jpeg,.png"
-          onChange={(e) => publish(e.target.files?.[0])}
+          label="Choose file"
           disabled={uploading}
+          files={picked}
+          onChange={(next) => {
+            setPicked(next);
+            if (next[0]) void publish(next[0]);
+          }}
         />
         <ul className="space-y-1 text-sm">
           {(issued.data?.employeeIssuedDocuments || []).map((d: any) => (

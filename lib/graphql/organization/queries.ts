@@ -18,6 +18,7 @@ export const GET_ORGANIZATIONS = gql`
             registrationNumber
             llmApiKey
             accent
+            canCustomizeAccent
             faceAttendanceEnabled
             weekendDays
             plan
@@ -47,8 +48,11 @@ export const GET_ORGANIZATION = gql`
             registrationNumber
             llmApiKey
             accent
+            canCustomizeAccent
             faceAttendanceEnabled
             weekendDays
+            plan
+            planExpiresAt
             createdAt
             updatedAt
         }

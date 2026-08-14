@@ -161,7 +161,10 @@ export function PlanBillingSection({ highlight = false }: { highlight?: boolean 
         ))}
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
+      <p className="mb-3 hidden text-center text-[11px] text-muted-foreground md:block">
+        Hover to compare all plans
+      </p>
+      <div className="plan-deck">
         {PLAN_CATALOG.map((plan) => {
           const isCurrent = plan.id === currentPlan;
           const isUpgrade =
@@ -179,9 +182,12 @@ export function PlanBillingSection({ highlight = false }: { highlight?: boolean 
           return (
             <div
               key={plan.id}
+              data-plan={plan.id}
               className={cn(
-                "flex flex-col rounded-lg border p-4",
-                isCurrent ? "border-primary bg-primary/5" : "border-border bg-background"
+                "plan-deck-card flex flex-col rounded-lg border p-4",
+                isCurrent || plan.id === "pro"
+                  ? "border-primary bg-card"
+                  : "border-border bg-card"
               )}
             >
               <div className="mb-2 flex items-start justify-between gap-2">
