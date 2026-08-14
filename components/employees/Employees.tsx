@@ -45,6 +45,13 @@ import { toast } from "sonner";
 import { useMutation } from "@apollo/client/react";
 import { START_OFFBOARDING } from "@/lib/graphql/offboarding/queries";
 
+type StartOffboardingResult = {
+  success: boolean;
+  error?: string | null;
+  offboardingId?: string | null;
+  inviteUrl?: string | null;
+};
+
 export default function EmployeesPage() {
   const { user } = useStore();
   const router = useRouter();
@@ -80,7 +87,19 @@ export default function EmployeesPage() {
   useGraphQLOfficeLocations(undefined, organizationId || undefined);
   const { updateUserStatus } = useGraphQLUserStatusMutations();
   const { startOnboardingForEmployee } = useOnboardingMutations();
-  const [startOffboarding] = useMutation(START_OFFBOARDING);
+  const [startOffboarding] = useMutation<
+    { startOffboarding?: StartOffboardingResult | null },
+    {
+      input: {
+        userId: string;
+        exitDate: string;
+        lastWorkingDay: string;
+        reason: string;
+        deactivateNow: boolean;
+        sendInvite: boolean;
+      };
+    }
+  >(START_OFFBOARDING);
   const { exportData } = useCSVExport<User>();
 
   const handleStatusToggle = async (userId: string, newStatus: boolean) => {

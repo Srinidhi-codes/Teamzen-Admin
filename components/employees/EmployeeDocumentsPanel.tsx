@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,30 @@ interface Props {
   userId: string;
   employeeName?: string;
 }
+
+type MutationStatus = {
+  success: boolean;
+  error?: string | null;
+};
+
+type IssuedDocument = {
+  id: string;
+  category?: string | null;
+  title?: string | null;
+  financialYear?: string | null;
+  downloadUrl?: string | null;
+  publishedAt?: string | null;
+  visibleToEmployee?: boolean | null;
+};
+
+type EmployeeDocumentRequest = {
+  id: string;
+  title?: string | null;
+  category?: string | null;
+  status?: string | null;
+  dueAt?: string | null;
+  createdAt?: string | null;
+};
 
 function fyStartYear(d = new Date()) {
   return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
@@ -40,15 +65,31 @@ export default function EmployeeDocumentsPanel({ userId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [picked, setPicked] = useState<File[]>([]);
 
-  const issued = useQuery(EMPLOYEE_ISSUED_DOCUMENTS, {
+  const issued = useQuery<
+    { employeeIssuedDocuments?: IssuedDocument[] | null },
+    { userId: string }
+  >(EMPLOYEE_ISSUED_DOCUMENTS, {
     variables: { userId },
     fetchPolicy: "cache-and-network",
   });
-  const requests = useQuery(EMPLOYEE_DOCUMENT_REQUESTS, {
+  const requests = useQuery<
+    { employeeDocumentRequests?: EmployeeDocumentRequest[] | null },
+    { userId: string; status: string | null }
+  >(EMPLOYEE_DOCUMENT_REQUESTS, {
     variables: { userId, status: null },
     fetchPolicy: "cache-and-network",
   });
-  const [requestDoc] = useMutation(REQUEST_EMPLOYEE_DOCUMENT);
+  const [requestDoc] = useMutation<
+    { requestEmployeeDocument?: MutationStatus | null },
+    {
+      input: {
+        userId: string;
+        title: string;
+        category: string;
+        description: string;
+      };
+    }
+  >(REQUEST_EMPLOYEE_DOCUMENT);
 
   const publish = async (file?: File | null) => {
     if (!file) return;

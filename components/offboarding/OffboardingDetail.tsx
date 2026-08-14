@@ -29,11 +29,44 @@ function money(n: number) {
   }).format(n || 0);
 }
 
+type OffboardingTask = {
+  id: string;
+  title: string;
+  assigneeRole?: string | null;
+  phase?: string | null;
+  status?: string | null;
+};
+
+type ExitLetter = {
+  id: string;
+  letterType?: string | null;
+  pdfUrl?: string | null;
+  downloadUrl?: string | null;
+};
+
+type EmployeeOffboarding = {
+  userName: string;
+  userEmail?: string | null;
+  status?: string | null;
+  progressPct: number;
+  tasks?: OffboardingTask[] | null;
+  settlement?: {
+    proRataSalary: number;
+    leaveEncashment: number;
+    netPayable: number;
+    status?: string | null;
+  } | null;
+  letters?: ExitLetter[] | null;
+};
+
 export default function OffboardingDetail() {
   const params = useParams();
   const router = useRouter();
   const id = String(params.id);
-  const { data, loading, refetch } = useQuery(EMPLOYEE_OFFBOARDING, {
+  const { data, loading, refetch } = useQuery<
+    { employeeOffboarding?: EmployeeOffboarding | null },
+    { offboardingId: string }
+  >(EMPLOYEE_OFFBOARDING, {
     variables: { offboardingId: id },
     fetchPolicy: "cache-and-network",
   });
@@ -138,7 +171,7 @@ export default function OffboardingDetail() {
         <Card className="space-y-3 p-4">
           <h3 className="font-medium">Tasks</h3>
           <ul className="space-y-2">
-            {(ob.tasks || []).map((t: any) => (
+            {(ob.tasks || []).map((t) => (
               <li
                 key={t.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm"
@@ -281,7 +314,7 @@ export default function OffboardingDetail() {
             ))}
           </div>
           <ul className="space-y-2 text-sm">
-            {(ob.letters || []).map((l: any) => {
+            {(ob.letters || []).map((l) => {
               const href = l.downloadUrl || l.pdfUrl;
               return (
                 <li key={l.id} className="flex justify-between gap-2">

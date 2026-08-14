@@ -33,6 +33,25 @@ const CATEGORIES = [
 
 type StatusFilter = "open" | "fulfilled" | "cancelled" | "all";
 
+type MutationStatus = {
+  success: boolean;
+  error?: string | null;
+  id?: string | null;
+};
+
+type DocumentRequestRow = {
+  id: string;
+  title: string;
+  category?: string | null;
+  status: string;
+  dueAt?: string | null;
+  fulfilledAt?: string | null;
+  userName?: string | null;
+  fileUrl?: string | null;
+  verificationStatus?: string | null;
+  fulfilledDocumentId?: string | null;
+};
+
 export default function DocumentRequestsPanel() {
   const { user: me } = useStore();
   const organizationId =
@@ -61,14 +80,34 @@ export default function DocumentRequestsPanel() {
   );
 
   const statusVar = statusFilter === "all" ? null : statusFilter;
-  const inbox = useQuery(ORGANIZATION_DOCUMENT_REQUESTS, {
+  const inbox = useQuery<
+    { organizationDocumentRequests?: DocumentRequestRow[] | null },
+    { status: string | null }
+  >(ORGANIZATION_DOCUMENT_REQUESTS, {
     variables: { status: statusVar },
     fetchPolicy: "cache-and-network",
   });
 
-  const [requestDoc] = useMutation(REQUEST_EMPLOYEE_DOCUMENT);
-  const [cancelReq] = useMutation(CANCEL_DOCUMENT_REQUEST);
-  const [verifyDoc] = useMutation(VERIFY_VAULT_DOCUMENT);
+  const [requestDoc] = useMutation<
+    { requestEmployeeDocument?: MutationStatus | null },
+    {
+      input: {
+        userId: string;
+        title: string;
+        category: string;
+        description: string;
+        dueAt: string | null;
+      };
+    }
+  >(REQUEST_EMPLOYEE_DOCUMENT);
+  const [cancelReq] = useMutation<
+    { cancelDocumentRequest?: MutationStatus | null },
+    { requestId: string }
+  >(CANCEL_DOCUMENT_REQUEST);
+  const [verifyDoc] = useMutation<
+    { verifyVaultDocument?: MutationStatus | null },
+    { documentId: string; approve: boolean; rejectionReason: string }
+  >(VERIFY_VAULT_DOCUMENT);
 
   const createRequest = async () => {
     if (!userId) {
@@ -228,7 +267,7 @@ export default function DocumentRequestsPanel() {
           <p className="text-sm text-muted-foreground">No requests in this filter.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {rows.map((r: any) => (
+            {rows.map((r) => (
               <li
                 key={r.id}
                 className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
@@ -271,7 +310,7 @@ export default function DocumentRequestsPanel() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => onVerify(r.fulfilledDocumentId, true)}
+                        onClick={() => onVerify(r.fulfilledDocumentId!, true)}
                       >
                         Approve
                       </Button>
@@ -279,7 +318,7 @@ export default function DocumentRequestsPanel() {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        onClick={() => onVerify(r.fulfilledDocumentId, false)}
+                        onClick={() => onVerify(r.fulfilledDocumentId!, false)}
                       >
                         Reject
                       </Button>

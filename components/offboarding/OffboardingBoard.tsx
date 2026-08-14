@@ -8,11 +8,36 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/common/Skeleton";
 import { OFFBOARDING_OVERVIEW, OFFBOARDINGS } from "@/lib/graphql/offboarding/queries";
 
+type OffboardingOverview = {
+  total: number;
+  initiated: number;
+  inProgress: number;
+  settlementPending: number;
+  lettersPending: number;
+  completed: number;
+  cancelled: number;
+};
+
+type OffboardingRow = {
+  id: string;
+  status?: string | null;
+  progressPct: number;
+  exitDate?: string | null;
+  lastWorkingDay?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
+};
+
 export default function OffboardingBoard() {
-  const { data: overviewData, loading: overviewLoading } = useQuery(OFFBOARDING_OVERVIEW, {
+  const { data: overviewData, loading: overviewLoading } = useQuery<{
+    offboardingOverview?: OffboardingOverview | null;
+  }>(OFFBOARDING_OVERVIEW, {
     fetchPolicy: "cache-and-network",
   });
-  const { data, loading, refetch } = useQuery(OFFBOARDINGS, {
+  const { data, loading, refetch } = useQuery<
+    { offboardings?: OffboardingRow[] | null },
+    { status: string | null }
+  >(OFFBOARDINGS, {
     variables: { status: null },
     fetchPolicy: "cache-and-network",
   });
@@ -103,7 +128,7 @@ export default function OffboardingBoard() {
                 </td>
               </tr>
             )}
-            {rows.map((row: any) => (
+            {rows.map((row) => (
               <tr key={row.id} className="border-b last:border-0">
                 <td className="px-4 py-3">
                   <div className="font-medium">{row.userName}</div>

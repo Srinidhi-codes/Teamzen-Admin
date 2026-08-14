@@ -325,7 +325,9 @@ export default function EmployeeForm({
         }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
         const { name, value } = e.target;
         setFormData((prev) => {
             const newData = { ...prev, [name]: value };
