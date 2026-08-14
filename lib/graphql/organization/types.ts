@@ -6,6 +6,8 @@ export interface Organization {
     };
     gstNumber?: string;
     panNumber?: string;
+    tanNumber?: string;
+    citTdsOffice?: string;
     headquartersAddress?: string;
     isActive: boolean;
     registrationNumber: string;
@@ -14,6 +16,7 @@ export interface Organization {
     updatedAt: string;
     llmApiKey?: string;
     accent?: string;
+    canCustomizeAccent?: boolean;
     faceAttendanceEnabled?: boolean;
     weekendDays?: number[];
     plan?: string;
@@ -66,6 +69,8 @@ export interface CreateOrganizationInput {
     logo?: string;
     gstNumber?: string;
     panNumber?: string;
+    tanNumber?: string;
+    citTdsOffice?: string;
     registrationNumber?: string;
     headquartersAddress?: string;
     isActive: boolean;
@@ -80,6 +85,8 @@ export interface OrganizationInput {
     logo?: string;
     gstNumber?: string;
     panNumber?: string;
+    tanNumber?: string;
+    citTdsOffice?: string;
     registrationNumber?: string;
     headquartersAddress?: string;
     isActive: boolean;

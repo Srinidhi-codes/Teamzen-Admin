@@ -116,6 +116,7 @@ export const GET_ALL_USERS = gql`
         role
         isActive
         isVerified
+        onboardingStarted
         dateOfJoining
         dateOfBirth
         gender
@@ -151,6 +152,7 @@ export const GET_ALL_USERS = gql`
         panNumber
         aadharNumber
         uanNumber
+        residentialAddress
         salaryDetails {
           id
           salaryStructure {

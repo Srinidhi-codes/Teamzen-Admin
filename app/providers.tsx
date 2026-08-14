@@ -9,7 +9,7 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
 import { ColorAccent } from "@/lib/store/slices/themeSlice";
-import { normalizeAccent } from "@/lib/transformers";
+import { effectiveAccent } from "@/lib/plans";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,35 +21,18 @@ const queryClient = new QueryClient({
   },
 });
 
-const VALID_ACCENTS: ColorAccent[] = [
-  "teal",
-  "slate",
-  "blue",
-  "green",
-  "indigo",
-  "orange",
-  "red",
-  "purple",
-];
-
 function ThemeInitializer({ children }: { children: ReactNode }) {
   const accent = useStore((state) => state.accent);
   const setAccent = useStore((state) => state.setAccent);
   const orgAccent = useStore((state) => state.user?.organization?.accent);
+  const plan = useStore((state) => state.user?.organization?.plan);
+  const expiresAt = useStore((state) => state.user?.organization?.planExpiresAt);
 
-  // Company accent from org settings — apply as soon as known (no teal flash)
   useEffect(() => {
-    if (!orgAccent || !VALID_ACCENTS.includes(orgAccent as ColorAccent)) return;
-    const next = normalizeAccent(orgAccent);
-    if (next !== accent) {
-      setAccent(next);
-    }
+    const next = effectiveAccent(orgAccent || accent, plan, expiresAt) as ColorAccent;
+    if (next !== accent) setAccent(next);
     document.documentElement.setAttribute("data-accent", next);
-  }, [orgAccent, accent, setAccent]);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-accent", accent || "teal");
-  }, [accent]);
+  }, [orgAccent, accent, setAccent, plan, expiresAt]);
 
   return <>{children}</>;
 }

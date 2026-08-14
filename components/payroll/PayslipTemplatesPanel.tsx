@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
@@ -98,7 +98,10 @@ function isUploadedTemplate(t: any) {
     t?.layoutKey === "networth" ||
     t?.source === "cloned" ||
     t?.theme?.use_source_pdf ||
-    t?.theme?.renderer === "networth_replica"
+    t?.theme?.renderer === "networth_replica" ||
+    t?.theme?.renderer === "pdf_fill" ||
+    t?.theme?.renderer === "corporate_replica" ||
+    t?.theme?.fill_in_place
   );
 }
 
@@ -230,7 +233,7 @@ export function PayslipTemplatesPanel({ organizationId }: Props) {
       await downloadDemoPdf(t.id, t.name, organizationId);
       toast.success(
         isUploadedTemplate(t)
-          ? "Downloaded your uploaded template PDF"
+          ? "Downloaded structure replica demo"
           : "Demo payslip downloaded"
       );
     } catch (e: any) {
@@ -282,7 +285,7 @@ export function PayslipTemplatesPanel({ organizationId }: Props) {
         );
       }
       setCloneName("");
-      toast.success("Payslip saved as editable template");
+      toast.success("Payslip structure saved — replica template is now default");
       if (created?.id) {
         try {
           await downloadDemoPdf(
@@ -392,7 +395,9 @@ export function PayslipTemplatesPanel({ organizationId }: Props) {
           <h4 className="font-semibold">Upload payslip → become template</h4>
         </div>
         <p className="text-sm text-muted-foreground py-2">
-          Upload your existing payslip PDF. We rebuild a clean matching layout.
+          Upload a sample payslip PDF. We recreate the same structure with your
+          company logo and each employee&apos;s real payroll data. New uploads
+          become the default template automatically.
         </p>
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 max-w-[300px]">
@@ -437,6 +442,7 @@ export function PayslipTemplatesPanel({ organizationId }: Props) {
               <TemplateCard
                 key={t.id}
                 template={t}
+                organizationId={organizationId}
                 busy={settingDefault || deleting}
                 downloading={downloadingId === t.id}
                 onUse={() => handleSetDefault(t.id)}
@@ -462,6 +468,7 @@ export function PayslipTemplatesPanel({ organizationId }: Props) {
               <TemplateCard
                 key={t.id}
                 template={t}
+                organizationId={organizationId}
                 busy={settingDefault}
                 downloading={downloadingId === t.id}
                 onUse={() => handleSetDefault(t.id)}
@@ -477,6 +484,7 @@ export function PayslipTemplatesPanel({ organizationId }: Props) {
 
 function TemplateCard({
   template: t,
+  organizationId,
   onUse,
   onDownloadDemo,
   onDelete,
@@ -484,6 +492,7 @@ function TemplateCard({
   downloading,
 }: {
   template: any;
+  organizationId?: string;
   onUse: () => void;
   onDownloadDemo: () => void;
   onDelete?: () => void;
@@ -494,6 +503,8 @@ function TemplateCard({
   const isActiveDefault = Boolean(t.isDefault && !t.isSystem);
   const uploaded = isUploadedTemplate(t);
   const canDelete = Boolean(onDelete) && !t.isSystem;
+  // Bust preview when source URL / id changes (new upload)
+  const previewKey = `${t.id}:${t.sourceFileUrl || ""}:${t.layoutKey || ""}`;
 
   return (
     <div
@@ -504,11 +515,17 @@ function TemplateCard({
     >
       <div className="relative border-b border-border bg-[#e8eaed] dark:bg-zinc-900/80">
         {uploaded ? (
-          <div className="p-3">
+          <div className="relative">
             <span className="absolute right-2 top-2 z-10 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-              Clean replica
+              Structure replica
             </span>
-            <PayslipMiniPreview layoutKey="networth" theme={theme} />
+            <UploadedTemplatePreview
+              templateId={String(t.id)}
+              organizationId={organizationId}
+              previewKey={previewKey}
+              sourceFileUrl={t.sourceFileUrl || ""}
+              theme={theme}
+            />
           </div>
         ) : (
           <div className="p-3">
@@ -569,7 +586,7 @@ function TemplateCard({
             ) : (
               <>
                 <Download className="mr-2 h-3.5 w-3.5" />
-                {uploaded ? "Download filled demo" : "Download demo PDF"}
+                {uploaded ? "Download structure demo" : "Download demo PDF"}
               </>
             )}
           </Button>
@@ -600,6 +617,96 @@ function TemplateCard({
   );
 }
 
+function UploadedTemplatePreview({
+  templateId,
+  organizationId,
+  previewKey,
+  sourceFileUrl,
+  theme,
+}: {
+  templateId: string;
+  organizationId?: string;
+  previewKey: string;
+  sourceFileUrl: string;
+  theme: Theme;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    async function load() {
+      setLoading(true);
+      setSrc(null);
+      try {
+        const qs = new URLSearchParams();
+        if (organizationId) qs.set("organization_id", organizationId);
+        qs.set("v", previewKey);
+        const path = `${API_ENDPOINTS.payslipTemplatePreview(templateId)}?${qs.toString()}`;
+        const res = await api.get(path, { responseType: "blob" });
+        const contentType = res.headers?.["content-type"] || "";
+        if (contentType.includes("application/json") || contentType.includes("text/")) {
+          throw new Error("Preview unavailable");
+        }
+        objectUrl = URL.createObjectURL(res.data as Blob);
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        setSrc(objectUrl);
+      } catch {
+        if (!cancelled) setSrc(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [templateId, organizationId, previewKey]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[220px] items-center justify-center bg-muted/40">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt="Payslip template preview"
+        className="h-[220px] w-full object-contain object-top bg-white"
+      />
+    );
+  }
+
+  // Fallback: embed the uploaded source PDF when raster preview fails
+  if (sourceFileUrl) {
+    return (
+      <iframe
+        title="Payslip source preview"
+        src={`${sourceFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
+        className="h-[220px] w-full border-0 bg-white"
+      />
+    );
+  }
+
+  return (
+    <div className="p-3">
+      <PayslipMiniPreview layoutKey="uploaded" theme={theme} />
+    </div>
+  );
+}
+
 function PayslipMiniPreview({
   layoutKey,
   theme,
@@ -615,7 +722,7 @@ function PayslipMiniPreview({
   const dedBg = theme.deduction_bg || "#fef2f2";
   const thBg = theme.table_header_bg || primary;
   const thFg = theme.table_header_fg || "#ffffff";
-  const showHero = theme.show_net_hero !== false && layoutKey !== "minimal" && layoutKey !== "networth";
+  const showHero = theme.show_net_hero !== false && layoutKey !== "minimal" && layoutKey !== "networth" && layoutKey !== "uploaded";
   const compact = layoutKey === "compact" || layoutKey === "minimal";
   const modern = layoutKey === "modern";
   const networth = layoutKey === "networth";

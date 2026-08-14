@@ -10,6 +10,8 @@ export interface User {
   role: "superadmin" | "admin" | "hr" | "manager" | "employee";
   isActive: boolean;
   isVerified: boolean;
+  /** True when a non-cancelled onboarding record exists */
+  onboardingStarted?: boolean;
   isStaff: boolean;
 
   dateOfJoining?: string | null;

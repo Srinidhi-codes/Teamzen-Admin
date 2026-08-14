@@ -15,6 +15,9 @@ export const FEEDBACK_LIST = gql`
       updatedAt
       organizationId
       organizationName
+      escalatedToPlatform
+      escalatedAt
+      escalationNote
       author {
         id
         firstName
@@ -22,6 +25,11 @@ export const FEEDBACK_LIST = gql`
         email
       }
       repliedBy {
+        id
+        firstName
+        lastName
+      }
+      escalatedBy {
         id
         firstName
         lastName
@@ -50,6 +58,9 @@ export const FEEDBACK_ITEM = gql`
       createdAt
       organizationId
       organizationName
+      escalatedToPlatform
+      escalatedAt
+      escalationNote
       author {
         id
         firstName
@@ -57,6 +68,11 @@ export const FEEDBACK_ITEM = gql`
         email
       }
       repliedBy {
+        id
+        firstName
+        lastName
+      }
+      escalatedBy {
         id
         firstName
         lastName

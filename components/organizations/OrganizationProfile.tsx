@@ -28,7 +28,7 @@ import { Input } from "../common/Input";
 import { PageHeader } from "../common/PageHeader";
 import { useStore } from "@/lib/store/useStore";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
-import { planLabel } from "@/lib/plans";
+import { planLabel, hasPlanFeature } from "@/lib/plans";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import moment from "moment";
@@ -71,6 +71,11 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
     isOrganizationError,
     refetchOrganization,
   } = useGraphQLOrganization(id);
+  const canCustomAccent = hasPlanFeature(
+    organization?.plan,
+    organization?.planExpiresAt,
+    "custom_accent"
+  );
   const { updateOrganization, isUpdatingOrganizationLoading } =
     useGraphQLUpdateOrganizationMutation();
   const [isEditing, setIsEditing] = useState(false);
@@ -78,6 +83,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
     name: "",
     gstNumber: "",
     panNumber: "",
+    tanNumber: "",
+    citTdsOffice: "",
     registrationNumber: "",
     headquartersAddress: "",
     logo: "",
@@ -92,6 +99,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
       name: organization.name,
       gstNumber: organization.gstNumber || "",
       panNumber: organization.panNumber || "",
+      tanNumber: organization.tanNumber || "",
+      citTdsOffice: organization.citTdsOffice || "",
       registrationNumber: organization.registrationNumber || "",
       headquartersAddress: organization.headquartersAddress || "",
       isActive: organization.isActive,
@@ -397,6 +406,12 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                     value={formData.panNumber}
                     onChange={(e) => setFormData({ ...formData, panNumber: e.target.value })}
                   />
+                  <Input
+                    label="TAN number"
+                    placeholder="TAN (TDS / TRACES)"
+                    value={formData.tanNumber}
+                    onChange={(e) => setFormData({ ...formData, tanNumber: e.target.value })}
+                  />
                   <div className="md:col-span-2">
                     <Input
                       label="Headquarters"
@@ -404,6 +419,19 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       value={formData.headquartersAddress}
                       onChange={(e) =>
                         setFormData({ ...formData, headquartersAddress: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-1.5 block text-sm font-medium text-foreground">
+                      CIT (TDS) office
+                    </label>
+                    <textarea
+                      className="min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      placeholder="Commissioner of Income Tax (TDS) office address"
+                      value={formData.citTdsOffice}
+                      onChange={(e) =>
+                        setFormData({ ...formData, citTdsOffice: e.target.value })
                       }
                     />
                   </div>
@@ -417,10 +445,21 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <AccentPicker
-                      value={formData.accent || "teal"}
-                      onChange={(accent) => setFormData({ ...formData, accent })}
-                    />
+                    {canCustomAccent ? (
+                      <AccentPicker
+                        value={formData.accent || "teal"}
+                        onChange={(accent) => setFormData({ ...formData, accent })}
+                      />
+                    ) : (
+                      <div className="rounded-xl border border-border bg-muted/20 p-4">
+                        <p className="text-sm font-medium text-foreground">Company color theme</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Free plan is limited to light and dark mode. Color themes require the{" "}
+                          {planLabel(requiredPlan("custom_accent"))} plan. Upgrade in Settings → Plan
+                          & billing.
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="md:col-span-2 flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/20 p-4">
                     <div className="min-w-0">
@@ -554,6 +593,13 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                 />
                 <DataBox icon={FileText} label="GST number" value={organization.gstNumber} />
                 <DataBox icon={CreditCard} label="PAN number" value={organization.panNumber} />
+                <DataBox icon={CreditCard} label="TAN number" value={organization.tanNumber} />
+                {organization.citTdsOffice ? (
+                  <div className="md:col-span-2 rounded-xl border border-border bg-muted/20 p-4 text-sm">
+                    <p className="text-xs text-muted-foreground">CIT (TDS)</p>
+                    <p className="mt-1 whitespace-pre-wrap">{organization.citTdsOffice}</p>
+                  </div>
+                ) : null}
                 <DataBox
                   icon={Hash}
                   label="LLM API key"
@@ -563,8 +609,10 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                   icon={Hash}
                   label="Color theme"
                   value={
-                    COMPANY_ACCENTS.find((a) => a.name === (organization.accent || "teal"))
-                      ?.label || "Teal"
+                    !canCustomAccent
+                      ? `Light / dark only (${planLabel(requiredPlan("custom_accent"))}+)`
+                      : COMPANY_ACCENTS.find((a) => a.name === (organization.accent || "teal"))
+                          ?.label || "Teal"
                   }
                 />
                 <DataBox

@@ -7,6 +7,7 @@ import {
   CREATE_FEEDBACK,
   REPLY_TO_FEEDBACK,
   UPDATE_FEEDBACK_STATUS,
+  ESCALATE_FEEDBACK,
 } from "@/lib/graphql/feedback/mutations";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -27,6 +28,7 @@ import {
   ExternalLink,
   ImageIcon,
   X,
+  Send,
 } from "lucide-react";
 
 type FeedbackItem = {
@@ -42,8 +44,12 @@ type FeedbackItem = {
   attachmentCount?: number;
   organizationId?: string | null;
   organizationName?: string | null;
+  escalatedToPlatform?: boolean;
+  escalatedAt?: string | null;
+  escalationNote?: string;
   author?: { id: string; firstName?: string; lastName?: string; email?: string };
   repliedBy?: { firstName?: string; lastName?: string } | null;
+  escalatedBy?: { firstName?: string; lastName?: string } | null;
   attachments?: { id: string; fileName?: string; fileUrl?: string }[];
 };
 
@@ -92,6 +98,7 @@ export default function FeedbackPage() {
   const [organizationId, setOrganizationId] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [reply, setReply] = useState("");
+  const [escalateNote, setEscalateNote] = useState("");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
   const [category, setCategory] = useState("admin_share");
@@ -117,6 +124,7 @@ export default function FeedbackPage() {
   const [createFeedback] = useMutation<any>(CREATE_FEEDBACK);
   const [replyToFeedback] = useMutation<any>(REPLY_TO_FEEDBACK);
   const [updateStatus] = useMutation<any>(UPDATE_FEEDBACK_STATUS);
+  const [escalateFeedback] = useMutation<any>(ESCALATE_FEEDBACK);
 
   const items = useMemo(() => {
     const list = data?.feedbackList || [];
@@ -222,11 +230,38 @@ export default function FeedbackPage() {
     }
   };
 
+  const handleEscalate = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      const { data: res } = await escalateFeedback({
+        variables: {
+          input: { id: selected.id, note: escalateNote.trim() || undefined },
+        },
+      });
+      if (!res?.escalateFeedback?.success) {
+        toast.error(res?.escalateFeedback?.error || "Could not forward feedback");
+        return;
+      }
+      toast.success("Sent to Teamzen for review");
+      setEscalateNote("");
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message || "Could not forward feedback");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="page-shell">
       <PageHeader
         title="Feedback"
-        description="Review employee feedback, reply with context, and share updates with the organization."
+        description={
+          isSuperadmin
+            ? "Review items company admins have forwarded to Teamzen, and share updates with an organization."
+            : "Review employee feedback first. Forward valid items to Teamzen, reply in-company, or share updates with the organization."
+        }
         actions={
           isSuperadmin ? (
             <OrganizationFilterSelect
@@ -351,7 +386,7 @@ export default function FeedbackPage() {
             <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
               <div>
                 <h3 className="text-sm font-semibold">
-                  {tab === "share" ? "Organization shares" : "All feedback"}
+                  {tab === "share" ? "Organization shares" : isSuperadmin ? "Forwarded to Teamzen" : "Company inbox"}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {loading ? "Loading…" : `${items.length} items`}
@@ -403,6 +438,11 @@ export default function FeedbackPage() {
                         {item.status.replace("_", " ")}
                       </span>
                     </div>
+                    {item.escalatedToPlatform && tab === "inbox" && (
+                      <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-primary">
+                        Sent to Teamzen
+                      </p>
+                    )}
                     <p className="mt-0.5 text-xs text-muted-foreground">
                       {authorName(item)}
                       {item.organizationName ? ` · ${item.organizationName}` : ""}
@@ -509,6 +549,27 @@ export default function FeedbackPage() {
                   </div>
                 )}
 
+                {selected.escalatedToPlatform && (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+                    <p className="text-xs font-medium text-primary">Forwarded to Teamzen</p>
+                    {selected.escalationNote ? (
+                      <p className="mt-1 whitespace-pre-wrap text-sm">{selected.escalationNote}</p>
+                    ) : (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Company admin marked this as valid for platform review.
+                      </p>
+                    )}
+                    {selected.escalatedAt && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        {selected.escalatedBy
+                          ? `${selected.escalatedBy.firstName || ""} ${selected.escalatedBy.lastName || ""}`.trim()
+                          : "Company admin"}{" "}
+                        · {new Date(selected.escalatedAt).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {selected.category !== "admin_share" && (
                   <>
                     <div className="flex flex-wrap items-center gap-2">
@@ -540,6 +601,24 @@ export default function FeedbackPage() {
                       <Reply className="mr-2 h-4 w-4" />
                       {saving ? "Sending…" : "Send reply"}
                     </Button>
+                    {!isSuperadmin && !selected.escalatedToPlatform && (
+                      <div className="space-y-3 rounded-lg border border-dashed border-border p-3">
+                        <p className="text-xs text-muted-foreground">
+                          If this is valid and needs Teamzen, forward it to superadmin. They will not see it until you send it.
+                        </p>
+                        <FormTextarea
+                          label="Note to Teamzen (optional)"
+                          rows={3}
+                          value={escalateNote}
+                          onChange={(e) => setEscalateNote(e.target.value)}
+                          placeholder="Why this should go to Teamzen…"
+                        />
+                        <Button variant="outline" disabled={saving} onClick={handleEscalate}>
+                          <Send className="mr-2 h-4 w-4" />
+                          {saving ? "Sending…" : "Send to Teamzen"}
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

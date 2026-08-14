@@ -28,6 +28,8 @@ export const API_ENDPOINTS = {
   PAYSLIP_TEMPLATE_CLONE: "/payroll/payslip-templates/clone/",
   payslipTemplateDemo: (id: string | number) =>
     `/payroll/payslip-templates/${id}/demo/`,
+  payslipTemplatePreview: (id: string | number) =>
+    `/payroll/payslip-templates/${id}/preview/`,
   payrollBankExport: (runId: string | number, format: string) =>
     `/payroll/runs/${runId}/bank-export/?bank_format=${encodeURIComponent(format)}`,
 

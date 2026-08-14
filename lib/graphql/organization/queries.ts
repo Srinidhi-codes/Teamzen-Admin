@@ -11,11 +11,14 @@ export const GET_ORGANIZATIONS = gql`
             gstNumber
             employeeCount
             panNumber
+            tanNumber
+            citTdsOffice
             headquartersAddress
             isActive
             registrationNumber
             llmApiKey
             accent
+            canCustomizeAccent
             faceAttendanceEnabled
             weekendDays
             plan
@@ -38,13 +41,18 @@ export const GET_ORGANIZATION = gql`
             gstNumber
             employeeCount
             panNumber
+            tanNumber
+            citTdsOffice
             headquartersAddress
             isActive
             registrationNumber
             llmApiKey
             accent
+            canCustomizeAccent
             faceAttendanceEnabled
             weekendDays
+            plan
+            planExpiresAt
             createdAt
             updatedAt
         }

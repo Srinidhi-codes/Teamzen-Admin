@@ -42,6 +42,15 @@ import { useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store/useStore";
 import { useOnboardingMutations } from "@/lib/graphql/onboarding/onboardingHook";
 import { toast } from "sonner";
+import { useMutation } from "@apollo/client/react";
+import { START_OFFBOARDING } from "@/lib/graphql/offboarding/queries";
+
+type StartOffboardingResult = {
+  success: boolean;
+  error?: string | null;
+  offboardingId?: string | null;
+  inviteUrl?: string | null;
+};
 
 export default function EmployeesPage() {
   const { user } = useStore();
@@ -56,6 +65,9 @@ export default function EmployeesPage() {
     () => searchParams.get("organizationId") || ""
   );
   const [startingOnboardingId, setStartingOnboardingId] = useState<string | null>(
+    null
+  );
+  const [startingOffboardingId, setStartingOffboardingId] = useState<string | null>(
     null
   );
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -75,6 +87,19 @@ export default function EmployeesPage() {
   useGraphQLOfficeLocations(undefined, organizationId || undefined);
   const { updateUserStatus } = useGraphQLUserStatusMutations();
   const { startOnboardingForEmployee } = useOnboardingMutations();
+  const [startOffboarding] = useMutation<
+    { startOffboarding?: StartOffboardingResult | null },
+    {
+      input: {
+        userId: string;
+        exitDate: string;
+        lastWorkingDay: string;
+        reason: string;
+        deactivateNow: boolean;
+        sendInvite: boolean;
+      };
+    }
+  >(START_OFFBOARDING);
   const { exportData } = useCSVExport<User>();
 
   const handleStatusToggle = async (userId: string, newStatus: boolean) => {
@@ -105,6 +130,7 @@ export default function EmployeesPage() {
         } else {
           toast.message(payload.error || "Opening existing onboarding");
         }
+        refetchUsers();
         router.push(`/onboarding/${payload.onboardingId}`);
         return;
       }
@@ -113,6 +139,45 @@ export default function EmployeesPage() {
       toast.error(err?.message || "Could not start onboarding");
     } finally {
       setStartingOnboardingId(null);
+    }
+  };
+
+  const handleStartOffboarding = async (employee: User) => {
+    setStartingOffboardingId(employee.id);
+    try {
+      const exitDate =
+        employee.dateOfExit || new Date().toISOString().slice(0, 10);
+      const result = await startOffboarding({
+        variables: {
+          input: {
+            userId: employee.id,
+            exitDate,
+            lastWorkingDay: exitDate,
+            reason: "resign",
+            deactivateNow: true,
+            sendInvite: true,
+          },
+        },
+      });
+      const payload = result.data?.startOffboarding;
+      if (payload?.success && payload.offboardingId) {
+        toast.success(
+          payload.inviteUrl
+            ? `F&F started. Employee marked inactive; exit link ready.`
+            : `F&F started for ${employee.firstName}. Employee marked inactive.`
+        );
+        if (payload.inviteUrl) {
+          await navigator.clipboard?.writeText(payload.inviteUrl).catch(() => undefined);
+        }
+        refetchUsers();
+        router.push(`/offboarding/${payload.offboardingId}`);
+        return;
+      }
+      toast.error(payload?.error || "Could not start F&F");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not start F&F");
+    } finally {
+      setStartingOffboardingId(null);
     }
   };
 
@@ -332,6 +397,8 @@ export default function EmployeesPage() {
                 onStatusToggle={handleStatusToggle}
                 onStartOnboarding={handleStartOnboarding}
                 startingOnboardingId={startingOnboardingId}
+                onStartOffboarding={handleStartOffboarding}
+                startingOffboardingId={startingOffboardingId}
               />
             ))}
           </div>
@@ -363,7 +430,7 @@ export default function EmployeesPage() {
                 : "Create a roster record for someone already joining or on payroll. New candidates with offer letters should use Onboarding → Start hire."}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex min-h-0 flex-1 flex-col px-6 py-5">
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
             <EmployeeForm
               key={selectedEmployee?.id || "new-employee"}
               initialData={selectedEmployee}

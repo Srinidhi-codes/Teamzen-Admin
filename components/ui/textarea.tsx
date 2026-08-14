@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import { cn } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 
 const AI_MODES = [
   { id: "improve", label: "Improve" },
@@ -24,6 +25,8 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
+  const { can } = useOrgPlan();
+  const showAi = enableAi && can("ai_assistant");
 
   const runAi = async (mode: string) => {
     setMenuOpen(false);
@@ -73,7 +76,7 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
 
   return (
     <div className="relative w-full">
-      {enableAi && (
+      {showAi && (
         <div className="absolute right-2 top-2 z-10">
           <button
             type="button"
@@ -118,7 +121,7 @@ function Textarea({ className, enableAi = true, value, onChange, ...props }: Tex
         data-slot="textarea"
         className={cn(
           "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-          enableAi && "pt-10",
+          showAi && "pt-10",
           className
         )}
         {...props}

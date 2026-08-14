@@ -11,6 +11,7 @@ import { Camera, Loader2 } from "lucide-react";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { AccentPicker } from "./AccentPicker";
+import { hasPlanFeature, planLabel } from "@/lib/plans";
 
 interface CreateOrganizationFormProps {
     orgEditData?: any;
@@ -35,6 +36,11 @@ export default function CreateOrganizationForm({
         accent: "teal",
         isActive: true,
     });
+    const canCustomAccent = hasPlanFeature(
+        orgEditData?.plan,
+        orgEditData?.planExpiresAt,
+        "custom_accent"
+    );
 
     useEffect(() => {
         if (orgEditData) {
@@ -228,10 +234,17 @@ export default function CreateOrganizationForm({
                     hint="This key will be used for AI insights specifically for this organization."
                 />
 
-                <AccentPicker
-                    value={formData.accent}
-                    onChange={(accent) => setFormData((prev) => ({ ...prev, accent }))}
-                />
+                {canCustomAccent ? (
+                    <AccentPicker
+                        value={formData.accent}
+                        onChange={(accent) => setFormData((prev) => ({ ...prev, accent }))}
+                    />
+                ) : orgEditData ? (
+                    <p className="text-xs text-muted-foreground">
+                        Color themes require the {planLabel("pro")} plan. Free orgs can use light and
+                        dark mode only.
+                    </p>
+                ) : null}
 
                 <div className="space-y-3">
                     <label className="text-sm font-medium text-muted-foreground ml-1">

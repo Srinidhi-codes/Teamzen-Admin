@@ -1,7 +1,7 @@
 "use client";
 
 import { User } from "@/lib/graphql/users/types";
-import { Mail, Phone, Building2, Edit, MapPin, ClipboardList, Loader2 } from "lucide-react";
+import { Mail, Phone, Building2, Edit, MapPin, ClipboardList, Loader2, LogOut } from "lucide-react";
 import { Switch } from "../ui/switch";
 import Image from "next/image";
 import { useState } from "react";
@@ -15,6 +15,8 @@ interface EmployeeCardProps {
   onStatusToggle: (userId: string, newStatus: boolean) => void;
   onStartOnboarding?: (employee: User) => void | Promise<void>;
   startingOnboardingId?: string | null;
+  onStartOffboarding?: (employee: User) => void | Promise<void>;
+  startingOffboardingId?: string | null;
 }
 
 export default function EmployeeCard({
@@ -23,6 +25,8 @@ export default function EmployeeCard({
   onStatusToggle,
   onStartOnboarding,
   startingOnboardingId,
+  onStartOffboarding,
+  startingOffboardingId,
 }: EmployeeCardProps) {
   const [isPhotoOpen, setIsPhotoOpen] = useState(false);
   const { user: currentUser } = useStore();
@@ -31,6 +35,7 @@ export default function EmployeeCard({
     currentUser?.role === "hr" ||
     currentUser?.role === "superadmin";
   const isStarting = startingOnboardingId === employee.id;
+  const isStartingFnf = startingOffboardingId === employee.id;
 
   return (
     <>
@@ -144,7 +149,7 @@ export default function EmployeeCard({
                   })
                 : "—"}
             </span>
-            {onStartOnboarding && (
+            {onStartOnboarding && employee.isActive && !employee.onboardingStarted && (
               <button
                 type="button"
                 disabled={isStarting}
@@ -158,6 +163,22 @@ export default function EmployeeCard({
                   <ClipboardList className="h-3.5 w-3.5" />
                 )}
                 Onboard
+              </button>
+            )}
+            {onStartOffboarding && employee.isActive && (
+              <button
+                type="button"
+                disabled={isStartingFnf}
+                onClick={() => void onStartOffboarding(employee)}
+                className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
+                title="Start Full & Final / offboarding"
+              >
+                {isStartingFnf ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <LogOut className="h-3.5 w-3.5" />
+                )}
+                F&F
               </button>
             )}
             <button
