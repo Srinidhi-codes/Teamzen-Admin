@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useGraphQLCompanyHolidays, useGraphQLCompanyHolidayMutations } from '@/lib/graphql/leaves/leavesHook'
 import { DataTable, Column } from '../common/DataTable'
 import { CompanyHoliday } from '@/lib/graphql/leaves/types'
@@ -174,6 +174,22 @@ const CompanyHolidays = () => {
         setDeleteId(null);
     };
 
+    const filteredHolidays = useMemo(() => {
+        let result = companyHolidays || [];
+        if (debouncedSearch) {
+            const lower = debouncedSearch.toLowerCase();
+            result = result.filter(h => 
+                h.name.toLowerCase().includes(lower) || 
+                (h.description && h.description.toLowerCase().includes(lower)) ||
+                (h.organization?.name && h.organization.name.toLowerCase().includes(lower))
+            );
+        }
+        if (organizationId) {
+            result = result.filter(h => h.organization?.id === organizationId);
+        }
+        return result;
+    }, [companyHolidays, debouncedSearch, organizationId]);
+
     if (isLoading) return (
         <div className="space-y-3" aria-busy="true" aria-label="Loading">
             <div className="flex justify-end">
@@ -192,6 +208,8 @@ const CompanyHolidays = () => {
             <p className="text-sm text-destructive">{error.message}</p>
         </div>
     );
+
+
 
     return (
         <div className="space-y-6">
@@ -231,7 +249,7 @@ const CompanyHolidays = () => {
 
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <DataTable
-                    data={companyHolidays}
+                    data={filteredHolidays}
                     columns={columns}
                 />
             </div>

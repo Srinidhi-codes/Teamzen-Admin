@@ -1,5 +1,5 @@
 "use client"
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useGraphQLLeaveTypes, useGraphQLLeaveMutations } from '@/lib/graphql/leaves/leavesHook'
 import { DataTable, Column } from '../common/DataTable'
 import { LeaveType } from '@/lib/graphql/leaves/types'
@@ -217,6 +217,21 @@ const LeaveTypes = () => {
     };
 
 
+    const filteredLeaveTypes = useMemo(() => {
+        let result = leaveTypes || [];
+        if (debouncedSearch) {
+            const lower = debouncedSearch.toLowerCase();
+            result = result.filter(lt => 
+                lt.name.toLowerCase().includes(lower) || 
+                lt.code.toLowerCase().includes(lower)
+            );
+        }
+        if (organizationId) {
+            result = result.filter(lt => lt.organization?.id === organizationId);
+        }
+        return result;
+    }, [leaveTypes, debouncedSearch, organizationId]);
+
     if (isLoading) return (
         <div className="space-y-3" aria-busy="true" aria-label="Loading">
             <div className="flex justify-end">
@@ -238,7 +253,7 @@ const LeaveTypes = () => {
     );
 
 
-    const filteredLeaveTypes = leaveTypes || [];
+
 
     return (
         <div className="space-y-6">

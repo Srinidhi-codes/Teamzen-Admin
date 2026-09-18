@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Check, X, Calendar, Clock, FileText, User, ArrowRight, MessageSquare, XCircle, CheckCircle2, RotateCcw } from "lucide-react";
 import { LeaveRequest } from "@/lib/graphql/leaves/types";
 import { DataTable, Column } from "../common/DataTable";
@@ -32,6 +32,34 @@ export default function LeaveRequests() {
             refetch();
         }
     }, { silent: true });
+
+    const filteredLeaveRequests = useMemo(() => {
+        let result = leaveRequestData || [];
+        if (debouncedSearch) {
+            const lower = debouncedSearch.toLowerCase();
+            result = result.filter((r: LeaveRequest) => 
+                r.user.firstName.toLowerCase().includes(lower) || 
+                r.user.lastName.toLowerCase().includes(lower) || 
+                r.leaveType.name.toLowerCase().includes(lower) || 
+                r.status.toLowerCase().includes(lower) ||
+                (r.user.organization?.name || '').toLowerCase().includes(lower)
+            );
+        }
+        if (organizationId) {
+            result = result.filter((r: LeaveRequest) => r.user.organization?.id === organizationId);
+        }
+        return result;
+    }, [leaveRequestData, debouncedSearch, organizationId]);
+
+    const pendingCount = filteredLeaveRequests.filter((r: LeaveRequest) => r.status === "pending").length;
+    const approvedCount = filteredLeaveRequests.filter((r: LeaveRequest) => r.status === "approved").length;
+    const rejectedCount = filteredLeaveRequests.filter((r: LeaveRequest) => r.status === "rejected").length;
+
+    const flattenedData = filteredLeaveRequests.map((r: LeaveRequest) => ({
+        ...r,
+        employeeName: `${r.user.firstName} ${r.user.lastName}`,
+        leaveTypeName: r.leaveType.name
+    }));
 
     if (isLoading) return (
         <div className="space-y-3" aria-busy="true" aria-label="Loading">
@@ -188,15 +216,7 @@ export default function LeaveRequests() {
 
     ];
 
-    const pendingCount = leaveRequestData.filter((r: LeaveRequest) => r.status === "pending").length;
-    const approvedCount = leaveRequestData.filter((r: LeaveRequest) => r.status === "approved").length;
-    const rejectedCount = leaveRequestData.filter((r: LeaveRequest) => r.status === "rejected").length;
 
-    const flattenedData = leaveRequestData.map((r) => ({
-        ...r,
-        employeeName: `${r.user.firstName} ${r.user.lastName}`,
-        leaveTypeName: r.leaveType.name
-    }));
 
     return (
         <div className="space-y-6">
@@ -206,7 +226,7 @@ export default function LeaveRequests() {
                     { label: 'Pending', count: pendingCount, icon: Clock, color: 'text-amber-500', gradient: 'bg-amber-500/10' },
                     { label: 'Approved', count: approvedCount, icon: Check, color: 'text-emerald-500', gradient: 'bg-emerald-500/10' },
                     { label: 'Rejected', count: rejectedCount, icon: X, color: 'text-destructive', gradient: 'bg-destructive/10' },
-                    { label: 'Total', count: leaveRequestData.length, icon: FileText, color: 'text-primary', gradient: 'bg-primary/10' },
+                    { label: 'Total', count: filteredLeaveRequests.length, icon: FileText, color: 'text-primary', gradient: 'bg-primary/10' },
                 ].map((stat, i) => (
                     <Stat
                         key={i}

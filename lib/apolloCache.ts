@@ -25,16 +25,16 @@ export const apolloCacheConfig: InMemoryCacheConfig = {
           keyArgs: ["page", "pageSize", "filters", "sort"],
         },
         getLeaveRequests: {
-          keyArgs: ["approvalsOnly", "search"],
+          keyArgs: ["approvalsOnly", "search", "organizationId"],
         },
         leaveBalance: {
-          keyArgs: ["allOrg", "search"],
+          keyArgs: ["allOrg", "search", "organizationId"],
         },
         leaveTypes: {
-          keyArgs: ["search"],
+          keyArgs: ["search", "organizationId"],
         },
         companyHolidays: {
-          keyArgs: ["search"],
+          keyArgs: ["search", "organizationId"],
         },
         organizations: {
           keyArgs: ["search"],

@@ -71,6 +71,22 @@ const LeaveBalance = () => {
                 continue;
             }
 
+            if (organizationId && b.user.organization?.id !== organizationId) {
+                continue;
+            }
+
+            if (debouncedSearch) {
+                const lower = debouncedSearch.toLowerCase();
+                const matches = 
+                    (b.user.firstName || "").toLowerCase().includes(lower) ||
+                    (b.user.lastName || "").toLowerCase().includes(lower) ||
+                    (b.user.department?.name || "").toLowerCase().includes(lower) ||
+                    (b.user.organization?.name || "").toLowerCase().includes(lower);
+                if (!matches) {
+                    continue;
+                }
+            }
+
             let row = byUser.get(b.user.id);
             if (!row) {
                 row = {
@@ -95,7 +111,7 @@ const LeaveBalance = () => {
         return Array.from(byUser.values()).sort((a, b) =>
             a.employeeName.localeCompare(b.employeeName)
         );
-    }, [leaveBalanceData, isManager, me?.id]);
+    }, [leaveBalanceData, isManager, me?.id, debouncedSearch, organizationId]);
 
     const totalRows = aggregatedData.length;
     const pagedData = useMemo(() => {
@@ -286,12 +302,6 @@ const LeaveBalance = () => {
                     paginationLabel="employees"
                 />
             </div>
-
-            {totalRows === 0 && (
-                <div className="rounded-xl border border-dashed border-border px-6 py-16 text-center">
-                    <p className="text-sm text-muted-foreground">No leave balances found.</p>
-                </div>
-            )}
 
             <div ref={formRef}>
                 {isModalOpen && (

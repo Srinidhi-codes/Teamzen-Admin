@@ -40,12 +40,10 @@ export const GET_PAYSLIP_TEMPLATES = gql`
       layoutKey
       theme
       source
-      previewNotes
       isDefault
       isActive
       isSystem
       organizationId
-      sourceFileUrl
     }
   }
 `;
@@ -153,6 +151,7 @@ export const GET_PAYROLL_RUN_DETAILS = gql`
         totalDeductions
         netPay
         status
+        pdfSource
         payslipPdf {
           url
         }

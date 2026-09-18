@@ -293,80 +293,11 @@ export const SET_DEFAULT_PAYSLIP_TEMPLATE = gql`
       layoutKey
       theme
       source
-      previewNotes
       isDefault
       isActive
       isSystem
       organizationId
-      sourceFileUrl
     }
-  }
-`;
-
-export const CREATE_PAYSLIP_TEMPLATE = gql`
-  mutation CreatePayslipTemplate(
-    $name: String!
-    $layoutKey: String
-    $description: String
-    $theme: JSON
-    $organizationId: ID
-    $setAsDefault: Boolean
-  ) {
-    createPayslipTemplate(
-      name: $name
-      layoutKey: $layoutKey
-      description: $description
-      theme: $theme
-      organizationId: $organizationId
-      setAsDefault: $setAsDefault
-    ) {
-      id
-      name
-      slug
-      description
-      layoutKey
-      theme
-      source
-      previewNotes
-      isDefault
-      isActive
-      isSystem
-      organizationId
-      sourceFileUrl
-    }
-  }
-`;
-
-export const UPDATE_PAYSLIP_TEMPLATE = gql`
-  mutation UpdatePayslipTemplate(
-    $templateId: ID!
-    $name: String
-    $description: String
-    $layoutKey: String
-    $theme: JSON
-    $isActive: Boolean
-  ) {
-    updatePayslipTemplate(
-      templateId: $templateId
-      name: $name
-      description: $description
-      layoutKey: $layoutKey
-      theme: $theme
-      isActive: $isActive
-    ) {
-      id
-      name
-      layoutKey
-      theme
-      isActive
-      isDefault
-    }
-  }
-`;
-
-export const DELETE_PAYSLIP_TEMPLATE = gql`
-  mutation DeletePayslipTemplate($templateId: ID!) {
-    deletePayslipTemplate(templateId: $templateId)
   }
 `;
 

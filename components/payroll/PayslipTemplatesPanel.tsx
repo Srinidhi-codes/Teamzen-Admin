@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
+import { useState } from "react";
+import { useMutation, useQuery } from "@apollo/client/react";
+import axios from "axios";
+import { Check, Download, FileUp, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Check,
-  Download,
-  ExternalLink,
-  FileUp,
-  Loader2,
-  Palette,
-  Trash2,
-} from "lucide-react";
 import { Card } from "@/components/common/Card";
 import { Button } from "@/components/ui/button";
+import { FilePicker } from "@/components/ui/file-picker";
 import {
   Select,
   SelectContent,
@@ -21,43 +15,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/common/Skeleton";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import { GET_PAYSLIP_TEMPLATES } from "@/lib/graphql/payroll/queries";
 import {
-  SET_DEFAULT_PAYSLIP_TEMPLATE,
-  CREATE_PAYSLIP_TEMPLATE,
-  DELETE_PAYSLIP_TEMPLATE,
-} from "@/lib/graphql/payroll/mutations";
+  GET_PAYROLL_RUNS,
+  GET_PAYSLIP_TEMPLATES,
+} from "@/lib/graphql/payroll/queries";
+import { SET_DEFAULT_PAYSLIP_TEMPLATE } from "@/lib/graphql/payroll/mutations";
 import { cn } from "@/lib/utils";
-import ConfirmationModal from "@/components/common/ConfirmationModal";
 
 type Props = {
   organizationId?: string;
 };
 
-const LAYOUTS = [
-  { value: "classic", label: "Classic" },
-  { value: "modern", label: "Modern" },
-  { value: "compact", label: "Compact" },
-  { value: "minimal", label: "Minimal" },
-];
+type MatchRow = {
+  index: number;
+  fileName: string;
+  matched: boolean;
+  matchBy?: "employee_id" | "name" | null;
+  reason?: string;
+  payslipId?: string | null;
+  employeeId?: string | null;
+  employeeName?: string | null;
+  currentStatus?: string | null;
+};
+
+type PreviewResult = {
+  runId: string;
+  total: number;
+  matched: number;
+  unmatched: number;
+  files: MatchRow[];
+};
 
 type Theme = {
-  primary?: string;
-  muted?: string;
   accent?: string;
   hero_bg?: string;
-  earning_bg?: string;
-  deduction_bg?: string;
-  table_header_bg?: string;
-  table_header_fg?: string;
-  show_net_hero?: boolean;
-  show_logo?: boolean;
-  use_source_pdf?: boolean;
 };
+
+type PayslipTemplate = {
+  id: string;
+  name: string;
+  description?: string;
+  layoutKey: string;
+  theme?: Theme | null;
+  isDefault: boolean;
+  isSystem: boolean;
+};
+
+type PayrollRun = {
+  id: string;
+  month: number;
+  year: number;
+  status: string;
+  organization?: { name?: string } | null;
+};
+
+type TemplateQueryData = { payslipTemplates: PayslipTemplate[] };
+type RunsQueryData = { payrollRuns: PayrollRun[] };
+type BulkResult = PreviewResult & { published?: number };
+
+function errorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError<{ error?: string }>(error)) {
+    return error.response?.data?.error || error.message || fallback;
+  }
+  return error instanceof Error ? error.message : fallback;
+}
+
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 async function downloadDemoPdf(
   templateId: string,
@@ -67,789 +95,391 @@ async function downloadDemoPdf(
   const qs = organizationId
     ? `?organization_id=${encodeURIComponent(organizationId)}`
     : "";
-  const path = `${API_ENDPOINTS.payslipTemplateDemo(templateId)}${qs}`;
-  const res = await api.get(path, { responseType: "blob" });
-  const contentType = res.headers?.["content-type"] || "";
-  if (contentType.includes("application/json")) {
-    const text = await (res.data as Blob).text();
-    let msg = "Download failed";
-    try {
-      msg = JSON.parse(text)?.error || msg;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(msg);
-  }
+  const res = await api.get(
+    `${API_ENDPOINTS.payslipTemplateDemo(templateId)}${qs}`,
+    { responseType: "blob" }
+  );
   const blob = new Blob([res.data], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const safe = (templateName || "payslip").replace(/[^\w\-]+/g, "_").slice(0, 40);
-  a.href = url;
-  a.download = `demo_payslip_${safe}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `demo_${(templateName || "payslip").replace(/[^\w-]+/g, "_")}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
   URL.revokeObjectURL(url);
 }
 
-function isUploadedTemplate(t: any) {
-  return (
-    t?.layoutKey === "uploaded" ||
-    t?.layoutKey === "networth" ||
-    t?.source === "cloned" ||
-    t?.theme?.use_source_pdf ||
-    t?.theme?.renderer === "networth_replica" ||
-    t?.theme?.renderer === "pdf_fill" ||
-    t?.theme?.renderer === "corporate_replica" ||
-    t?.theme?.fill_in_place
-  );
-}
-
-type PayslipTemplateRow = {
-  __typename?: string;
-  id: string;
-  name?: string;
-  slug?: string;
-  description?: string;
-  layoutKey?: string;
-  theme?: Theme | null;
-  source?: string;
-  previewNotes?: string;
-  isDefault?: boolean;
-  isActive?: boolean;
-  isSystem?: boolean;
-  organizationId?: string | null;
-  sourceFileUrl?: string | null;
-};
-
-function TemplateGridSkeleton({ count = 3 }: { count?: number }) {
-  return (
-    <div
-      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-      aria-busy="true"
-      aria-label="Loading templates"
-    >
-      {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="overflow-hidden rounded-xl border border-border bg-card"
-        >
-          <Skeleton className="h-36 w-full rounded-none" />
-          <div className="space-y-2 p-4">
-            <Skeleton className="h-4 w-2/3" />
-            <Skeleton className="h-3 w-1/2" />
-            <div className="flex gap-2 pt-2">
-              <Skeleton className="h-8 w-20" />
-              <Skeleton className="h-8 w-24" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function PayslipTemplatesPanel({ organizationId }: Props) {
-  const client = useApolloClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [cloning, setCloning] = useState(false);
-  const [cloneName, setCloneName] = useState("");
-  const [customName, setCustomName] = useState("");
-  const [customLayout, setCustomLayout] = useState("classic");
+  const [runId, setRunId] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [preview, setPreview] = useState<PreviewResult | null>(null);
+  const [uploading, setUploading] = useState<"preview" | "publish" | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
 
   const queryVars = { organizationId: organizationId || undefined };
-
-  const { data, loading } = useQuery(GET_PAYSLIP_TEMPLATES, {
+  const { data, loading, refetch } = useQuery<TemplateQueryData>(
+    GET_PAYSLIP_TEMPLATES,
+    {
     variables: queryVars,
-    fetchPolicy: "cache-first",
-    nextFetchPolicy: "cache-first",
-    notifyOnNetworkStatusChange: false,
-  }) as any;
-
-  const readTemplates = (): PayslipTemplateRow[] => {
-    try {
-      const cached = client.readQuery({
-        query: GET_PAYSLIP_TEMPLATES,
-        variables: queryVars,
-      }) as { payslipTemplates?: PayslipTemplateRow[] } | null;
-      return cached?.payslipTemplates || [];
-    } catch {
-      return [];
+    fetchPolicy: "network-only",
     }
-  };
-
-  const writeTemplates = (templates: PayslipTemplateRow[]) => {
-    client.writeQuery({
-      query: GET_PAYSLIP_TEMPLATES,
+  );
+  const { data: runsData, refetch: refetchRuns } = useQuery<RunsQueryData>(
+    GET_PAYROLL_RUNS,
+    {
       variables: queryVars,
-      data: { payslipTemplates: templates },
-    });
-  };
-
+      fetchPolicy: "network-only",
+    }
+  );
   const [setDefault, { loading: settingDefault }] = useMutation(
     SET_DEFAULT_PAYSLIP_TEMPLATE
   );
-  const [createTpl, { loading: creating }] = useMutation(CREATE_PAYSLIP_TEMPLATE);
-  const [deleteTpl, { loading: deleting }] = useMutation(DELETE_PAYSLIP_TEMPLATE);
 
   const templates = data?.payslipTemplates || [];
-  const system = templates.filter((t: any) => t.isSystem);
-  const custom = templates.filter((t: any) => !t.isSystem);
-  const initialLoading = loading && !data;
+  const gallery = templates.filter((template) => template.isSystem);
+  const orgDefault = templates.find(
+    (template) => !template.isSystem && template.isDefault
+  );
+  const activeLayout =
+    orgDefault?.layoutKey ||
+    templates.find((template) => template.isSystem && template.isDefault)
+      ?.layoutKey ||
+    "classic";
+  const completedRuns = (runsData?.payrollRuns || []).filter(
+    (run) => run.status === "completed"
+  );
 
   const handleSetDefault = async (templateId: string) => {
     try {
       await setDefault({
-        variables: {
-          templateId,
-          organizationId: organizationId || undefined,
-        },
-        update(_cache, { data: mutData }) {
-          const updated = (mutData as any)?.setDefaultPayslipTemplate;
-          if (!updated?.id) return;
-          const list = readTemplates();
-          writeTemplates(
-            list.map((t) => ({
-              ...t,
-              isDefault: String(t.id) === String(updated.id),
-            }))
-          );
-        },
+        variables: { templateId, organizationId: organizationId || undefined },
       });
-      toast.success("Default payslip template updated");
-    } catch (e: any) {
-      toast.error(e?.message || "Could not set default");
+      await refetch();
+      toast.success("Default payslip design updated");
+    } catch (error: unknown) {
+      toast.error(errorMessage(error, "Could not update design"));
     }
   };
 
-  const handleDownloadDemo = async (t: any) => {
-    setDownloadingId(t.id);
+  const handleDownload = async (template: PayslipTemplate) => {
+    setDownloadingId(template.id);
     try {
-      await downloadDemoPdf(t.id, t.name, organizationId);
-      toast.success(
-        isUploadedTemplate(t)
-          ? "Downloaded structure replica demo"
-          : "Demo payslip downloaded"
-      );
-    } catch (e: any) {
-      toast.error(e?.message || "Could not download PDF");
+      await downloadDemoPdf(template.id, template.name, organizationId);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error, "Could not download demo"));
     } finally {
       setDownloadingId(null);
     }
   };
 
-  const handleClone = async (file: File | null) => {
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
-      toast.error("Upload a PDF payslip");
+  const chooseFiles = (selected: File[]) => {
+    setFiles(selected);
+    setPreview(null);
+  };
+
+  const submitBulk = async (mode: "preview" | "publish") => {
+    if (!runId) {
+      toast.error("Select a processed payroll run");
       return;
     }
-    setCloning(true);
+    if (!files.length) {
+      toast.error("Select payslip PDFs");
+      return;
+    }
+    setUploading(mode);
     try {
       const form = new FormData();
-      form.append("file", file);
-      if (cloneName.trim()) form.append("name", cloneName.trim());
-      if (organizationId) form.append("organization_id", organizationId);
-      const res = await api.post(API_ENDPOINTS.PAYSLIP_TEMPLATE_CLONE, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      const created = res.data;
-      if (created?.id) {
-        const row: PayslipTemplateRow = {
-          __typename: "PayslipTemplate",
-          id: String(created.id),
-          name: created.name || "Uploaded template",
-          slug: created.slug || "",
-          description: created.description || "",
-          layoutKey: created.layoutKey || "networth",
-          theme: created.theme || null,
-          source: created.source || "cloned",
-          previewNotes: created.previewNotes || "",
-          isDefault: Boolean(created.isDefault),
-          isActive: true,
-          isSystem: false,
-          organizationId: organizationId || null,
-          sourceFileUrl: created.sourceFileUrl || "",
-        };
-        const list = readTemplates();
-        const withoutDup = list.filter((t) => String(t.id) !== row.id);
-        writeTemplates(
-          row.isDefault
-            ? [row, ...withoutDup.map((t) => ({ ...t, isDefault: false }))]
-            : [row, ...withoutDup]
+      form.append("run_id", runId);
+      form.append("mode", mode);
+      files.forEach((file) => form.append("files", file));
+      if (mode === "publish" && preview) {
+        form.append(
+          "mapping",
+          JSON.stringify(
+            preview.files
+              .filter((row) => row.matched && row.payslipId)
+              .map((row) => ({ index: row.index, payslipId: row.payslipId }))
+          )
         );
       }
-      setCloneName("");
-      toast.success("Payslip structure saved — replica template is now default");
-      if (created?.id) {
-        try {
-          await downloadDemoPdf(
-            String(created.id),
-            created.name || "uploaded",
-            organizationId
-          );
-        } catch {
-          /* optional */
-        }
+      const { data: result } = await api.post<BulkResult>(
+        API_ENDPOINTS.PAYSLIP_BULK_UPLOAD,
+        form,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      if (mode === "preview") {
+        setPreview(result);
+        toast.success(
+          `${result.matched} of ${result.total} PDFs matched employees`
+        );
+      } else {
+        toast.success(`${result.published || 0} payslips published`);
+        setFiles([]);
+        setPreview(null);
+        await refetchRuns();
       }
-    } catch (e: any) {
-      toast.error(e?.response?.data?.error || e?.message || "Upload failed");
+    } catch (error: unknown) {
+      toast.error(errorMessage(error, "Bulk upload failed"));
     } finally {
-      setCloning(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!customName.trim()) {
-      toast.error("Name is required");
-      return;
-    }
-    try {
-      await createTpl({
-        variables: {
-          name: customName.trim(),
-          layoutKey: customLayout,
-          description: "Custom template",
-          organizationId: organizationId || undefined,
-          setAsDefault: false,
-        },
-        update(_cache, { data: mutData }) {
-          const created = (mutData as any)?.createPayslipTemplate;
-          if (!created?.id) return;
-          const list = readTemplates();
-          if (list.some((t) => String(t.id) === String(created.id))) return;
-          const row: PayslipTemplateRow = {
-            __typename: "PayslipTemplate",
-            isActive: true,
-            isSystem: false,
-            organizationId: organizationId || null,
-            sourceFileUrl: "",
-            previewNotes: "",
-            slug: "",
-            ...created,
-          };
-          writeTemplates(
-            row.isDefault
-              ? [row, ...list.map((t) => ({ ...t, isDefault: false }))]
-              : [row, ...list]
-          );
-        },
-      });
-      setCustomName("");
-      toast.success("Template created");
-    } catch (e: any) {
-      toast.error(e?.message || "Create failed");
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!deleteTarget) return;
-    const deletedId = deleteTarget.id;
-    try {
-      await deleteTpl({
-        variables: { templateId: deletedId },
-        update() {
-          writeTemplates(
-            readTemplates().filter((t) => String(t.id) !== String(deletedId))
-          );
-        },
-      });
-      setDeleteTarget(null);
-      toast.success("Template deleted");
-    } catch (e: any) {
-      toast.error(e?.message || "Could not delete template");
+      setUploading(null);
     }
   };
 
   return (
     <div className="space-y-6">
-      <ConfirmationModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDelete}
-        title="Delete payslip template?"
-        description={
-          deleteTarget
-            ? `"${deleteTarget.name}" will be removed permanently. Gallery templates are not affected.`
-            : ""
-        }
-        confirmText={deleting ? "Deleting…" : "Delete"}
-        variant="destructive"
-      />
       <Card className="p-5">
-        <div className="flex flex-wrap items-start gap-3 pb-5">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-xl font-semibold text-foreground">
-              Payslip templates
-            </h3>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <FileUp className="h-4 w-4 text-muted-foreground" />
-          <h4 className="font-semibold">Upload payslip → become template</h4>
-        </div>
-        <p className="text-sm text-muted-foreground py-2">
-          Upload a sample payslip PDF. We recreate the same structure with your
-          company logo and each employee&apos;s real payroll data. New uploads
-          become the default template automatically.
+        <h3 className="text-lg font-semibold text-foreground">
+          Standard payslip designs
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Choose a distinct, real-world payroll format. Teamzen generates every
+          employee&apos;s payslip from payroll data using the selected design.
         </p>
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex-1 max-w-[300px]">
-            <Input
-              placeholder="Template name (optional)"
-              value={cloneName}
-              onChange={(e) => setCloneName(e.target.value)}
-            />
+
+        {loading && !data ? (
+          <div className="mt-5 flex min-h-40 items-center justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            className="hidden"
-            onChange={(e) => handleClone(e.target.files?.[0] || null)}
-          />
-          <Button disabled={cloning} onClick={() => fileRef.current?.click()}>
-            {cloning ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…
-              </>
-            ) : (
-              "Upload PDF"
-            )}
-          </Button>
-        </div>
+        ) : (
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {gallery.map((template) => {
+              const inUse = template.layoutKey === activeLayout;
+              return (
+                <div
+                  key={template.id}
+                  className={cn(
+                    "flex flex-col overflow-hidden rounded-xl border bg-card",
+                    inUse ? "border-primary ring-2 ring-primary/20" : "border-border"
+                  )}
+                >
+                  <PayslipPreview
+                    layout={template.layoutKey}
+                    theme={template.theme || {}}
+                  />
+                  <div className="flex flex-1 flex-col p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-foreground">{template.name}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {template.description}
+                        </p>
+                      </div>
+                      {inUse && (
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
+                          <Check className="h-3 w-3" /> In use
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-auto space-y-2 pt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                        disabled={downloadingId === template.id}
+                        onClick={() => handleDownload(template)}
+                      >
+                        {downloadingId === template.id ? (
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="mr-2 h-3.5 w-3.5" />
+                        )}
+                        Download demo
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        variant={inUse ? "outline" : "default"}
+                        disabled={inUse || settingDefault}
+                        onClick={() => handleSetDefault(template.id)}
+                      >
+                        {inUse ? "Selected" : "Use this design"}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
 
-      <div>
-        <h4 className="mb-3 text-sm font-medium text-foreground">
-          Your templates
-        </h4>
-        {initialLoading ? (
-          <TemplateGridSkeleton count={2} />
-        ) : custom.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            No uploaded templates yet. Upload a PDF above.
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {custom.map((t: any) => (
-              <TemplateCard
-                key={t.id}
-                template={t}
-                organizationId={organizationId}
-                busy={settingDefault || deleting}
-                downloading={downloadingId === t.id}
-                onUse={() => handleSetDefault(t.id)}
-                onDownloadDemo={() => handleDownloadDemo(t)}
-                onDelete={() =>
-                  setDeleteTarget({ id: t.id, name: t.name || "Template" })
-                }
-              />
-            ))}
+      <Card className="p-5">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-primary/10 p-2 text-primary">
+            <FileUp className="h-5 w-5" />
           </div>
-        )}
-      </div>
-
-      <div>
-        <h4 className="mb-3 text-sm font-medium text-foreground">
-          Teamzen gallery
-        </h4>
-        {initialLoading ? (
-          <TemplateGridSkeleton count={4} />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {system.map((t: any) => (
-              <TemplateCard
-                key={t.id}
-                template={t}
-                organizationId={organizationId}
-                busy={settingDefault}
-                downloading={downloadingId === t.id}
-                onUse={() => handleSetDefault(t.id)}
-                onDownloadDemo={() => handleDownloadDemo(t)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function TemplateCard({
-  template: t,
-  organizationId,
-  onUse,
-  onDownloadDemo,
-  onDelete,
-  busy,
-  downloading,
-}: {
-  template: any;
-  organizationId?: string;
-  onUse: () => void;
-  onDownloadDemo: () => void;
-  onDelete?: () => void;
-  busy: boolean;
-  downloading: boolean;
-}) {
-  const theme = (t.theme || {}) as Theme;
-  const isActiveDefault = Boolean(t.isDefault && !t.isSystem);
-  const uploaded = isUploadedTemplate(t);
-  const canDelete = Boolean(onDelete) && !t.isSystem;
-  // Bust preview when source URL / id changes (new upload)
-  const previewKey = `${t.id}:${t.sourceFileUrl || ""}:${t.layoutKey || ""}`;
-
-  return (
-    <div
-      className={cn(
-        "flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm",
-        isActiveDefault && "ring-2 ring-primary/40"
-      )}
-    >
-      <div className="relative border-b border-border bg-[#e8eaed] dark:bg-zinc-900/80">
-        {uploaded ? (
-          <div className="relative">
-            <span className="absolute right-2 top-2 z-10 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-              Structure replica
-            </span>
-            <UploadedTemplatePreview
-              templateId={String(t.id)}
-              organizationId={organizationId}
-              previewKey={previewKey}
-              sourceFileUrl={t.sourceFileUrl || ""}
-              theme={theme}
-            />
-          </div>
-        ) : (
-          <div className="p-3">
-            <span className="absolute right-2 top-2 z-10 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-white">
-              Demo
-            </span>
-            <PayslipMiniPreview
-              layoutKey={t.layoutKey || "classic"}
-              theme={theme}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col space-y-2 p-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="font-medium text-foreground">{t.name}</p>
-            <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              {uploaded ? "Uploaded PDF" : `${t.layoutKey} layout`}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-              {t.description || t.source}
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">
+              Publish your own payslip PDFs
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Bulk upload finalized PDFs. Filenames are matched to this run by
+              employee ID first, then by a unique full name. Preview is required;
+              unmatched files are never published.
             </p>
           </div>
-          {isActiveDefault ? (
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-400">
-              <Check className="h-3 w-3" /> Default
-            </span>
-          ) : null}
         </div>
 
-        {t.sourceFileUrl ? (
-          <a
-            href={t.sourceFileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            <ExternalLink className="h-3 w-3" />
-            Open PDF
-          </a>
-        ) : null}
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">
+              Processed payroll run
+            </label>
+            <Select value={runId} onValueChange={(value) => {
+              setRunId(value);
+              setPreview(null);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {completedRuns.map((run) => (
+                  <SelectItem key={run.id} value={String(run.id)}>
+                    {MONTHS[run.month - 1]} {run.year} · {run.organization?.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">
+              Payslip PDFs
+            </label>
+            <FilePicker
+              accept=".pdf,application/pdf"
+              multiple
+              disabled={!!uploading}
+              label="Choose PDFs"
+              emptyLabel="No payslips selected"
+              files={files}
+              onChange={chooseFiles}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Example: EMP-001_Aanya_Sharma_Mar-2026.pdf
+            </p>
+          </div>
+        </div>
 
-        <div className="mt-auto flex flex-col gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button
-            size="sm"
             variant="outline"
-            className="w-full"
-            disabled={downloading}
-            onClick={onDownloadDemo}
+            disabled={!!uploading}
+            onClick={() => submitBulk("preview")}
           >
-            {downloading ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                Preparing…
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-3.5 w-3.5" />
-                {uploaded ? "Download structure demo" : "Download demo PDF"}
-              </>
+            {uploading === "preview" && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
+            Preview matches
           </Button>
           <Button
-            size="sm"
-            variant={isActiveDefault ? "outline" : "default"}
-            className="w-full"
-            disabled={busy || isActiveDefault}
-            onClick={onUse}
+            disabled={!preview?.matched || !!uploading}
+            onClick={() => submitBulk("publish")}
           >
-            {isActiveDefault ? "In use" : "Use as default"}
+            {uploading === "publish" ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ShieldCheck className="mr-2 h-4 w-4" />
+            )}
+            Publish {preview?.matched || 0} matched
           </Button>
-          {canDelete ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive"
-              disabled={busy}
-              onClick={onDelete}
-            >
-              <Trash2 className="mr-2 h-3.5 w-3.5" />
-              Delete
-            </Button>
-          ) : null}
         </div>
-      </div>
+
+        {preview && (
+          <div className="mt-5 overflow-hidden rounded-lg border border-border">
+            <div className="flex flex-wrap gap-3 border-b border-border bg-muted/30 px-3 py-2 text-xs">
+              <span>{preview.total} files</span>
+              <span className="text-emerald-700 dark:text-emerald-400">
+                {preview.matched} matched
+              </span>
+              <span className="text-destructive">
+                {preview.unmatched} unmatched
+              </span>
+            </div>
+            <div className="max-h-80 divide-y divide-border overflow-y-auto">
+              {preview.files.map((row) => (
+                <div
+                  key={`${row.index}-${row.fileName}`}
+                  className="grid gap-1 px-3 py-2 text-xs sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                >
+                  <span className="truncate font-medium">{row.fileName}</span>
+                  <span className={row.matched ? "text-foreground" : "text-destructive"}>
+                    {row.matched
+                      ? `${row.employeeName} · ${row.employeeId || "No employee ID"}`
+                      : row.reason}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {row.matched ? `by ${row.matchBy?.replace("_", " ")}` : "Skipped"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
 
-function UploadedTemplatePreview({
-  templateId,
-  organizationId,
-  previewKey,
-  sourceFileUrl,
+function PayslipPreview({
+  layout,
   theme,
 }: {
-  templateId: string;
-  organizationId?: string;
-  previewKey: string;
-  sourceFileUrl: string;
+  layout: string;
   theme: Theme;
 }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    let objectUrl: string | null = null;
-
-    async function load() {
-      setLoading(true);
-      setSrc(null);
-      try {
-        const qs = new URLSearchParams();
-        if (organizationId) qs.set("organization_id", organizationId);
-        qs.set("v", previewKey);
-        const path = `${API_ENDPOINTS.payslipTemplatePreview(templateId)}?${qs.toString()}`;
-        const res = await api.get(path, { responseType: "blob" });
-        const contentType = res.headers?.["content-type"] || "";
-        if (contentType.includes("application/json") || contentType.includes("text/")) {
-          throw new Error("Preview unavailable");
-        }
-        objectUrl = URL.createObjectURL(res.data as Blob);
-        if (cancelled) {
-          URL.revokeObjectURL(objectUrl);
-          return;
-        }
-        setSrc(objectUrl);
-      } catch {
-        if (!cancelled) setSrc(null);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [templateId, organizationId, previewKey]);
-
-  if (loading) {
-    return (
-      <div className="flex h-[220px] items-center justify-center bg-muted/40">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (src) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt="Payslip template preview"
-        className="h-[220px] w-full object-contain object-top bg-white"
-      />
-    );
-  }
-
-  // Fallback: embed the uploaded source PDF when raster preview fails
-  if (sourceFileUrl) {
-    return (
-      <iframe
-        title="Payslip source preview"
-        src={`${sourceFileUrl}#page=1&view=FitH&toolbar=0&navpanes=0`}
-        className="h-[220px] w-full border-0 bg-white"
-      />
-    );
-  }
+  const accent = theme.accent || "#0f766e";
+  const compact = layout === "compact";
+  const minimal = layout === "minimal";
+  const modern = layout === "modern";
 
   return (
-    <div className="p-3">
-      <PayslipMiniPreview layoutKey="uploaded" theme={theme} />
-    </div>
-  );
-}
-
-function PayslipMiniPreview({
-  layoutKey,
-  theme,
-}: {
-  layoutKey: string;
-  theme: Theme;
-}) {
-  const primary = theme.primary || "#212529";
-  const muted = theme.muted || "#6c757d";
-  const accent = theme.accent || "#0d6efd";
-  const heroBg = theme.hero_bg || "#f8f9fa";
-  const earnBg = theme.earning_bg || "#f0fdf4";
-  const dedBg = theme.deduction_bg || "#fef2f2";
-  const thBg = theme.table_header_bg || primary;
-  const thFg = theme.table_header_fg || "#ffffff";
-  const showHero = theme.show_net_hero !== false && layoutKey !== "minimal" && layoutKey !== "networth" && layoutKey !== "uploaded";
-  const compact = layoutKey === "compact" || layoutKey === "minimal";
-  const modern = layoutKey === "modern";
-  const networth = layoutKey === "networth";
-
-  return (
-    <div
-      className="relative mx-auto w-full max-w-[220px] overflow-hidden rounded-sm border border-black/10 bg-white shadow-md"
-      style={{ color: primary }}
-      aria-hidden
-    >
-      {networth ? (
-        <div className="absolute bottom-0 right-0 top-0 w-1.5">
-          <div className="h-1/4 bg-[#800020]" />
-          <div className="h-1/4 bg-[#1e40af]" />
-          <div className="h-1/4 bg-[#ca8a04]" />
-          <div className="h-1/4 bg-[#166534]" />
+    <div className="h-44 border-b border-border bg-muted/30 p-3">
+      <div className="mx-auto h-full max-w-56 overflow-hidden border border-black/10 bg-white p-2 text-zinc-900 shadow-sm">
+        <div
+          className={cn(
+            "flex items-start justify-between border-b pb-1",
+            modern && "border-b-4"
+          )}
+          style={{ borderColor: modern ? accent : "#d4d4d8" }}
+        >
+          <div>
+            <p className="text-[8px] font-bold">ACME INDUSTRIES PVT LTD</p>
+            <p className="text-[6px] text-zinc-500">Salary slip · March 2026</p>
+          </div>
+          <div className="h-5 w-5 rounded-sm" style={{ background: accent }} />
         </div>
-      ) : null}
-      <div
-        className="flex items-start justify-between gap-2 border-b px-2.5 py-2"
-        style={{ borderColor: "#dee2e6" }}
-      >
-        <div className="flex min-w-0 items-start gap-1.5">
-          {networth ? (
-            <div className="mt-0.5 h-5 w-1 shrink-0 bg-zinc-900" />
-          ) : theme.show_logo !== false ? (
-            <div
-              className="mt-0.5 h-5 w-5 shrink-0 rounded"
-              style={{ background: accent }}
-            />
-          ) : null}
-          <div className="min-w-0">
-            <p
-              className="truncate text-[9px] font-bold leading-tight"
-              style={{ color: primary }}
-            >
-              {networth ? "Networth Corp" : "Acme Tech Pvt Ltd"}
-            </p>
-            <p className="text-[7px]" style={{ color: muted }}>
-              {networth ? "Payslip for the month of Mar 2026" : "Payslip"}
+        {!minimal && (
+          <div
+            className={cn("my-1.5 px-2", compact ? "py-1" : "py-2")}
+            style={{ background: theme.hero_bg || "#f4f4f5" }}
+          >
+            <p className="text-[5px] uppercase text-zinc-500">Net pay</p>
+            <p className={cn("font-bold", compact ? "text-[10px]" : "text-sm")}>
+              ₹72,450
             </p>
           </div>
+        )}
+        <div className={cn("grid grid-cols-2 gap-x-3", compact ? "text-[5px]" : "text-[6px]")}>
+          <span>Employee: Aanya Sharma</span><span>ID: EMP-001</span>
+          <span>Department: Engineering</span><span>PAN: ABCDE1234F</span>
         </div>
-        {!networth ? (
-          <p
-            className="shrink-0 text-[8px] font-semibold"
-            style={{ color: primary }}
-          >
-            Mar 2026
-          </p>
-        ) : null}
-      </div>
-
-      {showHero ? (
-        <div
-          className={cn("px-2.5", compact ? "py-1.5" : "py-2")}
-          style={{
-            background: heroBg,
-            borderBottom: modern ? `2px solid ${accent}` : undefined,
-          }}
-        >
-          <p className="text-[7px] uppercase tracking-wide" style={{ color: muted }}>
-            Net Pay
-          </p>
-          <p
-            className={cn(
-              "mt-0.5 font-bold leading-none",
-              compact ? "text-[13px]" : "text-[15px]"
-            )}
-            style={{ color: primary }}
-          >
-            ₹72,450
-          </p>
-        </div>
-      ) : (
-        <div
-          className="flex items-center justify-between border-b px-2.5 py-1.5"
-          style={{ borderColor: "#dee2e6" }}
-        >
-          <span className="text-[7px]" style={{ color: muted }}>
-            Net pay
-          </span>
-          <span className="text-[10px] font-bold" style={{ color: primary }}>
-            ₹72,450
-          </span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-1 px-2.5 py-2">
-        <div className="rounded px-1.5 py-1" style={{ background: earnBg }}>
-          <p className="text-[6px] font-medium text-emerald-700">Gross</p>
-          <p className="text-[8px] font-bold" style={{ color: primary }}>
-            ₹85,000
-          </p>
-        </div>
-        <div className="rounded px-1.5 py-1" style={{ background: dedBg }}>
-          <p className="text-[6px] font-medium text-red-600">Deduct</p>
-          <p className="text-[8px] font-bold" style={{ color: primary }}>
-            ₹12,550
-          </p>
-        </div>
-      </div>
-
-      <div className="px-2.5 pb-2">
-        <div
-          className="flex items-center justify-between rounded-t px-1.5 py-0.5"
-          style={{ background: thBg, color: thFg }}
-        >
-          <span className="text-[6.5px] font-semibold">Earnings</span>
-          <span className="text-[6.5px] font-semibold">Amount</span>
-        </div>
-        <div className="border border-t-0" style={{ borderColor: "#e9ecef" }}>
-          {[
-            ["Basic", "₹34,000"],
-            ["HRA", "₹13,600"],
-          ].map(([n, a]) => (
-            <div
-              key={n}
-              className="flex justify-between border-b px-1.5 py-0.5 last:border-0"
-              style={{ borderColor: "#f1f3f5" }}
-            >
-              <span className="text-[7px]" style={{ color: primary }}>
-                {n}
-              </span>
-              <span className="text-[7px]" style={{ color: muted }}>
-                {a}
-              </span>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {["Earnings", "Deductions"].map((label) => (
+            <div key={label} className="border border-zinc-200">
+              <p
+                className="px-1 py-0.5 text-[6px] font-bold text-white"
+                style={{ background: minimal ? "#3f3f46" : accent }}
+              >
+                {label}
+              </p>
+              <div className={cn("space-y-0.5 p-1", compact ? "text-[5px]" : "text-[6px]")}>
+                <div className="flex justify-between"><span>Basic</span><span>34,000</span></div>
+                <div className="flex justify-between"><span>HRA</span><span>13,600</span></div>
+                <div className="flex justify-between border-t pt-0.5 font-bold">
+                  <span>Total</span><span>47,600</span>
+                </div>
+              </div>
             </div>
           ))}
         </div>

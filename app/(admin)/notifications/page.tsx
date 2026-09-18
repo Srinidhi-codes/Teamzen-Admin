@@ -17,10 +17,13 @@ import { FormTextarea } from "@/components/common/FormTextArea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Bell, Megaphone } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export default function NotificationsPage() {
   const [message, setMessage] = useState("");
   const [notificationType, setNotificationType] = useState("PUSH");
+  const [sendToBots, setSendToBots] = useState(false);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState<"broadcast" | "activity">("broadcast");
 
@@ -29,6 +32,19 @@ export default function NotificationsPage() {
     { variables: { level: "admin" } }
   ) as any;
   const [sendBroadcast] = useMutation(SEND_BROADCAST_NOTIFICATION);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImageBase64(null);
+    }
+  };
 
   const handleBroadcast = async () => {
     if (!message.trim()) {
@@ -43,10 +59,17 @@ export default function NotificationsPage() {
           message,
           verb: "announcement",
           notificationType,
+          sendToBots,
+          imageBase64,
         },
       });
       toast.success("Broadcast sent");
       setMessage("");
+      setSendToBots(false);
+      setImageBase64(null);
+      // Reset file input
+      const fileInput = document.getElementById("broadcast-image") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
       refetchActivity();
     } catch (err) {
       toast.error("Failed to send broadcast");
@@ -109,6 +132,22 @@ export default function NotificationsPage() {
               />
 
               <div className="space-y-1.5">
+                <label className="text-sm font-medium">Attach Image</label>
+                <input
+                  id="broadcast-image"
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={handleImageChange}
+                  className="block w-full text-sm text-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/90"
+                />
+                {imageBase64 && (
+                  <div className="mt-2 overflow-hidden rounded-md border border-border">
+                    <img src={imageBase64} alt="Preview" className="max-h-[200px] w-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">Channel</label>
                 <Select value={notificationType} onValueChange={setNotificationType}>
                   <SelectTrigger>
@@ -120,6 +159,14 @@ export default function NotificationsPage() {
                     <SelectItem value="BOTH">Push and email</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Send to Bots</label>
+                  <p className="text-xs text-muted-foreground">Broadcast to Slack, Telegram, and WhatsApp</p>
+                </div>
+                <Switch checked={sendToBots} onCheckedChange={setSendToBots} />
               </div>
 
               <Button
