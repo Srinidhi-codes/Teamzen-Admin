@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_MY_NOTIFICATIONS, GET_UNREAD_COUNT } from "@/lib/graphql/notifications/queries";
 import { MARK_NOTIFICATION_READ, MARK_ALL_READ, DELETE_NOTIFICATION } from "@/lib/graphql/notifications/mutations";
@@ -11,6 +12,7 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { useNotifications } from "@/lib/hooks/useNotifications";
@@ -24,9 +26,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { AnnouncementModal, AnnouncementItem } from "./AnnouncementModal";
 
 export function NotificationBell() {
   const router = useRouter();
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
   const { data: notificationsData, refetch: refetchNotifications } = useQuery(
     GET_MY_NOTIFICATIONS,
     { variables: { level: "admin" } }
@@ -68,6 +72,8 @@ export function NotificationBell() {
   };
 
   const getIcon = (notif: any) => {
+    if (notif.verb === "announcement")
+      return <Megaphone className="h-4 w-4 text-indigo-500" />;
     if (notif.verb === "approved")
       return <CheckCircle2 className="h-4 w-4 text-emerald-600" />;
     if (notif.verb === "rejected")
@@ -80,6 +86,11 @@ export function NotificationBell() {
   };
 
   const handleRedirect = (notif: any) => {
+    if (notif.verb === "announcement") {
+      !notif.isRead && handleMarkRead(notif.id);
+      setSelectedAnnouncement(notif);
+      return;
+    }
     if (notif.targetType === "Leave Request") {
       !notif.isRead && handleMarkRead(notif.id);
       router.push(`/leaves?tab=requests`);
@@ -95,6 +106,7 @@ export function NotificationBell() {
   };
 
   return (
+    <>
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <button
@@ -217,5 +229,12 @@ export function NotificationBell() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    <AnnouncementModal
+      isOpen={!!selectedAnnouncement}
+      announcement={selectedAnnouncement}
+      onClose={() => setSelectedAnnouncement(null)}
+    />
+    </>
   );
 }

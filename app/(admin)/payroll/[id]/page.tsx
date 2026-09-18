@@ -483,15 +483,22 @@ export default function PayrollRunDetailsPage({
             {
               key: "status",
               label: "Status",
-              render: (val) => (
-                <span
-                  className={cn(
-                    "rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
-                    statusChip(String(val))
-                  )}
-                >
-                  {val}
-                </span>
+              render: (val, row: { pdfSource?: string }) => (
+                <div className="flex flex-wrap items-center gap-1">
+                  <span
+                    className={cn(
+                      "rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
+                      statusChip(String(val))
+                    )}
+                  >
+                    {val}
+                  </span>
+                  {row.pdfSource === "uploaded" ? (
+                    <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                      Uploaded PDF
+                    </span>
+                  ) : null}
+                </div>
               ),
             },
             {

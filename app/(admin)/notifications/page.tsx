@@ -16,19 +16,38 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { FormTextarea } from "@/components/common/FormTextArea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Bell, Megaphone } from "lucide-react";
+import { Bell, Megaphone, Eye } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
 
 export default function NotificationsPage() {
   const [message, setMessage] = useState("");
   const [notificationType, setNotificationType] = useState("PUSH");
+  const [sendToBots, setSendToBots] = useState(false);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState<"broadcast" | "activity">("broadcast");
+  const [showLivePreview, setShowLivePreview] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
 
   const { data: activityData, refetch: refetchActivity } = useQuery(
     GET_MY_NOTIFICATIONS,
     { variables: { level: "admin" } }
   ) as any;
   const [sendBroadcast] = useMutation(SEND_BROADCAST_NOTIFICATION);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImageBase64(null);
+    }
+  };
 
   const handleBroadcast = async () => {
     if (!message.trim()) {
@@ -43,10 +62,17 @@ export default function NotificationsPage() {
           message,
           verb: "announcement",
           notificationType,
+          sendToBots,
+          imageBase64,
         },
       });
       toast.success("Broadcast sent");
       setMessage("");
+      setSendToBots(false);
+      setImageBase64(null);
+      // Reset file input
+      const fileInput = document.getElementById("broadcast-image") as HTMLInputElement;
+      if (fileInput) fileInput.value = "";
       refetchActivity();
     } catch (err) {
       toast.error("Failed to send broadcast");
@@ -109,6 +135,22 @@ export default function NotificationsPage() {
               />
 
               <div className="space-y-1.5">
+                <label className="text-sm font-medium">Attach Image</label>
+                <input
+                  id="broadcast-image"
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={handleImageChange}
+                  className="block w-full text-sm text-foreground file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-foreground hover:file:bg-primary/90"
+                />
+                {imageBase64 && (
+                  <div className="mt-2 overflow-hidden rounded-md border border-border">
+                    <img src={imageBase64} alt="Preview" className="max-h-[200px] w-full object-cover" />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-sm font-medium">Channel</label>
                 <Select value={notificationType} onValueChange={setNotificationType}>
                   <SelectTrigger>
@@ -122,13 +164,33 @@ export default function NotificationsPage() {
                 </Select>
               </div>
 
-              <Button
-                onClick={handleBroadcast}
-                disabled={isSending}
-                className="w-full sm:w-auto"
-              >
-                {isSending ? "Sending…" : "Send broadcast"}
-              </Button>
+              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+                <div className="space-y-0.5">
+                  <label className="text-sm font-medium">Send to Bots</label>
+                  <p className="text-xs text-muted-foreground">Broadcast to Slack, Telegram, and WhatsApp</p>
+                </div>
+                <Switch checked={sendToBots} onCheckedChange={setSendToBots} />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Button
+                  onClick={handleBroadcast}
+                  disabled={isSending || !message.trim()}
+                  className="w-full sm:w-auto"
+                >
+                  {isSending ? "Sending…" : "Send broadcast"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowLivePreview(true)}
+                  disabled={!message.trim()}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Preview Announcement</span>
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -144,11 +206,11 @@ export default function NotificationsPage() {
       )}
 
       {activeTab === "activity" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-5 py-3">
-            <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border p-4 sm:px-6">
+            <h2 className="text-base font-semibold text-foreground">Recent Activity</h2>
             <p className="text-xs text-muted-foreground">
-              Notifications sent through the system
+              History of announcements and notifications sent. Click an announcement to view details.
             </p>
           </div>
 
@@ -164,10 +226,28 @@ export default function NotificationsPage() {
                 </thead>
                 <tbody>
                   {recentActivity.map((notif: any) => (
-                    <tr key={notif.id} className="border-b border-border last:border-0">
+                    <tr
+                      key={notif.id}
+                      onClick={() => {
+                        if (notif.verb === "announcement") {
+                          setSelectedAnnouncement(notif);
+                        }
+                      }}
+                      className={cn(
+                        "border-b border-border last:border-0",
+                        notif.verb === "announcement" && "cursor-pointer hover:bg-muted/40 transition-colors"
+                      )}
+                    >
                       <td className="px-5 py-3 align-top">
-                        <p className="font-medium text-foreground">{notif.message}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{notif.verb}</p>
+                        <div className="flex items-start gap-2">
+                          {notif.verb === "announcement" && (
+                            <Megaphone className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <p className="font-medium text-foreground">{notif.message}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{notif.verb}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3 align-top">
                         <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
@@ -196,6 +276,26 @@ export default function NotificationsPage() {
           )}
         </div>
       )}
+
+      {/* Live Preview Modal */}
+      <AnnouncementModal
+        isOpen={showLivePreview}
+        isPreview={true}
+        announcement={{
+          message,
+          imageUrl: imageBase64,
+          createdAt: new Date().toISOString(),
+          actor: { firstName: "Admin (You)" },
+        }}
+        onClose={() => setShowLivePreview(false)}
+      />
+
+      {/* Historical Announcement Details Modal */}
+      <AnnouncementModal
+        isOpen={!!selectedAnnouncement}
+        announcement={selectedAnnouncement}
+        onClose={() => setSelectedAnnouncement(null)}
+      />
     </div>
   );
 }

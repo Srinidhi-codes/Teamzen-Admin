@@ -25,7 +25,7 @@ export const API_ENDPOINTS = {
   PAYROLL_RUNS: "/payroll/runs/",
   PAYROLL_RECORDS: "/payroll/records/",
   PAYROLL_IMPORT_UPLOAD: "/payroll/import/upload/",
-  PAYSLIP_TEMPLATE_CLONE: "/payroll/payslip-templates/clone/",
+  PAYSLIP_BULK_UPLOAD: "/payroll/payslips/bulk-upload/",
   payslipTemplateDemo: (id: string | number) =>
     `/payroll/payslip-templates/${id}/demo/`,
   payslipTemplatePreview: (id: string | number) =>
