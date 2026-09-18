@@ -18,6 +18,9 @@ const OnboardingTour = dynamic(
   { ssr: false, loading: () => null }
 );
 
+import { useState, useEffect } from "react";
+import { AnnouncementModal, AnnouncementItem } from "../common/AnnouncementModal";
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -30,6 +33,26 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     setSidebarMobileOpen: setIsMobileOpen,
   } = useStore();
   const { can } = useOrgPlan();
+
+  const [activeAnnouncement, setActiveAnnouncement] = useState<AnnouncementItem | null>(null);
+
+  useEffect(() => {
+    const handleRealtimeAnnouncement = (e: any) => {
+      const data = e.detail;
+      if (data && data.verb === "announcement") {
+        setActiveAnnouncement({
+          id: data.id,
+          message: data.message,
+          imageUrl: data.imageUrl,
+          createdAt: data.createdAt,
+          actor: data.actor,
+        });
+      }
+    };
+
+    window.addEventListener("teamzen_announcement", handleRealtimeAnnouncement);
+    return () => window.removeEventListener("teamzen_announcement", handleRealtimeAnnouncement);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground" style={{ scrollbarGutter: "stable" }}>
@@ -54,6 +77,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {can("ai_assistant") && <AssistantWidget />}
       <OnboardingTour />
+
+      <AnnouncementModal
+        isOpen={!!activeAnnouncement}
+        announcement={activeAnnouncement}
+        onClose={() => setActiveAnnouncement(null)}
+      />
     </div>
   );
 }

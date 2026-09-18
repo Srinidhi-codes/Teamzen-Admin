@@ -16,8 +16,9 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { FormTextarea } from "@/components/common/FormTextArea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { Bell, Megaphone } from "lucide-react";
+import { Bell, Megaphone, Eye } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
 
 export default function NotificationsPage() {
   const [message, setMessage] = useState("");
@@ -26,6 +27,8 @@ export default function NotificationsPage() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [activeTab, setActiveTab] = useState<"broadcast" | "activity">("broadcast");
+  const [showLivePreview, setShowLivePreview] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
 
   const { data: activityData, refetch: refetchActivity } = useQuery(
     GET_MY_NOTIFICATIONS,
@@ -169,13 +172,25 @@ export default function NotificationsPage() {
                 <Switch checked={sendToBots} onCheckedChange={setSendToBots} />
               </div>
 
-              <Button
-                onClick={handleBroadcast}
-                disabled={isSending}
-                className="w-full sm:w-auto"
-              >
-                {isSending ? "Sending…" : "Send broadcast"}
-              </Button>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Button
+                  onClick={handleBroadcast}
+                  disabled={isSending || !message.trim()}
+                  className="w-full sm:w-auto"
+                >
+                  {isSending ? "Sending…" : "Send broadcast"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowLivePreview(true)}
+                  disabled={!message.trim()}
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Preview Announcement</span>
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -191,11 +206,11 @@ export default function NotificationsPage() {
       )}
 
       {activeTab === "activity" && (
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="border-b border-border px-5 py-3">
-            <h3 className="text-sm font-semibold text-foreground">Recent activity</h3>
+        <div className="rounded-xl border border-border bg-card">
+          <div className="border-b border-border p-4 sm:px-6">
+            <h2 className="text-base font-semibold text-foreground">Recent Activity</h2>
             <p className="text-xs text-muted-foreground">
-              Notifications sent through the system
+              History of announcements and notifications sent. Click an announcement to view details.
             </p>
           </div>
 
@@ -211,10 +226,28 @@ export default function NotificationsPage() {
                 </thead>
                 <tbody>
                   {recentActivity.map((notif: any) => (
-                    <tr key={notif.id} className="border-b border-border last:border-0">
+                    <tr
+                      key={notif.id}
+                      onClick={() => {
+                        if (notif.verb === "announcement") {
+                          setSelectedAnnouncement(notif);
+                        }
+                      }}
+                      className={cn(
+                        "border-b border-border last:border-0",
+                        notif.verb === "announcement" && "cursor-pointer hover:bg-muted/40 transition-colors"
+                      )}
+                    >
                       <td className="px-5 py-3 align-top">
-                        <p className="font-medium text-foreground">{notif.message}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{notif.verb}</p>
+                        <div className="flex items-start gap-2">
+                          {notif.verb === "announcement" && (
+                            <Megaphone className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                          )}
+                          <div>
+                            <p className="font-medium text-foreground">{notif.message}</p>
+                            <p className="mt-0.5 text-xs text-muted-foreground">{notif.verb}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-5 py-3 align-top">
                         <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
@@ -243,6 +276,26 @@ export default function NotificationsPage() {
           )}
         </div>
       )}
+
+      {/* Live Preview Modal */}
+      <AnnouncementModal
+        isOpen={showLivePreview}
+        isPreview={true}
+        announcement={{
+          message,
+          imageUrl: imageBase64,
+          createdAt: new Date().toISOString(),
+          actor: { firstName: "Admin (You)" },
+        }}
+        onClose={() => setShowLivePreview(false)}
+      />
+
+      {/* Historical Announcement Details Modal */}
+      <AnnouncementModal
+        isOpen={!!selectedAnnouncement}
+        announcement={selectedAnnouncement}
+        onClose={() => setSelectedAnnouncement(null)}
+      />
     </div>
   );
 }
