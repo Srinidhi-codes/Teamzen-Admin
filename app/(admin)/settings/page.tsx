@@ -24,6 +24,7 @@ import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Mail } from "lucide-react";
+import apiClient from "@/lib/api/client";
 
 const MODELS = [
   {
@@ -434,29 +435,12 @@ function EmailSettings() {
     
     setIsSending(true);
     try {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("access_token="))
-        ?.split("=")[1];
+      const res = await apiClient.post("/test-email/", { email });
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000/api";
-      const res = await fetch(`${baseUrl}/test-email/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to send test email");
-      }
-      
       toast.success(`Test email sent successfully to ${email}`);
       setEmail("");
-    } catch (err) {
-      toast.error("Error sending test email. Check server logs.");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || "Error sending test email. Check server logs.");
     } finally {
       setIsSending(false);
     }
