@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 interface StatProps {
   icon: any;
   label: string;
@@ -9,46 +11,36 @@ interface StatProps {
   gradient?: string;
 }
 
-export function Stat({ icon: Icon, label, value, index, color = "text-primary", gradient = "bg-primary/10" }: StatProps) {
-  // Logic to determine if Icon is a component (function or forwardRef object)
-  const isComponent = typeof Icon === 'function' ||
-    (typeof Icon === 'object' && Icon !== null && (Icon.$$typeof || Icon.render));
+export function Stat({
+  icon: Icon,
+  label,
+  value,
+  color = "text-primary",
+  gradient = "bg-primary/10",
+}: StatProps) {
+  const isComponent =
+    typeof Icon === "function" ||
+    (typeof Icon === "object" && Icon !== null && (Icon.$$typeof || Icon.render));
 
   return (
-    <div className="premium-card card-hover group relative overflow-hidden">
-      {/* Background Icon */}
-      <div className="absolute top-0 right-0 p-6 opacity-5 transition-transform group-hover:scale-110 group-hover:opacity-10">
-        {isComponent ? (
-          <Icon className={`w-28 h-28 ${color} rotate-12`} />
-        ) : (
-          <div className="w-28 h-28 rotate-12 scale-150">
-            {Icon}
-          </div>
-        )}
-      </div>
-
-      <div className="relative z-10">
-        {/* Top Section: Icon & Index */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className={`w-14 h-14 rounded-2xl ${gradient} ${color} flex items-center justify-center shadow-inner`}>
-            {isComponent ? (
-              <Icon className="w-7 h-7" />
-            ) : (
-              <div className="w-7 h-7">
-                {Icon}
-              </div>
-            )}
-          </div>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+            {value}
+          </p>
         </div>
-
-        {/* Bottom Section: Data */}
-        <div className="space-y-1">
-          <h3 className={`text-premium-h1 tabular-nums ${color}`}>{value}</h3>
-          <p className="text-premium-label">{label}</p>
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            gradient,
+            color
+          )}
+        >
+          {isComponent ? <Icon className="h-4 w-4" /> : <div className="h-4 w-4">{Icon}</div>}
         </div>
       </div>
     </div>
   );
 }
-
-

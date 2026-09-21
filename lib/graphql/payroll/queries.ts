@@ -1,8 +1,56 @@
 import { gql } from "@apollo/client";
 
+export const GET_IMPORT_TARGET_FIELDS = gql`
+  query GetImportTargetFields {
+    importTargetFields {
+      key
+      label
+      required
+    }
+  }
+`;
+
+export const GET_DATA_IMPORT_JOB = gql`
+  query GetDataImportJob($id: ID!) {
+    dataImportJob(id: $id) {
+      id
+      status
+      sourceType
+      fileName
+      headers
+      sampleRows
+      columnMapping
+      mappingConfidence
+      previewResult
+      commitResult
+      errorMessage
+      rowCount
+      createdAt
+    }
+  }
+`;
+
+export const GET_PAYSLIP_TEMPLATES = gql`
+  query GetPayslipTemplates($organizationId: ID) {
+    payslipTemplates(organizationId: $organizationId) {
+      id
+      name
+      slug
+      description
+      layoutKey
+      theme
+      source
+      isDefault
+      isActive
+      isSystem
+      organizationId
+    }
+  }
+`;
+
 export const GET_SALARY_COMPONENTS = gql`
-  query GetSalaryComponents {
-    salaryComponents {
+  query GetSalaryComponents($organizationId: ID) {
+    salaryComponents(organizationId: $organizationId) {
       id
       name
       code
@@ -10,23 +58,32 @@ export const GET_SALARY_COMPONENTS = gql`
       isTaxable
       isStatutory
       description
+      organization {
+        id
+        name
+      }
     }
   }
 `;
 
 export const GET_SALARY_STRUCTURES = gql`
-  query GetSalaryStructures {
-    salaryStructures {
+  query GetSalaryStructures($organizationId: ID) {
+    salaryStructures(organizationId: $organizationId) {
       id
       name
       description
       isActive
+      organization {
+        id
+        name
+      }
       components {
         id
         component {
           id
           name
           code
+          componentType
         }
         calculationType
         value
@@ -41,8 +98,8 @@ export const GET_SALARY_STRUCTURES = gql`
 `;
 
 export const GET_PAYROLL_RUNS = gql`
-  query GetPayrollRuns {
-    payrollRuns {
+  query GetPayrollRuns($organizationId: ID) {
+    payrollRuns(organizationId: $organizationId) {
       id
       month
       year
@@ -51,6 +108,14 @@ export const GET_PAYROLL_RUNS = gql`
       totalDeduction
       totalNetPay
       createdAt
+      hasLockedPayslips
+      draftCount
+      publishedCount
+      paidCount
+      organization {
+        id
+        name
+      }
     }
   }
 `;
@@ -66,6 +131,10 @@ export const GET_PAYROLL_RUN_DETAILS = gql`
       totalDeduction
       totalNetPay
       createdAt
+      hasLockedPayslips
+      draftCount
+      publishedCount
+      paidCount
       payslips {
         id
         user {
@@ -82,10 +151,75 @@ export const GET_PAYROLL_RUN_DETAILS = gql`
         totalDeductions
         netPay
         status
+        pdfSource
         payslipPdf {
           url
         }
       }
+    }
+  }
+`;
+
+export const GET_SALARY_ADVANCES = gql`
+  query GetSalaryAdvances($status: String, $organizationId: ID) {
+    salaryAdvances(status: $status, organizationId: $organizationId) {
+      id
+      amount
+      reason
+      grantedOn
+      installmentsTotal
+      installmentAmount
+      remainingBalance
+      recoveredSoFar
+      status
+      organization {
+        id
+        name
+      }
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+    }
+  }
+`;
+
+export const GET_PAYROLL_SETTINGS = gql`
+  query GetPayrollSettings($organizationId: ID) {
+    payrollSettings(organizationId: $organizationId) {
+      plan
+      payrollCycleDay
+      payrollAutoEnabled
+      canEnablePayrollAuto
+    }
+  }
+`;
+
+export const GET_PAYROLL_SETUP_CHECKLIST = gql`
+  query GetPayrollSetupChecklist($organizationId: ID) {
+    payrollSetupChecklist(organizationId: $organizationId) {
+      components
+      structures
+      employeesWithCtc
+      activeAdvances
+      ready
+      activeEmployees
+      employeesMissingCtc
+      employeesMissingBank
+    }
+  }
+`;
+
+export const GET_ADVANCE_RECOVERY_PREVIEW = gql`
+  query GetAdvanceRecoveryPreview {
+    advanceRecoveryPreview {
+      advanceId
+      userId
+      userName
+      deduct
+      remainingAfter
     }
   }
 `;

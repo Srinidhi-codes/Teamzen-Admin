@@ -1,6 +1,8 @@
 "use client";
 
-interface CardProps {
+import { cn } from "@/lib/utils";
+
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   title?: string;
   children: React.ReactNode;
   className?: string;
@@ -8,24 +10,29 @@ interface CardProps {
   gradient?: boolean;
 }
 
-export function Card({ title, children, className = "", hover = false, gradient = false }: CardProps) {
+export function Card({
+  title,
+  children,
+  className = "",
+  hover = false,
+  gradient: _gradient,
+  ...rest
+}: CardProps) {
   return (
     <div
-      className={`
-        ${gradient ? 'glass' : 'premium-card'} 
-        ${hover ? 'card-hover' : ''} 
-        ${className}
-      `}
+      className={cn(
+        "rounded-xl border border-border bg-card p-5 sm:p-6",
+        hover && "transition-colors hover:bg-muted/30",
+        className
+      )}
+      {...rest}
     >
       {title && (
-        <h2 className="text-premium-h2 mb-6 flex items-center">
-          <span className="w-1.5 h-6 bg-primary rounded-full mr-3 shadow-sm shadow-primary/20"></span>
+        <h2 className="mb-4 text-base font-semibold tracking-tight text-foreground">
           {title}
         </h2>
       )}
-      <div className="font-medium text-foreground/80 leading-relaxed">
-        {children}
-      </div>
+      <div className="text-sm text-foreground/80 leading-relaxed">{children}</div>
     </div>
   );
 }

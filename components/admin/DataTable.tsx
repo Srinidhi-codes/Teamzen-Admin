@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, Search } from "lucide-react";
+import { Pagination } from "@/components/common/Pagination";
 
 
 export interface Column<T> {
@@ -56,9 +57,11 @@ export function DataTable<T>({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-4">
-        <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Synchronizing Ledger...</p>
+      <div className="space-y-3 rounded-xl border border-border bg-card p-4" aria-busy="true">
+        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-12 w-full animate-pulse rounded-md bg-muted" />
+        ))}
       </div>
     );
   }
@@ -123,148 +126,89 @@ export function DataTable<T>({
 
 
       {/* Table */}
-      <div className="bg-card rounded-3xl border border-border shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
-            <thead className="bg-muted/50">
-              <tr>
-                {columns.map((column) => (
-                  <th
-                    key={column.key}
-                    onClick={() => column.sortable && handleSort(column.key)}
-                    className={`px-6 py-4 text-left text-[11px] font-black text-muted-foreground uppercase tracking-widest ${column.sortable ? "cursor-pointer hover:bg-muted/80 transition-colors" : ""
-                      }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span>{column.label}</span>
-                      {column.sortable && (
-                        <div className="flex flex-col opacity-30">
-                          <ChevronLeft className={`w-3 h-3 rotate-90 ${sortConfig?.key === column.key && sortConfig.direction === 'asc' ? 'text-primary opacity-100' : ''}`} />
-                          <ChevronLeft className={`w-3 h-3 -rotate-90 -mt-1 ${sortConfig?.key === column.key && sortConfig.direction === 'desc' ? 'text-primary opacity-100' : ''}`} />
-                        </div>
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="bg-card divide-y divide-border/50">
-              {paginatedData.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={columns.length}
-                    className="px-6 py-12 text-center text-muted-foreground font-medium italic"
-                  >
-                    No matching records found.
-                  </td>
-                </tr>
-              ) : (
-                paginatedData.map((item, index) => (
-                  <tr
-                    key={index}
-                    onClick={() => onRowClick?.(item)}
-                    className={`hover:bg-muted/30 transition-colors group ${onRowClick ? "cursor-pointer" : ""
-                      }`}
-                  >
-                    {columns.map((column) => (
-                      <td
-                        key={column.key}
-                        className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground/80 group-hover:text-foreground"
-                      >
-                        {column.render ? column.render((item as any)[column.key], item) : (item as any)[column.key]}
-                      </td>
-                    ))}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="bg-muted/10 px-6 py-4 flex items-center justify-between border-t border-border">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-4 py-2 border border-border text-xs font-black uppercase tracking-widest rounded-xl text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-border text-xs font-black uppercase tracking-widest rounded-xl text-foreground bg-card hover:bg-muted disabled:opacity-50 transition-colors"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Showing <span className="text-foreground">{startIndex + 1}</span>{" "}
-                  –{" "}
-                  <span className="text-foreground">
-                    {Math.min(startIndex + itemsPerPage, totalCount)}
-                  </span>{" "}
-                  of <span className="text-foreground">{totalCount}</span>{" "}
-                  data points
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-2xl shadow-sm -space-x-px border border-border overflow-hidden">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-3 py-2 bg-card text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 text-xs font-black transition-all ${currentPage === pageNum
-                          ? "z-10 bg-primary text-primary-foreground"
-                          : "bg-card text-muted-foreground hover:bg-muted"
+      <div className="overflow-hidden overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted/50">
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  onClick={() => column.sortable && handleSort(column.key)}
+                  className={`px-6 py-4 text-left text-xs font-medium text-muted-foreground ${
+                    column.sortable ? "cursor-pointer transition-colors hover:bg-muted/80" : ""
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <span>{column.label}</span>
+                    {column.sortable && (
+                      <div className="flex flex-col opacity-30">
+                        <ChevronLeft
+                          className={`h-3 w-3 rotate-90 ${
+                            sortConfig?.key === column.key && sortConfig.direction === "asc"
+                              ? "text-primary opacity-100"
+                              : ""
                           }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                  <button
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-3 py-2 bg-card text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-50 transition-colors"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
-
+                        />
+                        <ChevronLeft
+                          className={`-mt-1 h-3 w-3 -rotate-90 ${
+                            sortConfig?.key === column.key && sortConfig.direction === "desc"
+                              ? "text-primary opacity-100"
+                              : ""
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50 bg-card">
+            {paginatedData.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-6 py-12 text-center text-sm italic text-muted-foreground"
+                >
+                  No matching records found.
+                </td>
+              </tr>
+            ) : (
+              paginatedData.map((item, index) => (
+                <tr
+                  key={index}
+                  onClick={() => onRowClick?.(item)}
+                  className={`group transition-colors hover:bg-muted/30 ${
+                    onRowClick ? "cursor-pointer" : ""
+                  }`}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground/80 group-hover:text-foreground"
+                    >
+                      {column.render
+                        ? column.render((item as any)[column.key], item)
+                        : (item as any)[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {totalPages > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+          total={totalCount}
+          pageSize={itemsPerPage}
+          label="items"
+        />
+      )}
     </div>
   );
 }

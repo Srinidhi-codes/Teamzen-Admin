@@ -43,9 +43,14 @@ export interface GraphqlUser {
   uanNumber: string;
   hasSeenOnboarding: boolean;
   hasSeenAiOnboarding: boolean;
+  emailLoginAlerts?: boolean;
   organization: {
     id: string;
     name: string;
+    plan?: "free" | "pro" | "elite" | string;
+    planExpiresAt?: string | null;
+    daysUntilPlanExpiry?: number | null;
+    accent?: string | null;
     logo: {
       url: string;
     } | null;
