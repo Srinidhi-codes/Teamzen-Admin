@@ -23,6 +23,7 @@ import { PlanGate } from "@/components/common/PlanGate";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Mail } from "lucide-react";
 
 const MODELS = [
   {
@@ -256,6 +257,8 @@ function SettingsPageContent() {
             <OrganizationAISettings user={user} />
           </PlanGate>
 
+          {isSuperadmin && <EmailSettings />}
+
           <section className="rounded-xl border border-border bg-card p-5">
             <div className="mb-4 flex items-center gap-2">
               <MessageSquareQuote className="h-4 w-4 text-muted-foreground" />
@@ -415,6 +418,75 @@ function OrganizationAISettings({ user }: { user: any }) {
       <p className="mt-2 text-xs text-muted-foreground">
         Supports OpenAI, Gemini, and Anthropic keys.
       </p>
+    </section>
+  );
+}
+
+function EmailSettings() {
+  const [email, setEmail] = useState("");
+  const [isSending, setIsSending] = useState(false);
+
+  const handleTestEmail = async () => {
+    if (!email) {
+      toast.error("Please enter an email address");
+      return;
+    }
+    
+    setIsSending(true);
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("access_token="))
+        ?.split("=")[1];
+
+      const res = await fetch("http://localhost:8000/api/test-email/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send test email");
+      }
+      
+      toast.success(`Test email sent successfully to ${email}`);
+      setEmail("");
+    } catch (err) {
+      toast.error("Error sending test email. Check server logs.");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <section className="rounded-xl border border-border bg-card p-5 mt-4">
+      <div className="mb-4 flex items-center gap-2">
+        <Mail className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold text-foreground">Test Email Settings</h2>
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Send a test welcome email to verify your SMTP and provider settings are working correctly.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="admin@example.com"
+          className="input flex-1"
+        />
+        <button
+          type="button"
+          onClick={handleTestEmail}
+          disabled={isSending || !email}
+          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        >
+          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Test Email"}
+        </button>
+      </div>
     </section>
   );
 }
