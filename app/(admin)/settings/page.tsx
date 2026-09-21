@@ -257,7 +257,7 @@ function SettingsPageContent() {
             <OrganizationAISettings user={user} />
           </PlanGate>
 
-          {isSuperadmin && <EmailSettings />}
+          <EmailSettings />
 
           <section className="rounded-xl border border-border bg-card p-5">
             <div className="mb-4 flex items-center gap-2">
