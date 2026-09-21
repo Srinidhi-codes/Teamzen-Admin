@@ -51,8 +51,8 @@ export function AuthShell({
   wide = false,
 }: AuthShellProps) {
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-2">
-      <aside className="relative hidden overflow-hidden bg-[#e8eef4] lg:flex lg:flex-col lg:justify-between">
+    <div className="flex min-h-screen flex-col bg-background lg:grid lg:grid-cols-2">
+      <aside className="relative flex min-h-[240px] flex-col justify-between overflow-hidden bg-[#e8eef4] lg:min-h-screen">
         <Image
           src={sideImage}
           alt={sideImageAlt}
@@ -63,11 +63,11 @@ export function AuthShell({
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-black/25" />
 
-        <div className="relative z-10 px-10 pt-12">
+        <div className="relative z-10 hidden px-10 pt-12 lg:block">
           <BrandMark dark />
         </div>
 
-        <div className="relative z-10 max-w-md space-y-4 px-10 pb-12">
+        <div className="relative z-10 hidden max-w-md space-y-4 px-10 pb-12 lg:block">
           <h1 className="text-3xl font-semibold tracking-tight text-balance text-white">
             Workforce and payroll administration
           </h1>
@@ -80,7 +80,7 @@ export function AuthShell({
         </div>
       </aside>
 
-      <div className="flex min-h-screen flex-col justify-center px-4 py-12 sm:px-6 lg:px-12">
+      <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:px-12">
         <div className={`mx-auto w-full ${wide ? "max-w-lg" : "max-w-md"}`}>
           <div className="mb-8 lg:hidden">
             <BrandMark />
