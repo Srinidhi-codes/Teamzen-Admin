@@ -21,7 +21,8 @@ interface ConfirmationModalProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: "primary" | "destructive" | "warning" | "success";
+  hideCancel?: boolean;
+  variant?: "primary" | "destructive" | "warning" | "success" | "error";
 }
 
 const ConfirmationModal = ({
@@ -32,6 +33,7 @@ const ConfirmationModal = ({
   description,
   confirmText = "Confirm",
   cancelText = "Cancel",
+  hideCancel = false,
   variant = "primary",
 }: ConfirmationModalProps) => {
   const variantConfig = {
@@ -41,6 +43,11 @@ const ConfirmationModal = ({
       buttonVariant: "default" as const,
     },
     destructive: {
+      icon: XCircle,
+      iconClass: "bg-destructive/10 text-destructive",
+      buttonVariant: "destructive" as const,
+    },
+    error: {
       icon: XCircle,
       iconClass: "bg-destructive/10 text-destructive",
       buttonVariant: "destructive" as const,
@@ -81,9 +88,11 @@ const ConfirmationModal = ({
         </DialogHeader>
 
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={onClose}>
-            {cancelText}
-          </Button>
+          {!hideCancel && (
+            <Button variant="outline" onClick={onClose}>
+              {cancelText}
+            </Button>
+          )}
           <Button
             variant={config.buttonVariant}
             className={

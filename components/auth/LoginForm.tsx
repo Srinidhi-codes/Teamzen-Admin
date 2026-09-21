@@ -129,7 +129,8 @@ export default function LoginForm() {
       onClose={() => setErrorModal({ isOpen: false, message: "" })}
       onConfirm={() => setErrorModal({ isOpen: false, message: "" })}
       confirmText="Close"
-      variant="destructive"
+      variant="error"
+      hideCancel={true}
     />
     </>
   );
