@@ -439,7 +439,8 @@ function EmailSettings() {
         .find((row) => row.startsWith("access_token="))
         ?.split("=")[1];
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}test-email/`, {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "http://localhost:8000/api";
+      const res = await fetch(`${baseUrl}/test-email/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
