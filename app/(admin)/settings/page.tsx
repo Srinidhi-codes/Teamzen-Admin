@@ -257,7 +257,7 @@ function SettingsPageContent() {
             <OrganizationAISettings user={user} />
           </PlanGate>
 
-          {isSuperadmin && <EmailSettings />}
+          <EmailSettings />
 
           <section className="rounded-xl border border-border bg-card p-5">
             <div className="mb-4 flex items-center gap-2">
@@ -439,7 +439,7 @@ function EmailSettings() {
         .find((row) => row.startsWith("access_token="))
         ?.split("=")[1];
 
-      const res = await fetch("http://localhost:8000/api/test-email/", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}test-email/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
