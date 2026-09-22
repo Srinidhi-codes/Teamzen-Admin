@@ -1,4 +1,4 @@
-import { X, TrendingUp } from 'lucide-react'
+import { X } from 'lucide-react'
 
 import React from 'react'
 import { Input } from '../ui/input'
@@ -26,41 +26,25 @@ function LeaveBalanceModal({
     leaveTypes
 }: LeaveBalanceModalProps) {
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-
-            <div className="bg-card rounded-[2.5rem] w-full max-w-2xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500">
-                {/* Header */}
-                <div className="relative p-10 pb-8 bg-linear-to-br from-primary/20 via-background to-background border-b border-border/50">
-                    <div className="absolute top-0 right-0 p-10 opacity-5">
-                        <TrendingUp className="w-24 h-24 rotate-12" />
-                    </div>
-                    <div className="relative z-10 flex justify-between items-start">
-                        <div>
-                            <h2 className="text-3xl font-black text-foreground tracking-tight leading-none mb-3">
-                                {editingBalance ? 'Update Leave Balance' : 'Create Leave Balance'}
-                            </h2>
-                            <div className="flex items-center gap-3">
-                                <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-[10px] font-black uppercase tracking-widest">
-                                    Entitlement Matrix
-                                </span>
-                                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Asset Synchronization</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => onClose()}
-                            className="w-12 h-12 rounded-2xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all duration-300 flex items-center justify-center active:scale-90"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-xl w-full max-w-2xl border border-border overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                    <h2 className="text-base font-semibold text-foreground">
+                        {editingBalance ? 'Edit balance' : 'Allocate balance'}
+                    </h2>
+                    <button
+                        onClick={() => onClose()}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
 
-
-                <form onSubmit={onSubmit} className="p-10 space-y-8">
+                <form onSubmit={onSubmit} className="overflow-y-auto flex-1 p-6 space-y-6">
                     {!editingBalance && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="flex flex-col gap-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Employee</label>
+                                <label className="text-xs text-muted-foreground px-1">Employee</label>
                                 <Select
                                     value={formData.userId}
                                     onValueChange={(value) => setFormData({ ...formData, userId: value })}
@@ -68,7 +52,7 @@ function LeaveBalanceModal({
                                     <SelectTrigger className="bg-muted/30 rounded-2xl border-border/50 h-[52px]">
                                         <SelectValue placeholder="Select Employee" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-border shadow-2xl">
+                                    <SelectContent className="rounded-xl border-border">
                                         {users.map(u => (
                                             <SelectItem key={u.id} value={u.id} className="focus:bg-primary/10 focus:text-primary rounded-xl">
                                                 {u.firstName} {u.lastName}
@@ -79,7 +63,7 @@ function LeaveBalanceModal({
                             </div>
 
                             <div className="flex flex-col gap-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Entitlement Type</label>
+                                <label className="text-xs text-muted-foreground px-1">Entitlement Type</label>
                                 <Select
                                     value={formData.leaveTypeId}
                                     onValueChange={(value) => setFormData({ ...formData, leaveTypeId: value })}
@@ -87,7 +71,7 @@ function LeaveBalanceModal({
                                     <SelectTrigger className="bg-muted/30 rounded-2xl border-border/50 h-[52px]">
                                         <SelectValue placeholder="Select Leave Type" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-border shadow-2xl">
+                                    <SelectContent className="rounded-xl border-border">
                                         {leaveTypes.map(lt => (
                                             <SelectItem key={lt.id} value={lt.id} className="focus:bg-primary/10 focus:text-primary rounded-xl">
                                                 {lt.name}
@@ -109,7 +93,7 @@ function LeaveBalanceModal({
                         </div>
                     )}
 
-                    <div className="bg-muted/30 p-8 rounded-4xl border border-border/50">
+                    <div className="bg-muted/30 p-6 rounded-xl border border-border">
                         <Input
                             label="Total Entitled Day(s)"
                             type="number"
@@ -120,25 +104,24 @@ function LeaveBalanceModal({
                         />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4 pt-4">
+                    <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2 pt-2">
                         <button
                             type="button"
                             onClick={() => onClose()}
-                            className="px-10 py-5 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-muted rounded-2xl active:scale-95"
+                            className="btn-ghost"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-primary/20"
+                            className="btn-primary"
                         >
-                            {editingBalance ? 'Update Leave Balance' : 'Create Leave Balance'}
+                            {editingBalance ? 'Save changes' : 'Allocate balance'}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-
     )
 }
 

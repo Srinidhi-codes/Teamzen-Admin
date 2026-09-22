@@ -1,4 +1,4 @@
-import { X, Info, Calendar, TrendingUp, Shield, Settings } from 'lucide-react'
+import { X, Info, Calendar, TrendingUp, Shield } from 'lucide-react'
 import React, { useState } from 'react'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
@@ -36,34 +36,21 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
     };
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-
-            <div className="bg-card rounded-[3rem] w-full max-w-4xl shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] border border-border overflow-hidden flex flex-col animate-in zoom-in-95 duration-500 max-h-[90vh]">
-                {/* Header */}
-                <div className="relative p-10 pb-8 bg-linear-to-br from-primary/10 via-background to-background border-b border-border/50">
-                    <div className="absolute top-0 right-0 p-10 opacity-5">
-                        <Settings className="w-32 h-32 rotate-12" />
-                    </div>
-                    <div className="relative z-10 flex justify-between items-start">
-                        <div>
-                            <h2 className="text-4xl font-black text-foreground tracking-tight leading-none mb-3">
-                                {editingType ? 'Edit Leave Type' : 'Create Leave Type'}
-                            </h2>
-                            <div className="flex items-center gap-3">
-                                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Leave Management System</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => onClose()}
-                            className="w-12 h-12 rounded-2xl bg-muted hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-all duration-300 flex items-center justify-center active:scale-90"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-xl w-full max-w-4xl border border-border overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                    <h2 className="text-base font-semibold text-foreground">
+                        {editingType ? 'Edit leave type' : 'Leave type'}
+                    </h2>
+                    <button
+                        onClick={() => onClose()}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
                 </div>
 
-
-                <div className="overflow-y-auto flex-1 p-10 space-y-12 custom-scrollbar">
+                <div className="overflow-y-auto flex-1 p-6 space-y-12 custom-scrollbar">
                     <form onSubmit={onSubmit} className="space-y-12">
                         {/* Basic Information */}
                         <section className="space-y-6">
@@ -72,11 +59,11 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                     <Info className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-foreground tracking-tight">Basic Information</h3>
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Basic details of the leave type</p>
+                                    <h3 className="text-base font-semibold text-foreground">Basic Information</h3>
+                                    <p className="text-xs text-muted-foreground">Basic details of the leave type</p>
                                 </div>
                             </div>
-                            <div className="bg-muted/30 rounded-4xl p-8 border border-border/50 space-y-6">
+                            <div className="bg-muted/30 rounded-xl p-6 border border-border/50 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <Input
                                         label="Leave Type Name"
@@ -105,7 +92,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                     />}
                                 </div>
                                 <div className="flex flex-col gap-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Leave Type Description</label>
+                                    <label className="text-xs text-muted-foreground px-1">Leave Type Description</label>
                                     <Textarea
                                         value={formData.description}
                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -125,11 +112,11 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                     <Calendar className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-foreground tracking-tight">Quotas & Entitlements</h3>
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Temporal limitations and accrual logic</p>
+                                    <h3 className="text-base font-semibold text-foreground">Quotas & Entitlements</h3>
+                                    <p className="text-xs text-muted-foreground">Temporal limitations and accrual logic</p>
                                 </div>
                             </div>
-                            <div className="bg-muted/30 rounded-4xl p-8 border border-border/50 space-y-6">
+                            <div className="bg-muted/30 rounded-xl p-6 border border-border/50 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <Input
                                         label="Annual Entitlement (Days)"
@@ -139,7 +126,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         onChange={(e) => setFormData({ ...formData, maxDaysPerYear: parseInt(e.target.value) })}
                                     />
                                     <div className="flex flex-col gap-y-2">
-                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Accrual Frequency</label>
+                                        <label className="text-xs text-muted-foreground px-1">Accrual Frequency</label>
                                         <Select
                                             value={formData.accrualFrequency}
                                             onValueChange={(value) => setFormData({ ...formData, accrualFrequency: value })}
@@ -147,7 +134,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                             <SelectTrigger className="bg-background rounded-2xl border-border/50 h-[52px]">
                                                 <SelectValue placeholder="Select Frequency" />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-border shadow-2xl">
+                                            <SelectContent className="rounded-xl border-border">
                                                 <SelectItem value="yearly" className="focus:bg-primary/10 focus:text-primary rounded-xl">Yearly Cycle</SelectItem>
                                                 <SelectItem value="monthly" className="focus:bg-primary/10 focus:text-primary rounded-xl">Monthly Interval</SelectItem>
                                                 <SelectItem value="quarterly" className="focus:bg-primary/10 focus:text-primary rounded-xl">Quarterly Phase</SelectItem>
@@ -174,15 +161,15 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                     <TrendingUp className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-foreground tracking-tight">Carry Forward & Encashment</h3>
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Carry-over regulations and financial conversion</p>
+                                    <h3 className="text-base font-semibold text-foreground">Carry Forward & Encashment</h3>
+                                    <p className="text-xs text-muted-foreground">Carry-over regulations and financial conversion</p>
                                 </div>
                             </div>
-                            <div className="bg-muted/30 rounded-4xl p-8 border border-border/50 space-y-8">
+                            <div className="bg-muted/30 rounded-xl p-6 border border-border/50 space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div className="space-y-6">
                                         <div className="flex items-center justify-between p-5 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                            <label htmlFor="carryForwardAllowed" className="text-[10px] font-black text-foreground uppercase tracking-widest">Carry Forward</label>
+                                            <label htmlFor="carryForwardAllowed" className="text-sm font-medium text-foreground">Carry Forward</label>
                                             <Switch
                                                 id="carryForwardAllowed"
                                                 checked={formData.carryForwardAllowed}
@@ -199,7 +186,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                     </div>
                                     <div className="space-y-6">
                                         <div className="flex items-center justify-between p-5 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                            <label htmlFor="allowEncashment" className="text-[10px] font-black text-foreground uppercase tracking-widest">Encashment</label>
+                                            <label htmlFor="allowEncashment" className="text-sm font-medium text-foreground">Encashment</label>
                                             <Switch
                                                 id="allowEncashment"
                                                 checked={formData.allowEncashment}
@@ -227,14 +214,14 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                     <Shield className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-foreground tracking-tight">Rules</h3>
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Rules for leave type</p>
+                                    <h3 className="text-base font-semibold text-foreground">Rules</h3>
+                                    <p className="text-xs text-muted-foreground">Rules for leave type</p>
                                 </div>
                             </div>
-                            <div className="bg-muted/30 rounded-4xl p-8 border border-border/50">
+                            <div className="bg-muted/30 rounded-xl p-6 border border-border/50">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                        <label htmlFor="isPaidLeave" className="text-[10px] font-black text-foreground uppercase tracking-widest">Paid Leave</label>
+                                        <label htmlFor="isPaidLeave" className="text-sm font-medium text-foreground">Paid Leave</label>
                                         <Switch
                                             id="isPaidLeave"
                                             checked={formData.isPaidLeave}
@@ -242,7 +229,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         />
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                        <label htmlFor="requiresApproval" className="text-[10px] font-black text-foreground uppercase tracking-widest">Approval Required</label>
+                                        <label htmlFor="requiresApproval" className="text-sm font-medium text-foreground">Approval Required</label>
                                         <Switch
                                             id="requiresApproval"
                                             checked={formData.requiresApproval}
@@ -250,7 +237,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         />
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                        <label htmlFor="prorateOnJoin" className="text-[10px] font-black text-foreground uppercase tracking-widest">Join Proration</label>
+                                        <label htmlFor="prorateOnJoin" className="text-sm font-medium text-foreground">Join Proration</label>
                                         <Switch
                                             id="prorateOnJoin"
                                             checked={formData.prorateOnJoin}
@@ -258,7 +245,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         />
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                        <label htmlFor="prorateOnExit" className="text-[10px] font-black text-foreground uppercase tracking-widest">Exit Proration</label>
+                                        <label htmlFor="prorateOnExit" className="text-sm font-medium text-foreground">Exit Proration</label>
                                         <Switch
                                             id="prorateOnExit"
                                             checked={formData.prorateOnExit}
@@ -266,7 +253,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         />
                                     </div>
                                     <div className="flex flex-col gap-y-2">
-                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-1">Proration Frequency</label>
+                                        <label className="text-xs text-muted-foreground px-1">Proration Frequency</label>
                                         <Select
                                             value={formData.prorationBasis}
                                             onValueChange={(value) => setFormData({ ...formData, prorationBasis: value })}
@@ -274,7 +261,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                             <SelectTrigger className="bg-background rounded-2xl border-border/50 h-[48px]">
                                                 <SelectValue placeholder="Select Basis" />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-border shadow-2xl">
+                                            <SelectContent className="rounded-xl border-border">
                                                 <SelectItem value="daily" className="focus:bg-primary/10 focus:text-primary rounded-xl">Daily Accrual</SelectItem>
                                                 <SelectItem value="monthly" className="focus:bg-primary/10 focus:text-primary rounded-xl">Monthly Interval</SelectItem>
                                                 <SelectItem value="quarterly" className="focus:bg-primary/10 focus:text-primary rounded-xl">Quarterly Phase</SelectItem>
@@ -282,7 +269,7 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                                         </Select>
                                     </div>
                                     <div className="flex items-center justify-between p-4 bg-background rounded-2xl border border-border/50 shadow-sm px-6">
-                                        <label htmlFor="isActive" className={`text-[10px] font-black uppercase tracking-widest ${formData.isActive ? "text-emerald-500" : "text-destructive"}`}>{formData.isActive ? "Active" : "Inactive"}</label>
+                                        <label htmlFor="isActive" className={`text-sm font-medium ${formData.isActive ? "text-emerald-500" : "text-destructive"}`}>{formData.isActive ? "Active" : "Inactive"}</label>
                                         <Switch
                                             id="isActive"
                                             checked={formData.isActive}
@@ -297,21 +284,20 @@ function LeaveTypeModal({ isOpen, onClose, onSubmit, formData, setFormData, edit
                 </div>
 
 
-                {/* Footer */}
-                <div className="p-10 border-t border-border bg-muted/10 flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-4">
+                <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2 border-t border-border px-6 py-4">
                     <button
                         type="button"
                         onClick={() => onClose()}
-                        className="px-10 py-5 text-muted-foreground hover:text-foreground text-[11px] font-black uppercase tracking-[0.2em] transition-all hover:bg-muted rounded-2xl active:scale-95"
+                        className="btn-ghost"
                     >
-                        Dismiss
+                        Cancel
                     </button>
                     <button
                         type="submit"
                         onClick={onSubmit}
-                        className="px-12 py-5 bg-primary text-primary-foreground rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] hover:opacity-95 transition-all active:scale-95 flex items-center justify-center gap-3 shadow-2xl shadow-primary/20"
+                        className="btn-primary"
                     >
-                        {editingType ? 'Finalize Changes' : 'Create Leave Type'}
+                        {editingType ? 'Save changes' : 'Create leave type'}
                     </button>
                 </div>
             </div>

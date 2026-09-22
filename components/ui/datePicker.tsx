@@ -19,15 +19,21 @@ interface DatePickerSimpleProps {
     error?: string
     required?: boolean
     className?: string
+    /** When true, dates after today can be selected (e.g. due dates). */
+    allowFuture?: boolean
 }
 
-export function DatePickerSimple({ label, value, onChange, error, required, className }: DatePickerSimpleProps) {
+export function DatePickerSimple({ label, value, onChange, error, required, className, allowFuture = false }: DatePickerSimpleProps) {
     const [open, setOpen] = React.useState(false)
 
     const dateValue = value ? (typeof value === 'string' ? moment(value.substring(0, 10), "YYYY-MM-DD").toDate() : value) : undefined;
     // Check if date is valid
     const isValidDate = dateValue instanceof Date && !isNaN(dateValue.getTime());
     const displayDate = isValidDate ? dateValue : undefined;
+    const maxYear = new Date().getFullYear() + (allowFuture ? 5 : 0);
+    const maxDateStr = allowFuture
+        ? moment().add(5, "years").format("YYYY-MM-DD")
+        : moment().format("YYYY-MM-DD");
 
     return (
         <div className={cn("flex flex-col space-y-2", className)}>
@@ -51,13 +57,13 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                         onChange?.(val ? moment(val).toDate() : undefined);
                     }}
                     min="1900-01-01"
-                    max={moment().format("YYYY-MM-DD")}
+                    max={maxDateStr}
                 />
             </div>
 
             {/* Custom Premium Date Picker for Desktop */}
             <div className="hidden sm:block">
-                <Popover open={open} onOpenChange={setOpen}>
+                <Popover open={open} onOpenChange={setOpen} modal={false}>
                     <PopoverTrigger asChild>
                         <Button
                             variant="outline"
@@ -75,7 +81,33 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                             <CalendarIcon className={cn("ml-auto h-5 w-5 opacity-40 transition-colors", open && "text-primary opacity-100")} />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300" align="start">
+                    <PopoverContent
+                        className="w-auto p-0 rounded-3xl border-border animate-in zoom-in-95 duration-300"
+                        align="start"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                        onFocusOutside={(e) => e.preventDefault()}
+                        onPointerDownOutside={(e) => {
+                            const target = e.target as HTMLElement | null
+                            if (
+                                target?.closest?.("[data-slot=calendar]") ||
+                                target?.tagName === "SELECT" ||
+                                target?.tagName === "OPTION"
+                            ) {
+                                e.preventDefault()
+                            }
+                        }}
+                        onInteractOutside={(e) => {
+                            const target = e.target as HTMLElement | null
+                            if (
+                                target?.closest?.("[data-slot=calendar]") ||
+                                target?.tagName === "SELECT" ||
+                                target?.tagName === "OPTION"
+                            ) {
+                                e.preventDefault()
+                            }
+                        }}
+                    >
                         <Calendar
                             mode="single"
                             selected={displayDate}
@@ -84,12 +116,12 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
                                 setOpen(false)
                             }}
                             disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
+                                date < new Date("1900-01-01") ||
+                                (!allowFuture && date > new Date())
                             }
-                            initialFocus
                             captionLayout="dropdown"
                             fromYear={1960}
-                            toYear={new Date().getFullYear()}
+                            toYear={maxYear}
                         />
                     </PopoverContent>
                 </Popover>

@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StatsCardProps {
   title: string;
@@ -11,12 +12,12 @@ interface StatsCardProps {
   color?: "blue" | "green" | "yellow" | "red" | "purple";
 }
 
-const colorClasses = {
-  blue: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-  green: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-  yellow: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
-  red: "bg-destructive/10 text-destructive border border-destructive/20",
-  purple: "bg-primary/10 text-primary border border-primary/20",
+const iconTone = {
+  blue: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
+  green: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  yellow: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  red: "bg-destructive/10 text-destructive",
+  purple: "bg-primary/10 text-primary",
 };
 
 export function StatsCard({
@@ -27,33 +28,36 @@ export function StatsCard({
   color = "blue",
 }: StatsCardProps) {
   return (
-    <div className="group relative bg-card rounded-[2rem] border border-border overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-1">
-      {/* Premium Background Layer */}
-      <div className={`absolute inset-0 opacity-[0.03] dark:opacity-[0.07] bg-linear-to-br ${color === 'blue' ? 'from-blue-600' : color === 'green' ? 'from-emerald-600' : color === 'yellow' ? 'from-amber-600' : color === 'red' ? 'from-rose-600' : 'from-primary'} to-transparent`} />
-
-      {/* Decorative Large Background Icon */}
-      <div className="absolute -right-6 -bottom-6 opacity-[0.05] dark:opacity-[0.1] pointer-events-none group-hover:scale-110 transition-transform duration-700">
-        <Icon size={140} className="-rotate-12" />
-      </div>
-
-      <div className="relative p-7 flex items-center justify-between z-10">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-3">
-            <p className="text-[11px] font-black text-muted-foreground uppercase tracking-[0.2em]">{title}</p>
-          </div>
-          <p className="text-4xl font-black text-foreground tracking-tighter leading-none">{value}</p>
+    <div className="rounded-xl border border-border bg-card p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <p className="text-sm text-muted-foreground">{title}</p>
+          <p className="text-2xl font-semibold tracking-tight text-foreground tabular-nums">
+            {value}
+          </p>
           {trend && (
-            <div
-              className={`mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest ${trend.isPositive ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"
-                }`}
+            <p
+              className={cn(
+                "text-xs font-medium",
+                trend.isPositive
+                  ? "text-emerald-700 dark:text-emerald-400"
+                  : "text-destructive"
+              )}
             >
               {trend.isPositive ? "↑" : "↓"} {trend.value}
-              <span className="opacity-60">vs last cycle</span>
-            </div>
+              <span className="ml-1 font-normal text-muted-foreground">vs last period</span>
+            </p>
           )}
+        </div>
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+            iconTone[color]
+          )}
+        >
+          <Icon className="h-4 w-4" />
         </div>
       </div>
     </div>
   );
 }
-

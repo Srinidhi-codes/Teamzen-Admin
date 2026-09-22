@@ -1,8 +1,7 @@
 import { useQuery, useMutation } from "@apollo/client/react"
 import { GET_ATTENDANCE, GET_ATTENDANCE_CORRECTIONS, } from "./queries"
 import { APPROVE_OR_REJECT_ATTENDANCE_CORRECTION, CANCEL_ATTENDANCE_CORRECTION, CHECK_IN, CHECK_OUT, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
-import { AttendanceInput, AttendanceRecord, GetAttendanceCorrectionsResponse, GetAttendanceResponse, GetAttendanceVars } from "./types"
-import { number } from "zod";
+import { AttendanceInput, GetAttendanceCorrectionsResponse, GetAttendanceResponse, GetAttendanceVars } from "./types"
 
 export interface AttendanceCorrectionVariables {
     page?: number;
@@ -23,13 +22,12 @@ export function useGraphQlAttendance() {
     const { data, loading, error, refetch } = useQuery<
         GetAttendanceResponse,
         GetAttendanceVars
-    >(GET_ATTENDANCE, {
-        fetchPolicy: "network-only", // 👈 avoids stale data
-    });
+    >(GET_ATTENDANCE);
 
     return {
         attendance: data?.myAttendance ?? [],
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetchAttendance: (input?: AttendanceInput) =>
             refetch(input ? { input } : {}),
@@ -42,7 +40,6 @@ export function useGraphQLAttendanceCorrection(variables?: AttendanceCorrectionV
         GetAttendanceCorrectionsResponse
     >(GET_ATTENDANCE_CORRECTIONS, {
         variables,
-        fetchPolicy: "network-only",
     });
 
     return {
@@ -50,7 +47,8 @@ export function useGraphQLAttendanceCorrection(variables?: AttendanceCorrectionV
         total: data?.attendanceCorrections.total,
         page: data?.attendanceCorrections.page,
         pageSize: data?.attendanceCorrections.pageSize,
-        isLoading: loading,
+        isLoading: loading && !data,
+        isRefetching: loading && !!data,
         error,
         refetchAttendanceCorrections: (input?: AttendanceInput) => refetch({ input })
     };
@@ -62,14 +60,17 @@ export function useGraphQLAttendanceCorrection(variables?: AttendanceCorrectionV
 export function useAttendanceMutations() {
     const [checkInMutation, checkInState] = useMutation(CHECK_IN, {
         refetchQueries: [{ query: GET_ATTENDANCE }],
+        awaitRefetchQueries: true,
     });
 
     const [checkOutMutation, checkOutState] = useMutation(CHECK_OUT, {
         refetchQueries: [{ query: GET_ATTENDANCE }],
+        awaitRefetchQueries: true,
     });
 
     const [requestCorrectionMutation, requestCorrectionState] = useMutation(REQUEST_ATTENDANCE_CORRECTION, {
-        refetchQueries: [{ query: GET_ATTENDANCE }],
+        refetchQueries: [{ query: GET_ATTENDANCE }, { query: GET_ATTENDANCE_CORRECTIONS }],
+        awaitRefetchQueries: true,
     });
 
     const checkIn = async (input: {
@@ -134,7 +135,8 @@ export function useAttendanceMutations() {
 
 export function useCancelAttendanceCorrection() {
     const [cancelAttendanceCorrectionMutation, cancelAttendanceCorrectionState] = useMutation(CANCEL_ATTENDANCE_CORRECTION, {
-        refetchQueries: [{ query: GET_ATTENDANCE }],
+        refetchQueries: [{ query: GET_ATTENDANCE }, { query: GET_ATTENDANCE_CORRECTIONS }],
+        awaitRefetchQueries: true,
     });
 
     const cancelAttendanceCorrection = async (correctionId: string) => {
@@ -153,7 +155,8 @@ export function useCancelAttendanceCorrection() {
 
 export function useApproveOrRejectAttendanceCorrection() {
     const [approveOrRejectAttendanceCorrectionMutation, approveOrRejectAttendanceCorrectionState] = useMutation(APPROVE_OR_REJECT_ATTENDANCE_CORRECTION, {
-        refetchQueries: [{ query: GET_ATTENDANCE }],
+        refetchQueries: [{ query: GET_ATTENDANCE }, { query: GET_ATTENDANCE_CORRECTIONS }],
+        awaitRefetchQueries: true,
     });
 
     const approveOrRejectAttendanceCorrection = async (correctionId: string, status: string, approvalComments: string) => {

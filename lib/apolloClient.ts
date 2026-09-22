@@ -1,17 +1,117 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
+import {
+  ApolloClient,
+  InMemoryCache,
+  createHttpLink,
+  Observable,
+} from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
+import { onError } from "@apollo/client/link/error";
+import { refreshAuthToken } from "./api/client";
+import { apolloCacheConfig, apolloDefaultOptions } from "./apolloCache";
 
-// ⚠️ MUST use a relative /api/... URL, NOT NEXT_PUBLIC_GRAPHQL_URL directly.
-//
-// Why: The Render backend is on a different domain from Vercel. The httpOnly
-// access_token cookie cannot be sent cross-origin by the browser. The proxy
-// at app/api/[...path]/route.ts reads the cookie server-side (Node.js has
-// access to httpOnly cookies) and injects "Authorization: Bearer <token>"
-// before forwarding to Django — this is the only way auth works across domains.
+const fromPromise = <T>(promise: Promise<T>): Observable<T> => {
+  return new Observable<T>((observer: any) => {
+    promise
+      .then((value) => {
+        observer.next(value);
+        observer.complete();
+      })
+      .catch((err) => {
+        observer.error(err);
+      });
+  });
+};
+
 const httpLink = createHttpLink({
   uri: "/api/graphql/",
+  fetchOptions: {
+    method: "POST",
+  },
 });
 
+const authLink = setContext((_, { headers }) => {
+  let csrftoken = "";
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(new RegExp("(^| )csrftoken=([^;]+)"));
+    if (match) {
+      csrftoken = match[2];
+    }
+  }
+
+  return {
+    headers: {
+      ...headers,
+      "X-CSRFToken": csrftoken,
+    },
+  };
+});
+
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }: any) => {
+  // Only treat true auth/session failures as logout triggers.
+  // Business permission errors ("Unauthorized") must NOT force token refresh/logout.
+  const isUnauthorized =
+    (graphQLErrors &&
+      graphQLErrors.some(
+        (e: any) =>
+          e.message === "Unauthenticated" ||
+          e.extensions?.code === "UNAUTHENTICATED" ||
+          e.message.toLowerCase().includes("signature has expired") ||
+          e.message.toLowerCase().includes("authentication credentials were not provided")
+      )) ||
+    (networkError &&
+      "statusCode" in networkError &&
+      networkError.statusCode === 401);
+
+  if (isUnauthorized) {
+    return new Observable((observer: any) => {
+      refreshAuthToken()
+        .then(() => {
+          const subscriber = forward(operation).subscribe({
+            next: observer.next.bind(observer),
+            error: observer.error.bind(observer),
+            complete: observer.complete.bind(observer),
+          });
+
+          return () => {
+            if (subscriber.unsubscribe) subscriber.unsubscribe();
+          };
+        })
+        .catch((error) => {
+          import("@/lib/store/useStore").then(({ useStore }) => {
+            useStore.getState().logoutUser();
+          });
+
+          if (typeof window !== "undefined") {
+            const path = window.location.pathname;
+            const isPublic =
+              path === "/" ||
+              path.startsWith("/login") ||
+              path.startsWith("/register") ||
+              path.startsWith("/forgot-password") ||
+              path.startsWith("/reset-password");
+            if (!isPublic) {
+              window.location.href = "/login";
+            }
+          }
+
+          observer.error(error);
+        });
+    });
+  }
+});
+
+/** Refetch only queries that are currently active (mounted). */
+export async function refetchActiveQueries(
+  apolloClient: ApolloClient,
+  operationNames: string[]
+) {
+  await apolloClient.refetchQueries({
+    include: operationNames,
+  });
+}
+
 export const client = new ApolloClient({
-  link: httpLink,
-  cache: new InMemoryCache(),
+  link: errorLink.concat(authLink).concat(httpLink),
+  cache: new InMemoryCache(apolloCacheConfig),
+  defaultOptions: apolloDefaultOptions,
 });

@@ -40,10 +40,25 @@ export const GET_ATTENDANCE_CORRECTIONS = gql`
           isVerified
           workedHours
           status
+          faceVerified
+          faceMatchScore
+          checkInSelfieUrl
+          checkOutSelfieUrl
           correctionStatus
           correctionId
           correctionReason
           approvalComment
+          loginLatitude
+          loginLongitude
+          logoutLatitude
+          logoutLongitude
+          officeLocation {
+            id
+            name
+            latitude
+            longitude
+            geoRadiusMeters
+          }
         }
         correctedLoginTime
         correctedLogoutTime

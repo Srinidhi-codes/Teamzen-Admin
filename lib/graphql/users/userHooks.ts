@@ -3,7 +3,6 @@ import { GET_ME, GET_ALL_USERS } from "./queries";
 
 export function useMe() {
     const { data, loading, error, refetch } = useQuery<{ me: any }>(GET_ME, {
-        fetchPolicy: 'cache-first',
     });
 
     return {
@@ -16,7 +15,6 @@ export function useMe() {
 
 export function useUsers() {
     const { data, loading, error, refetch } = useQuery<{ allUsers: { results: any[] } }>(GET_ALL_USERS, {
-        fetchPolicy: 'cache-first',
     });
 
     return {
