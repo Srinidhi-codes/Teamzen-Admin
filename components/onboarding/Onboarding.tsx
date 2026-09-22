@@ -363,10 +363,10 @@ export default function OnboardingPage() {
       </div>
 
       {showStart && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6">
           <form
             onSubmit={handleStart}
-            className="w-full max-w-lg space-y-4 rounded-2xl border border-border bg-card p-6 shadow-xl"
+            className="w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-xl"
           >
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">Start hire / preboarding</h2>
@@ -392,7 +392,7 @@ export default function OnboardingPage() {
                 {formError}
               </p>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Input
                 required
                 placeholder="First name"

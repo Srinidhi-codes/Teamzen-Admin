@@ -9,6 +9,7 @@ import { Input } from "../common/Input";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { AuthShell } from "./AuthShell";
 import { AUTH_INPUT_CLASS, AuthFooterLink, AuthSubmitButton } from "./auth-ui";
+import ConfirmationModal from "../common/ConfirmationModal";
 
 function markLocationSyncNeeded() {
   try {
@@ -23,6 +24,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [errorModal, setErrorModal] = useState({ isOpen: false, message: "" });
   const router = useRouter();
   const { login } = useAuth();
   const { loginUser } = useStore();
@@ -44,12 +46,13 @@ export default function LoginForm() {
       router.replace("/dashboard");
       router.refresh();
     } catch (error: any) {
-      alert(error.message || "Login failed");
+      setErrorModal({ isOpen: true, message: error.message || "Invalid credentials. Please try again." });
     }
   };
 
   return (
-    <AuthShell title="Sign in" description="Use your admin credentials to continue.">
+    <>
+      <AuthShell title="Sign in" description="Use your admin credentials to continue.">
       <form className="space-y-5" onSubmit={handleSubmit}>
         <Input
           label="Email"
@@ -118,5 +121,17 @@ export default function LoginForm() {
 
       <AuthFooterLink prompt="New here?" href="/register" label="Create an account" />
     </AuthShell>
+
+    <ConfirmationModal
+      isOpen={errorModal.isOpen}
+      title="Authentication Error"
+      description={errorModal.message || "Please check your email and password or contact your administrator."}
+      onClose={() => setErrorModal({ isOpen: false, message: "" })}
+      onConfirm={() => setErrorModal({ isOpen: false, message: "" })}
+      confirmText="Close"
+      variant="error"
+      hideCancel={true}
+    />
+    </>
   );
 }
