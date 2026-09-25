@@ -140,8 +140,9 @@ export default function CreateOrganizationForm({
     };
 
     return (
-        <form id="create-org-form" className="space-y-8" onSubmit={handleSubmit}>
-            <div className="relative group/logo mx-auto w-fit">
+        <form id="create-org-form" className="flex flex-col min-h-full" onSubmit={handleSubmit}>
+            <div className="p-6 space-y-8 flex-1">
+                <div className="relative group/logo mx-auto w-fit">
                 <div
                     onClick={() => orgEditData && document.getElementById('logo-upload')?.click()}
                     className={`w-28 h-28 bg-linear-to-br from-primary to-primary/60 rounded-4xl flex items-center justify-center text-primary-foreground text-4xl font-black shadow-2xl shadow-primary/20 overflow-hidden ring-8 ring-background mb-10 group-hover:scale-105 transition-transform ${orgEditData ? 'cursor-pointer' : ''}`}
@@ -261,8 +262,9 @@ export default function CreateOrganizationForm({
                     />
                 </div>
             </div>
+            </div>
 
-            <div className="flex justify-end gap-2 pt-6 mt-4 border-t border-border">
+            <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-end gap-2 mt-auto">
                 <Button
                     variant="outline"
                     type="button"

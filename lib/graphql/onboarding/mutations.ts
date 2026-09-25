@@ -115,6 +115,8 @@ export const UPSERT_TASK_DEFINITION = gql`
       phase
       assigneeRole
       sortOrder
+      defaultAssigneeId
+      defaultAssigneeName
     }
   }
 `;

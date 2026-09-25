@@ -88,6 +88,8 @@ export type TaskDefinition = {
   requiresDocumentCategory: string;
   isRequired: boolean;
   sortOrder: number;
+  defaultAssigneeId?: string | null;
+  defaultAssigneeName?: string | null;
 };
 
 export type OnboardingTemplate = {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useGraphQLUserMutations, useGraphQLUsers } from "@/lib/graphql/users/userHook";
 import { toast } from "sonner";
 import { User } from "@/lib/graphql/users/types";
-import { Loader2, Eye, EyeOff, Plus, AlertCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, Plus, AlertCircle, Info, LogOut, ClipboardList } from "lucide-react";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 import { Switch } from "@/components/ui/switch";
 import { FormSelect } from "../common/FormSelect";
@@ -34,6 +34,10 @@ interface EmployeeFormProps {
     initialData?: User | null;
     onSuccess: () => void;
     onCancel: () => void;
+    onStartOffboarding?: (employee: User) => void;
+    isStartingOffboarding?: boolean;
+    onStartOnboarding?: (employee: User) => void;
+    isStartingOnboarding?: boolean;
 }
 
 const employeeSchema = z.object({
@@ -41,7 +45,7 @@ const employeeSchema = z.object({
     lastName: z.string().min(1, "Last name required "),
     email: z.string().email("Invalid email address"),
     password: z.string().optional(),
-    phoneNumber: z.string().min(10, "Phone number must be at least 10 digits"),
+    phoneNumber: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
     role: z.string().min(1, "Role required "),
     dateOfJoining: z.string().default(moment().format("YYYY-MM-DD")),
     dateOfBirth: z.string().optional(),
@@ -56,11 +60,11 @@ const employeeSchema = z.object({
     organizationId: z.string().optional(),
     managerId: z.string().optional(),
     // Financials
-    bankAccountNumber: z.string().optional(),
-    bankIfscCode: z.string().optional(),
-    panNumber: z.string().optional(),
-    aadharNumber: z.string().optional(),
-    uanNumber: z.string().optional(),
+    bankAccountNumber: z.string().regex(/^\d+$/, "Must contain only digits").min(9, "Too short").max(18, "Too long").or(z.literal("")).optional(),
+    bankIfscCode: z.string().regex(/^[A-Z]{4}0[A-Z0-9]{6}$/i, "Invalid IFSC code").or(z.literal("")).optional(),
+    panNumber: z.string().regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/i, "Invalid PAN format").or(z.literal("")).optional(),
+    aadharNumber: z.string().regex(/^\d{12}$/, "Aadhar must be exactly 12 digits").or(z.literal("")).optional(),
+    uanNumber: z.string().regex(/^\d{12}$/, "UAN must be exactly 12 digits").or(z.literal("")).optional(),
     residentialAddress: z.string().optional(),
     // Payroll
     salaryStructureId: z.string().optional(),
@@ -169,6 +173,10 @@ export default function EmployeeForm({
     initialData,
     onSuccess,
     onCancel,
+    onStartOffboarding,
+    isStartingOffboarding,
+    onStartOnboarding,
+    isStartingOnboarding,
 }: EmployeeFormProps) {
     const router = useRouter();
     const [formData, setFormData] = useState(() => buildEmployeeFormData(initialData));
@@ -638,8 +646,22 @@ export default function EmployeeForm({
 
     return (
         <>
-        <form noValidate onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }} className="flex min-h-0 flex-1 flex-col">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EmployeeTab)} className="flex min-h-0 flex-1 flex-col gap-0">
+        <form noValidate onSubmit={handleSubmit} onKeyDown={(e) => { if (e.key === "Enter" && (e.target as HTMLElement).tagName !== "TEXTAREA") e.preventDefault(); }} className="flex min-h-full flex-col">
+            <div className="flex-1 flex flex-col p-6 pb-0">
+                {!initialData && (
+                    <div className="mb-4 flex shrink-0 items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-primary">
+                        <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                        <div className="space-y-1">
+                            <p>
+                                <strong>Hiring someone new?</strong> Use the Onboarding module to handle their offer, preboarding portal, and documents.
+                            </p>
+                            <p>
+                                <strong>Already on the roster?</strong> Add them here, then click <em>Onboard</em> from their employee card.
+                            </p>
+                        </div>
+                    </div>
+                )}
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as EmployeeTab)} className="flex min-h-0 flex-1 flex-col gap-0">
                 {Object.keys(errors).length > 0 && (
                     <div
                         ref={errorBannerRef}
@@ -706,7 +728,7 @@ export default function EmployeeForm({
                 />
 
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
-                <TabsContent value="identity" forceMount className={cn("mt-0 space-y-6 data-[state=inactive]:hidden")}>
+                <TabsContent value="identity" forceMount className={cn("mt-0 pb-4 space-y-6 data-[state=inactive]:hidden")}>
                     {/* Profile Picture Upload Section */}
                     <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/30 p-4">
                         <div className="relative">
@@ -738,7 +760,7 @@ export default function EmployeeForm({
                         <Input label="First Name" name="firstName" required value={formData.firstName} onChange={handleChange} error={errors.firstName} />
                         <Input label="Last Name" name="lastName" required value={formData.lastName} onChange={handleChange} error={errors.lastName} />
                         <Input label="Email" name="email" type="email" required value={formData.email} onChange={handleChange} error={errors.email} />
-                        <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} error={errors.phoneNumber} />
+                        <Input label="Phone Number" name="phoneNumber" required value={formData.phoneNumber} onChange={handleChange} error={errors.phoneNumber} maxLength={10} />
                         {!initialData && (
                             <Input
                                 label="Temporary Password"
@@ -768,7 +790,7 @@ export default function EmployeeForm({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="employment" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
+                <TabsContent value="employment" forceMount className={cn("mt-0 pb-4 space-y-4 data-[state=inactive]:hidden")}>
                     <div className="grid grid-cols-2 gap-4">
                         <DatePickerSimple label="Date of Joining" value={formData.dateOfJoining} onChange={(date) => handleDateChange("dateOfJoining", date)} error={errors.dateOfJoining} />
                         <DatePickerSimple label="Date of Exit" value={formData.dateOfExit} onChange={(date) => handleDateChange("dateOfExit", date)} />
@@ -877,13 +899,13 @@ export default function EmployeeForm({
                     )}
                 </TabsContent>
 
-                <TabsContent value="financials" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
+                <TabsContent value="financials" forceMount className={cn("mt-0 pb-4 space-y-4 data-[state=inactive]:hidden")}>
                     <div className="grid grid-cols-2 gap-4">
-                        <Input label="Bank Account Number" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} />
-                        <Input label="IFSC Code" name="bankIfscCode" value={formData.bankIfscCode} onChange={handleChange} />
-                        <Input label="PAN Number" name="panNumber" value={formData.panNumber} onChange={handleChange} />
-                        <Input label="Aadhar Number" name="aadharNumber" value={formData.aadharNumber} onChange={handleChange} />
-                        <Input label="UAN Number" name="uanNumber" value={formData.uanNumber} onChange={handleChange} />
+                        <Input label="Bank Account Number" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} error={errors.bankAccountNumber} maxLength={18} />
+                        <Input label="IFSC Code" name="bankIfscCode" value={formData.bankIfscCode} onChange={handleChange} error={errors.bankIfscCode} maxLength={11} className="uppercase" />
+                        <Input label="PAN Number" name="panNumber" value={formData.panNumber} onChange={handleChange} error={errors.panNumber} maxLength={10} className="uppercase" />
+                        <Input label="Aadhar Number" name="aadharNumber" value={formData.aadharNumber} onChange={handleChange} error={errors.aadharNumber} maxLength={12} />
+                        <Input label="UAN Number" name="uanNumber" value={formData.uanNumber} onChange={handleChange} error={errors.uanNumber} maxLength={12} />
                     </div>
                     <div>
                         <label className="mb-1.5 block text-sm font-medium">Residential address</label>
@@ -897,7 +919,7 @@ export default function EmployeeForm({
                     </div>
                 </TabsContent>
 
-                <TabsContent value="payroll" forceMount className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}>
+                <TabsContent value="payroll" forceMount className={cn("mt-0 pb-4 space-y-4 data-[state=inactive]:hidden")}>
                     <div className="space-y-4 rounded-xl border border-border bg-muted/20 p-4">
                         <div className="flex items-center gap-3">
                             <CreditCard className="h-5 w-5 text-primary" />
@@ -1011,7 +1033,7 @@ export default function EmployeeForm({
                     <TabsContent
                         value="documents"
                         forceMount
-                        className={cn("mt-0 space-y-4 data-[state=inactive]:hidden")}
+                        className={cn("mt-0 pb-4 space-y-4 data-[state=inactive]:hidden")}
                     >
                         <div>
                             <h3 className="text-sm font-medium text-foreground">Documents vault</h3>
@@ -1027,20 +1049,38 @@ export default function EmployeeForm({
                 )}
                 </div>
             </Tabs>
+            </div>
 
-            <div className="mt-6 flex shrink-0 justify-end gap-2 border-t border-border pt-4">
-                {activeTab === "documents" ? (
-                    <button type="button" onClick={onCancel} className="btn-primary">
-                        Done
-                    </button>
-                ) : (
-                    <>
-                        <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>
-                        <button type="submit" className="btn-primary gap-2" disabled={isSubmitting || (activeTab === "payroll" && isStructuresLoading)}>
-                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (initialData ? "Save changes" : "Create employee")}
+            <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-between gap-2 mt-auto">
+                <div className="flex items-center gap-2">
+
+                    {initialData && onStartOffboarding && (
+                        <button
+                            type="button"
+                            onClick={() => onStartOffboarding(initialData)}
+                            disabled={isStartingOffboarding || !initialData.isActive || !!initialData.dateOfExit}
+                            className="inline-flex h-9 items-center gap-2 rounded-md border border-destructive bg-destructive/5 px-4 text-sm font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title={!!initialData.dateOfExit ? "F&F has already been initiated for this employee" : !initialData.isActive ? "Cannot start F&F for inactive employee" : "Start Full & Final offboarding"}
+                        >
+                            {isStartingOffboarding ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                            {!!initialData.dateOfExit ? "F&F Initiated" : "Start F&F"}
                         </button>
-                    </>
-                )}
+                    )}
+                </div>
+                <div className="flex justify-end gap-2">
+                    {activeTab === "documents" ? (
+                        <button type="button" onClick={onCancel} className="btn-primary">
+                            Done
+                        </button>
+                    ) : (
+                        <>
+                            <button type="button" onClick={onCancel} className="btn-ghost">Cancel</button>
+                            <button type="submit" className="btn-primary gap-2" disabled={isSubmitting || (activeTab === "payroll" && isStructuresLoading)}>
+                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : (initialData ? "Save changes" : "Create employee")}
+                            </button>
+                        </>
+                    )}
+                </div>
             </div>
         </form>
         <PhotoOverlay

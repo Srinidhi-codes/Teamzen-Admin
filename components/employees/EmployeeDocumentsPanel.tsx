@@ -14,6 +14,7 @@ import {
   EMPLOYEE_ISSUED_DOCUMENTS,
   REQUEST_EMPLOYEE_DOCUMENT,
 } from "@/lib/graphql/offboarding/queries";
+import { ExternalLink } from "lucide-react";
 
 interface Props {
   userId: string;
@@ -154,15 +155,18 @@ export default function EmployeeDocumentsPanel({ userId }: Props) {
             href="/documents"
             className="text-xs font-medium text-primary underline"
           >
-            Open Documents hub
+            Open Documents
           </Link>
         </div>
         <div className="grid gap-2 md:grid-cols-3">
-          <Input
-            placeholder="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium mb-1.5">Description</label>
+            <Input  
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              />
+          </div>
           <FormSelect
             label="Financial year"
             value={fy}
@@ -206,7 +210,7 @@ export default function EmployeeDocumentsPanel({ userId }: Props) {
               </span>
               {d.downloadUrl && (
                 <a className="text-primary underline" href={d.downloadUrl} target="_blank" rel="noreferrer">
-                  Open
+                  <ExternalLink />
                 </a>
               )}
             </li>

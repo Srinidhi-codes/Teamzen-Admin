@@ -37,7 +37,7 @@ export function DatePickerSimple({ label, value, onChange, error, required, clas
 
     return (
         <div className={cn("flex flex-col space-y-2", className)}>
-            <label className="text-premium-label px-1">
+            <label className="text-sm font-medium mb-1 block">
                 {label}
                 {required && <span className="text-destructive ml-1">*</span>}
             </label>

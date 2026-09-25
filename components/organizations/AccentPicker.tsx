@@ -24,10 +24,10 @@ type AccentPickerProps = {
 
 export function AccentPicker({ value, onChange, className }: AccentPickerProps) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-1", className)}>
       <p className="text-sm font-medium text-foreground">Company color theme</p>
       <p className="text-xs text-muted-foreground">
-        Applied to the employee portal for this organization. Default is Teal.
+        Applied to the employee portal for this organization.
       </p>
       <div className="flex flex-wrap gap-2.5 pt-1">
         {COMPANY_ACCENTS.map((item) => (

@@ -57,6 +57,8 @@ export const ONBOARDING_TEMPLATES = gql`
         requiresDocumentCategory
         isRequired
         sortOrder
+        defaultAssigneeId
+        defaultAssigneeName
       }
     }
   }

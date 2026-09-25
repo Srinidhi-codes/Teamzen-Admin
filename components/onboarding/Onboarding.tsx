@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
+import { client as apolloClient } from "@/lib/apolloClient";
 import moment from "moment";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePickerSimple } from "@/components/ui/datePicker";
+import { AsyncSearchSelect } from "@/components/ui/async-search-select";
 import { FormSelect } from "@/components/common/FormSelect";
 import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
@@ -22,6 +25,7 @@ import {
   useGraphQLDepartments,
   useGraphQLDesignations,
 } from "@/lib/graphql/organization/organizationsHook";
+import { GET_ALL_USERS } from "@/lib/graphql/users/queries";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "—";
@@ -57,7 +61,7 @@ function statusBadge(status: string) {
   const map: Record<string, string> = {
     invited: "bg-slate-100 text-slate-700",
     preboarding: "bg-amber-100 text-amber-800",
-    in_progress: "bg-sky-100 text-sky-800",
+    in_progress: "bg-yellow-100 text-yellow-800",
     completed: "bg-emerald-100 text-emerald-800",
     cancelled: "bg-rose-100 text-rose-800",
   };
@@ -85,6 +89,7 @@ export default function OnboardingPage() {
     includeCtcAnnexure: false,
     annualCtc: "",
     sendInvite: true,
+    inviteExpiryHours: 24,
   });
 
   const { overview, isLoading: overviewLoading, refetch: refetchOverview } = useOnboardingOverview(
@@ -103,12 +108,42 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const startBusy = loading || submitting;
 
-  const managers = useMemo(
-    () =>
-      (users || []).filter((u: { role?: string }) =>
-        ["manager", "admin", "hr"].includes(u.role || "")
-      ),
-    [users]
+  const fetchManagers = useCallback(
+    async (search: string, page: number) => {
+      try {
+        const { data } = await apolloClient.query({
+          query: GET_ALL_USERS,
+          variables: {
+            page,
+            pageSize: 20,
+            filters: {
+              search: search || undefined,
+              isActive: true,
+              organizationId: organizationId || undefined,
+            },
+          },
+          fetchPolicy: "network-only",
+        });
+
+        const usersData = data?.allUsers?.results || [];
+        const total = data?.allUsers?.total || 0;
+        const fetchedCount = (page - 1) * 20 + usersData.length;
+
+        const options = usersData.map((u: any) => ({
+          label: `${u.firstName || ""} ${u.lastName || ""} (${u.email})`.trim(),
+          value: u.id,
+        }));
+
+        return {
+          options,
+          hasMore: fetchedCount < total,
+        };
+      } catch (error) {
+        console.error("Failed to fetch managers", error);
+        return { options: [], hasMore: false };
+      }
+    },
+    [apolloClient, organizationId]
   );
 
   async function handleStart(e: React.FormEvent) {
@@ -138,6 +173,7 @@ export default function OnboardingPage() {
                 ? Number(form.annualCtc)
                 : undefined,
             sendInvite: form.sendInvite,
+            inviteExpiryHours: form.inviteExpiryHours,
           },
         },
       });
@@ -163,6 +199,7 @@ export default function OnboardingPage() {
         includeCtcAnnexure: false,
         annualCtc: "",
         sendInvite: true,
+        inviteExpiryHours: 24,
       });
       void Promise.all([refetch(), refetchOverview()]);
     } catch (err) {
@@ -176,7 +213,7 @@ export default function OnboardingPage() {
     <div className="space-y-6">
       <PageHeader
         title="Onboarding"
-        description="New joiners: offer, preboarding portal, docs, then activate. Already on the roster? Add them under Employees, then use Onboard on their card."
+        description="New joiners: offer, preboarding portal, docs, then activate."
         actions={
           <div className="flex flex-wrap gap-2">
             <HrOnboardingTourButton variant="board" />
@@ -192,7 +229,7 @@ export default function OnboardingPage() {
               id="onboarding-nav-letters"
               className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
             >
-              Offer letters
+              Letter templates
             </Link>
             <Button
               className="cursor-pointer"
@@ -204,6 +241,26 @@ export default function OnboardingPage() {
           </div>
         }
       />
+
+      {overviewLoading && !overview ? (
+        <div id="onboarding-kpis" className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-border bg-card p-4">
+              <Skeleton className="mb-2 h-3 w-16" />
+              <Skeleton className="h-7 w-10" />
+            </div>
+          ))}
+        </div>
+      ) : overview ? (
+        <div id="onboarding-kpis" className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
+          <Kpi label="Total" value={overview.total} />
+          <Kpi label="Preboarding" value={overview.preboarding} />
+          <Kpi label="In progress" value={overview.inProgress} />
+          <Kpi label="Completed" value={overview.completed} />
+          <Kpi label="Pending docs" value={overview.pendingVerifications} />
+          <Kpi label="Overdue tasks" value={overview.overdueTasks} />
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center gap-3">
         <OrganizationFilterSelect
@@ -231,29 +288,8 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {overviewLoading && !overview ? (
-        <div id="onboarding-kpis" className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4">
-              <Skeleton className="mb-2 h-3 w-16" />
-              <Skeleton className="h-7 w-10" />
-            </div>
-          ))}
-        </div>
-      ) : overview ? (
-        <div id="onboarding-kpis" className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
-          <Kpi label="Total" value={overview.total} />
-          <Kpi label="Preboarding" value={overview.preboarding} />
-          <Kpi label="In progress" value={overview.inProgress} />
-          <Kpi label="Completed" value={overview.completed} />
-          <Kpi label="Pending docs" value={overview.pendingVerifications} />
-          <Kpi label="Overdue tasks" value={overview.overdueTasks} />
-        </div>
-      ) : null}
-
       {inviteUrl && (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <span>Invite sent.</span>
           <a
             className="inline-flex items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800"
             href={inviteUrl}
@@ -349,12 +385,12 @@ export default function OnboardingPage() {
                   {row.templateName || "—"}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/onboarding/${row.id}`}
-                    className="text-primary hover:underline"
-                  >
-                    View
-                  </Link>
+                  <Button asChild size="sm" variant="outline" className="group relative w-20 overflow-hidden">
+                    <Link href={`/onboarding/${row.id}`}>
+                      <span className="transition-transform duration-200 group-hover:-translate-x-2">Open</span>
+                      <ArrowRight className="absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-0 transition-all duration-200 group-hover:opacity-100" />
+                    </Link>
+                  </Button>
                 </td>
               </tr>
             ))}
@@ -364,12 +400,14 @@ export default function OnboardingPage() {
 
       {showStart && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6">
-          <form
-            onSubmit={handleStart}
-            className="w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-4 rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-xl"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Start hire / preboarding</h2>
+          <div className="flex w-full max-w-lg lg:max-h-[50rem] max-h-[40rem] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border p-4 sm:p-6">
+              <div>
+                <h2 className="text-lg font-semibold">Start hire</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Creates an inactive hire, checklist, and offer link portal.
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="ghost"
@@ -380,51 +418,63 @@ export default function OnboardingPage() {
                 ✕
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Creates an inactive hire, checklist, and optional offer + magic-link
-              portal. For people already active in Employees, close this and use{" "}
-              <span className="font-medium text-foreground">Onboard</span> on
-              their card instead.
-            </p>
-            <fieldset disabled={startBusy} className="space-y-4 disabled:opacity-70">
+            
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <form id="start-hire-form" onSubmit={handleStart} className="space-y-4">
+                <fieldset disabled={startBusy} className="space-y-4 disabled:opacity-70">
             {formError && (
               <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
                 {formError}
               </p>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">First name</label>
+                <Input
+                  required
+                  placeholder="First name"
+                  value={form.firstName}
+                  onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Last name</label>
+                <Input
+                  required
+                  placeholder="Last name"
+                  value={form.lastName}
+                  onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Work email</label>
               <Input
                 required
-                placeholder="First name"
-                value={form.firstName}
-                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-              />
-              <Input
-                required
-                placeholder="Last name"
-                value={form.lastName}
-                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+                type="email"
+                placeholder="Work email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
             </div>
-            <Input
-              required
-              type="email"
-              placeholder="Work email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-            />
-            <Input
-              required
-              type="text"
-              placeholder="Temp password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-            />
-            <Input
-              type="date"
-              value={form.dateOfJoining}
-              onChange={(e) => setForm({ ...form, dateOfJoining: e.target.value })}
-            />
+            <div>
+              <label className="text-sm font-medium mb-1 block">Temp password</label>
+              <Input
+                required
+                type="text"
+                placeholder="Temp password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+              />
+            </div>
+            <div>
+              <DatePickerSimple
+                label="Date of joining"
+                value={form.dateOfJoining}
+                onChange={(d) => setForm({ ...form, dateOfJoining: d ? moment(d).format("YYYY-MM-DD") : "" })}
+                allowFuture={true}
+              />
+            </div>
             <FormSelect
               label="Department"
               value={form.departmentId || "__none__"}
@@ -461,30 +511,17 @@ export default function OnboardingPage() {
                 })),
               ]}
             />
-            <FormSelect
+            <AsyncSearchSelect
               label="Manager"
-              value={form.managerId || "__none__"}
+              value={form.managerId || ""}
               onValueChange={(value) =>
                 setForm({
                   ...form,
-                  managerId: value === "__none__" ? "" : value,
+                  managerId: value,
                 })
               }
               placeholder="Manager (optional)"
-              options={[
-                { label: "Manager (optional)", value: "__none__" },
-                ...managers.map(
-                  (m: {
-                    id: string;
-                    firstName?: string;
-                    lastName?: string;
-                    email: string;
-                  }) => ({
-                    label: `${m.firstName || ""} ${m.lastName || ""} (${m.email})`.trim(),
-                    value: m.id,
-                  })
-                ),
-              ]}
+              fetchData={fetchManagers}
             />
             <FormSelect
               label="Template"
@@ -502,6 +539,22 @@ export default function OnboardingPage() {
                   label: `${t.name}${t.isDefault ? " (default)" : ""}`,
                   value: t.id,
                 })),
+              ]}
+            />
+            <FormSelect
+              label="Invite Expiry Duration"
+              value={String(form.inviteExpiryHours)}
+              onValueChange={(value) =>
+                setForm({
+                  ...form,
+                  inviteExpiryHours: Number(value),
+                })
+              }
+              options={[
+                { label: "12 Hours", value: "12" },
+                { label: "24 Hours (1 Day)", value: "24" },
+                { label: "48 Hours (2 Days)", value: "48" },
+                { label: "168 Hours (7 Days)", value: "168" },
               ]}
             />
             <div className="rounded-xl border border-border bg-muted/20 p-4">
@@ -566,33 +619,38 @@ export default function OnboardingPage() {
               )}
             </div>
             </fieldset>
-            <Button
-              type="submit"
-              disabled={startBusy}
-              className="w-full"
-            >
-              {startBusy ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {form.generateOffer
-                    ? "Creating hire & offer…"
-                    : form.sendInvite
-                      ? "Creating & sending…"
-                      : "Creating hire…"}
-                </>
-              ) : form.sendInvite ? (
-                "Create & send invite"
-              ) : (
-                "Create hire"
+              </form>
+            </div>
+            <div className="border-t border-border bg-muted/20 p-4 sm:p-6">
+              <Button
+                type="submit"
+                form="start-hire-form"
+                disabled={startBusy}
+                className="w-full"
+              >
+                {startBusy ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {form.generateOffer
+                      ? "Creating hire & offer…"
+                      : form.sendInvite
+                        ? "Creating & sending…"
+                        : "Creating hire…"}
+                  </>
+                ) : form.sendInvite ? (
+                  "Send invite"
+                ) : (
+                  "Create hire"
+                )}
+              </Button>
+              {startBusy && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  This can take a few seconds while we generate the offer PDF
+                  {form.sendInvite ? " and send the invite" : ""}.
+                </p>
               )}
-            </Button>
-            {startBusy && (
-              <p className="text-center text-xs text-muted-foreground">
-                This can take a few seconds while we generate the offer PDF
-                {form.sendInvite ? " and send the invite" : ""}.
-              </p>
-            )}
-          </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

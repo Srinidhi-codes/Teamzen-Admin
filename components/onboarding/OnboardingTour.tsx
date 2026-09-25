@@ -191,7 +191,7 @@ export function HrOnboardingTourButton({
       size="sm"
       id="onboarding-tour-trigger"
       onClick={() => startHrOnboardingTour(variant)}
-      className="gap-1.5"
+      className="gap-1.5 h-9"
     >
       <HelpCircle className="h-4 w-4" />
       {labels[variant]}

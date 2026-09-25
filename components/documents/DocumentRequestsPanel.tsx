@@ -19,6 +19,8 @@ import {
   REQUEST_EMPLOYEE_DOCUMENT,
   VERIFY_VAULT_DOCUMENT,
 } from "@/lib/graphql/documents/queries";
+import { AsyncSearchSelect } from "@/components/ui/async-search-select";
+import { EmptyState } from "@/components/common/EmptyState";
 
 const CATEGORIES = [
   { value: "hr_request", label: "HR request" },
@@ -192,17 +194,29 @@ export default function DocumentRequestsPanel() {
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          <FormSelect
-            label="Employee"
-            value={userId}
-            onValueChange={setUserId}
-            placeholder="Select employee…"
-            options={employeeList.map((u: any) => ({
-              value: u.id,
-              label: `${u.firstName} ${u.lastName} · ${u.email}`,
-            }))}
-            className="h-9 rounded-md px-3 py-2"
-          />
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-muted-foreground">Employee</label>
+            <AsyncSearchSelect
+              value={userId}
+              onChange={setUserId}
+              placeholder="Search employee…"
+              fetchFn={async (query) => {
+                const res = employeeList.filter(u => 
+                  `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(query.toLowerCase())
+                );
+                return res.map(u => ({
+                  value: u.id,
+                  label: `${u.firstName} ${u.lastName}`,
+                  description: u.email
+                }));
+              }}
+              defaultOptions={employeeList.slice(0, 10).map(u => ({
+                value: u.id,
+                label: `${u.firstName} ${u.lastName}`,
+                description: u.email
+              }))}
+            />
+          </div>
           <FormSelect
             label="Category"
             value={category}
@@ -264,7 +278,13 @@ export default function DocumentRequestsPanel() {
         {inbox.loading && !rows.length ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No requests in this filter.</p>
+          <EmptyState 
+            className="rounded-xl border bg-card"
+            size="wide"
+            src="/images/empty/empty-payslip.webp" 
+            title="No requests found" 
+            description="There are no HR document requests for the selected status."
+          />
         ) : (
           <ul className="divide-y divide-border">
             {rows.map((r) => (
