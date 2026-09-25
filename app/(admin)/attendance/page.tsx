@@ -5,6 +5,7 @@ import {
   useApproveOrRejectAttendanceCorrection,
   useGraphQLAttendanceCorrection,
   useGraphQLOrgAttendanceRecords,
+  useApproveOrRejectOffHoursAttendance,
 } from "@/lib/graphql/attendance/attendanceHooks";
 import { ApprovalModal } from "@/components/attendance/ApprovalModal";
 import { HeartbeatTimelineModal } from "@/components/attendance/HeartbeatTimelineModal";
@@ -57,6 +58,20 @@ export default function AttendancePage() {
   const [presencePage, setPresencePage] = useState(1);
   const [correctionsPage, setCorrectionsPage] = useState(1);
 
+  const buildPresenceFilters = (start: string, end: string) => ({
+    startDate: start,
+    endDate: end,
+    search: debouncedSearchTerm || undefined,
+    status: ["roaming", "pending_approval", "off_hours", "weekend_work"].includes(statusFilter)
+      ? undefined
+      : statusFilter || undefined,
+    roamingOnly: statusFilter === "roaming" ? true : undefined,
+    approvalStatus: statusFilter === "pending_approval" ? "pending" : undefined,
+    isOffHours: statusFilter === "off_hours" ? true : undefined,
+    isWeekendWork: statusFilter === "weekend_work" ? true : undefined,
+    organizationId: organizationId || undefined,
+  });
+
   // 1. Organization Shift & Presence Logs Query
   const {
     records: presenceRecords,
@@ -66,14 +81,7 @@ export default function AttendancePage() {
   } = useGraphQLOrgAttendanceRecords({
     page: presencePage,
     pageSize,
-    filters: {
-      startDate,
-      endDate,
-      search: debouncedSearchTerm || undefined,
-      status: statusFilter === "roaming" ? undefined : statusFilter || undefined,
-      roamingOnly: statusFilter === "roaming" ? true : undefined,
-      organizationId: organizationId || undefined,
-    },
+    filters: buildPresenceFilters(startDate, endDate),
   });
 
   // 2. Attendance Regularization Corrections Query
@@ -91,20 +99,25 @@ export default function AttendancePage() {
     },
   });
 
+  const { approveOrReject: approveOffHours, loading: approvingOffHours } =
+    useApproveOrRejectOffHoursAttendance();
+
+  const handleApproveOffHours = async (record: AttendanceRecord, status: "approved" | "rejected") => {
+    try {
+      await approveOffHours(record.id, status);
+      await refetchPresence(buildPresenceFilters(startDate, endDate) as any);
+    } catch (err: any) {
+      console.error(err);
+    }
+  };
+
   const loadData = async (start: string, end: string) => {
     if (!start || !end) return;
     await Promise.all([
       refetchPresence({
         page: presencePage,
         pageSize,
-        filters: {
-          startDate: start,
-          endDate: end,
-          search: debouncedSearchTerm || undefined,
-          status: statusFilter === "roaming" ? undefined : statusFilter || undefined,
-          roamingOnly: statusFilter === "roaming" ? true : undefined,
-          organizationId: organizationId || undefined,
-        },
+        filters: buildPresenceFilters(start, end),
       }),
       refetchAttendanceCorrections({ startDate: start, endDate: end }),
     ]);
@@ -112,7 +125,7 @@ export default function AttendancePage() {
 
   useEffect(() => {
     loadData(startDate, endDate);
-  }, [startDate, endDate]);
+  }, [startDate, endDate, statusFilter, debouncedSearchTerm, organizationId]);
 
   const { approveOrRejectAttendanceCorrection } =
     useApproveOrRejectAttendanceCorrection();
@@ -133,6 +146,7 @@ export default function AttendancePage() {
   const verifiedCount = presenceRecords.filter(
     (r) => !r.roamingAnomalyDetected && (r.validHeartbeats || 0) > 0
   ).length;
+  const pendingApprovalsCount = presenceRecords.filter((r) => r.approvalStatus === "pending").length;
 
   const presenceStats = [
     {
@@ -150,18 +164,18 @@ export default function AttendancePage() {
       gradient: "bg-emerald-500/10",
     },
     {
+      label: "Pending shift approvals",
+      value: pendingApprovalsCount,
+      icon: Clock,
+      color: "text-amber-700 dark:text-amber-400",
+      gradient: "bg-amber-500/10",
+    },
+    {
       label: "Roaming flagged",
       value: roamingCount,
       icon: AlertTriangle,
       color: "text-destructive",
       gradient: "bg-destructive/10",
-    },
-    {
-      label: "Pending corrections",
-      value: correctionsTotal || 0,
-      icon: Clock,
-      color: "text-amber-700 dark:text-amber-400",
-      gradient: "bg-amber-500/10",
     },
   ];
 
@@ -291,8 +305,8 @@ export default function AttendancePage() {
     },
     {
       key: "status",
-      label: "Status",
-      render: (status: string) => {
+      label: "Status & Shift Approval",
+      render: (_: any, row: AttendanceRecord) => {
         const map: Record<string, string> = {
           present: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
           late_login: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
@@ -301,14 +315,39 @@ export default function AttendancePage() {
           absent: "bg-destructive/10 text-destructive border-destructive/20",
         };
         return (
-          <span
-            className={cn(
-              "inline-flex rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize",
-              map[status] || "bg-muted text-muted-foreground"
+          <div className="flex flex-col gap-1">
+            <span
+              className={cn(
+                "inline-flex rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize w-fit",
+                map[row.status] || "bg-muted text-muted-foreground"
+              )}
+            >
+              {row.status.replace(/_/g, " ")}
+            </span>
+            {row.approvalStatus === "pending" && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 w-fit">
+                <Clock className="h-2.5 w-2.5" />
+                {row.isWeekendWork ? "Weekend Pending" : "Off-Hours Pending"}
+              </span>
             )}
-          >
-            {status.replace(/_/g, " ")}
-          </span>
+            {row.approvalStatus === "approved" && (row.isWeekendWork || row.isOffHours) && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                <CheckCircle2 className="h-2.5 w-2.5" />
+                Approved {row.isWeekendWork ? "Weekend" : "Overtime"}
+              </span>
+            )}
+            {row.approvalStatus === "rejected" && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-destructive">
+                <XCircle className="h-2.5 w-2.5" />
+                Rejected
+              </span>
+            )}
+            {row.approvalRemarks && (
+              <span className="text-[10px] text-muted-foreground truncate max-w-[150px]" title={row.approvalRemarks}>
+                {row.approvalRemarks}
+              </span>
+            )}
+          </div>
         );
       },
     },
@@ -316,15 +355,45 @@ export default function AttendancePage() {
       key: "actions",
       label: "Actions",
       render: (_: any, row: AttendanceRecord) => (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setSelectedTimelineRecord(row)}
-          className="h-8 gap-1.5 text-xs hover:border-primary/50"
-        >
-          <Activity className="h-3.5 w-3.5 text-primary" />
-          Audit Timeline
-        </Button>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setSelectedTimelineRecord(row)}
+            className="h-8 gap-1.5 text-xs hover:border-primary/50"
+            title="View GPS Breadcrumbs Timeline"
+          >
+            <Activity className="h-3.5 w-3.5 text-primary" />
+            Audit
+          </Button>
+
+          {row.approvalStatus === "pending" && (
+            <>
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => handleApproveOffHours(row, "approved")}
+                disabled={approvingOffHours}
+                className="h-8 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5"
+                title="Approve weekend/off-hours attendance"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Approve
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleApproveOffHours(row, "rejected")}
+                disabled={approvingOffHours}
+                className="h-8 gap-1 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 px-2.5"
+                title="Reject and mark absent"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+                Reject
+              </Button>
+            </>
+          )}
+        </div>
       ),
     },
   ];
@@ -549,7 +618,9 @@ export default function AttendancePage() {
                 { label: "All", value: "" },
                 { label: "Present", value: "present" },
                 { label: "Late Login", value: "late_login" },
-                { label: "Half Day", value: "half_day" },
+                { label: "⏳ Pending Approval", value: "pending_approval" },
+                { label: "🌙 Off-Hours", value: "off_hours" },
+                { label: "🏖️ Weekend Work", value: "weekend_work" },
                 { label: "🚩 Roaming Flagged", value: "roaming" },
               ].map((pill) => (
                 <button

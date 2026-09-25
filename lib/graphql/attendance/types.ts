@@ -44,6 +44,12 @@ export interface AttendanceRecord {
   correctionReason?: string;
   approvalComment?: string;
 
+  isWeekendWork?: boolean;
+  isOffHours?: boolean;
+  approvalStatus?: "auto_approved" | "pending" | "approved" | "rejected";
+  approvalRemarks?: string | null;
+  approvedBy?: User | null;
+
   loginLatitude?: number | null;
   loginLongitude?: number | null;
   logoutLatitude?: number | null;
@@ -83,7 +89,24 @@ export type OrgAttendanceFilterInput = {
   search?: string;
   status?: string;
   roamingOnly?: boolean;
+  approvalStatus?: string;
+  isWeekendWork?: boolean;
+  isOffHours?: boolean;
   organizationId?: string;
+};
+
+export type ApproveOffHoursAttendanceInput = {
+  recordId: string;
+  status: "approved" | "rejected";
+  approvalRemarks?: string;
+};
+
+export type ApproveOffHoursAttendanceResponse = {
+  approveOrRejectOffHoursAttendance: {
+    success: boolean;
+    message: string;
+    record?: AttendanceRecord;
+  };
 };
 
 export type GetOrgAttendanceRecordsResponse = {

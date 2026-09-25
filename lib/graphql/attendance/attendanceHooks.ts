@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@apollo/client/react"
-import { GET_ATTENDANCE, GET_ATTENDANCE_CORRECTIONS, GET_ORG_ATTENDANCE_RECORDS } from "./queries"
+import { GET_ATTENDANCE, GET_ATTENDANCE_CORRECTIONS, GET_ORG_ATTENDANCE_RECORDS, APPROVE_OR_REJECT_OFF_HOURS_ATTENDANCE } from "./queries"
 import { APPROVE_OR_REJECT_ATTENDANCE_CORRECTION, CANCEL_ATTENDANCE_CORRECTION, CHECK_IN, CHECK_OUT, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
 import {
   AttendanceInput,
@@ -8,6 +8,8 @@ import {
   GetAttendanceVars,
   GetOrgAttendanceRecordsResponse,
   OrgAttendanceFilterInput,
+  ApproveOffHoursAttendanceInput,
+  ApproveOffHoursAttendanceResponse,
 } from "./types"
 
 export interface AttendanceCorrectionVariables {
@@ -203,5 +205,29 @@ export function useGraphQLOrgAttendanceRecords(variables?: OrgAttendanceRecordsV
     isRefetching: loading && !!data,
     error,
     refetch,
+  };
+}
+
+export function useApproveOrRejectOffHoursAttendance() {
+  const [mutate, { loading, error }] = useMutation<
+    ApproveOffHoursAttendanceResponse,
+    { input: ApproveOffHoursAttendanceInput }
+  >(APPROVE_OR_REJECT_OFF_HOURS_ATTENDANCE);
+
+  const approveOrReject = async (
+    recordId: string,
+    status: "approved" | "rejected",
+    approvalRemarks?: string
+  ) => {
+    const res = await mutate({
+      variables: { input: { recordId, status, approvalRemarks } },
+    });
+    return res.data?.approveOrRejectOffHoursAttendance;
+  };
+
+  return {
+    approveOrReject,
+    loading,
+    error,
   };
 }
