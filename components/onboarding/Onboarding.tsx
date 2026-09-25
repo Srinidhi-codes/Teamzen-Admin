@@ -111,7 +111,7 @@ export default function OnboardingPage() {
   const fetchManagers = useCallback(
     async (search: string, page: number) => {
       try {
-        const { data } = await apolloClient.query({
+        const { data } = await apolloClient.query<{ allUsers?: { results: any[]; total: number } }>({
           query: GET_ALL_USERS,
           variables: {
             page,

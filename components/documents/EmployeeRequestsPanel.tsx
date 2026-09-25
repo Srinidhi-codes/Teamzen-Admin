@@ -30,13 +30,17 @@ export default function EmployeeRequestsPanel() {
   const [uploading, setUploading] = useState(false);
   
   const statusVar = statusFilter === "all" ? null : statusFilter;
-  const { data, refetch, loading } = useQuery(ORG_EMPLOYEE_DOCUMENT_REQUESTS, {
+  const { data, refetch, loading } = useQuery<{ orgEmployeeDocumentRequests: any[] }>(ORG_EMPLOYEE_DOCUMENT_REQUESTS, {
     variables: { status: statusVar },
     fetchPolicy: "cache-and-network",
   });
   
-  const [issueReq, { loading: issuing }] = useMutation(ISSUE_EMPLOYEE_DOCUMENT);
-  const [rejectReq, { loading: rejecting }] = useMutation(REJECT_EMPLOYEE_DOCUMENT);
+  const [issueReq, { loading: issuing }] = useMutation<{
+    issueEmployeeDocument: { success: boolean; error?: string };
+  }>(ISSUE_EMPLOYEE_DOCUMENT);
+  const [rejectReq, { loading: rejecting }] = useMutation<{
+    rejectEmployeeDocument: { success: boolean; error?: string };
+  }>(REJECT_EMPLOYEE_DOCUMENT);
 
   const { templates: letterTemplates } = useLetterTemplates();
 
@@ -213,14 +217,14 @@ export default function EmployeeRequestsPanel() {
               Provide a document for <strong>{selectedReq?.userName}</strong>.
             </p>
             <div>
-              <label className="text-sm font-medium mb-1 block">Letter Template</label>
               <FormSelect
+                label="Letter Template"
                 options={[
                   { value: "", label: "Select a template..." },
                   ...letterTemplates.map(t => ({ value: t.id, label: t.name }))
                 ]}
                 value={templateId}
-                onChange={setTemplateId}
+                onValueChange={setTemplateId}
                 disabled={!!file}
               />
             </div>

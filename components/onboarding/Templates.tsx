@@ -81,7 +81,7 @@ export default function OnboardingTemplatesPage() {
     filters: { organizationId: organizationId || undefined, isActive: true },
   });
   
-  const { data: departmentsData } = useQuery(GET_DEPARTMENTS, {
+  const { data: departmentsData } = useQuery<{ departments: any[] }>(GET_DEPARTMENTS, {
     variables: { organizationId: organizationId || undefined, isActive: true },
     skip: !organizationId,
   });

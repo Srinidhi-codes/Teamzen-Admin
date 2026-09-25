@@ -195,26 +195,23 @@ export default function DocumentRequestsPanel() {
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-muted-foreground">Employee</label>
             <AsyncSearchSelect
+              label="Employee"
               value={userId}
-              onChange={setUserId}
+              onValueChange={setUserId}
               placeholder="Search employee…"
-              fetchFn={async (query) => {
+              fetchData={async (query: string) => {
                 const res = employeeList.filter(u => 
                   `${u.firstName} ${u.lastName} ${u.email}`.toLowerCase().includes(query.toLowerCase())
                 );
-                return res.map(u => ({
-                  value: u.id,
-                  label: `${u.firstName} ${u.lastName}`,
-                  description: u.email
-                }));
+                return {
+                  options: res.map(u => ({
+                    value: u.id,
+                    label: `${u.firstName} ${u.lastName} (${u.email})`,
+                  })),
+                  hasMore: false,
+                };
               }}
-              defaultOptions={employeeList.slice(0, 10).map(u => ({
-                value: u.id,
-                label: `${u.firstName} ${u.lastName}`,
-                description: u.email
-              }))}
             />
           </div>
           <FormSelect
