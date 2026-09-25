@@ -11,7 +11,10 @@ import {
     MessageSquare,
     ArrowRight,
     User,
-    ScanFace
+    ScanFace,
+    Activity,
+    ShieldCheck,
+    AlertTriangle
 } from "lucide-react";
 import { FormTextarea } from "../common/FormTextArea";
 import { PhotoOverlay } from "../common/PhotoOverlay";
@@ -253,6 +256,62 @@ export function ApprovalModal({ correction, onClose, onSubmit }: Props) {
                                     employeeName={`${correction.requestedBy?.firstName} ${correction.requestedBy?.lastName}`}
                                     officeName={record.officeLocation?.name || "Office"}
                                 />
+                            </div>
+                        );
+                    })()}
+
+                    {/* Background Heartbeats & Effective Presence */}
+                    {(() => {
+                        const rec = correction.attendanceRecord;
+                        const total = rec.totalHeartbeats ?? (rec.heartbeats?.length || 0);
+                        if (total === 0 && !rec.effectiveWorkedHours) return null;
+
+                        const valid = rec.validHeartbeats ?? (rec.heartbeats?.filter(h => h.isWithinGeofence).length || 0);
+                        const outOfFence = rec.outOfFenceHeartbeats ?? (total - valid);
+                        const gross = Number(rec.workedHours) || 0;
+                        const effective = rec.effectiveWorkedHours != null ? Number(rec.effectiveWorkedHours) : gross;
+                        const hasAnomaly = rec.roamingAnomalyDetected || outOfFence > 1;
+
+                        return (
+                            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Activity className="h-4 w-4 text-primary" />
+                                        <h3 className="text-sm font-medium text-foreground">Background Presence Verification</h3>
+                                    </div>
+                                    {hasAnomaly ? (
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-destructive/30 bg-destructive/10 px-2 py-0.5 text-xs font-semibold text-destructive">
+                                            <AlertTriangle className="h-3 w-3" />
+                                            Roaming Anomaly
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                                            <ShieldCheck className="h-3 w-3" />
+                                            Verified On-Premises
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2 text-center">
+                                    <div className="rounded-md border border-border bg-card p-2">
+                                        <span className="text-[10px] text-muted-foreground uppercase">Gross Hours</span>
+                                        <p className="text-sm font-semibold text-foreground">{gross}h</p>
+                                    </div>
+                                    <div className="rounded-md border border-border bg-card p-2">
+                                        <span className="text-[10px] text-muted-foreground uppercase">Effective Hours</span>
+                                        <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{effective}h</p>
+                                    </div>
+                                    <div className="rounded-md border border-border bg-card p-2">
+                                        <span className="text-[10px] text-muted-foreground uppercase">In-Fence Checks</span>
+                                        <p className="text-sm font-semibold text-foreground">{valid} / {total}</p>
+                                    </div>
+                                </div>
+
+                                {hasAnomaly && rec.roamingNotes && (
+                                    <p className="text-xs text-destructive bg-destructive/5 p-2 rounded border border-destructive/20">
+                                        {rec.roamingNotes}
+                                    </p>
+                                )}
                             </div>
                         );
                     })()}

@@ -22,6 +22,7 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import EmployeeForm from "./EmployeeForm";
 import EmployeeCard from "./EmployeeCard";
 import { PaginationControls } from "../common/PaginationControls";
+import { AdaptiveModal } from "@/components/common/AdaptiveModal";
 import {
   Dialog,
   DialogContent,
@@ -293,7 +294,7 @@ export default function EmployeesPage() {
     <div className="page-shell">
       <PageHeader
         title="Employees"
-        description="Directory of people already on your roster. For new joiners with offer & documents, use Onboarding → Start hire."
+        description="Directory of all employees"
         actions={
           <>
             <Link
@@ -357,7 +358,7 @@ export default function EmployeesPage() {
             placeholder="Search by name, email, or employee ID…"
             value={searchTerm}
             onChange={setSearchTerm}
-            containerClassName="max-w-md"
+            containerClassName="w-md"
           />
           {user?.role === "superadmin" && (
             <OrganizationFilterSelect
@@ -420,26 +421,26 @@ export default function EmployeesPage() {
         </div>
       )}
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="flex h-[min(90vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4 text-left">
-            <DialogTitle>{isEditing ? "Edit employee" : "Add employee"}</DialogTitle>
-            <DialogDescription>
-              {isEditing
-                ? "Update this employee’s profile and employment details."
-                : "Create a roster record for someone already joining or on payroll. New candidates with offer letters should use Onboarding → Start hire."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
-            <EmployeeForm
-              key={selectedEmployee?.id || "new-employee"}
-              initialData={selectedEmployee}
-              onSuccess={handleSuccess}
-              onCancel={handleClose}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AdaptiveModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        title={isEditing ? "Edit employee" : "Add employee"}
+        description={
+          isEditing
+            ? "Update the employee profile and employment details."
+            : "Create an employee profile and employment details."
+        }
+        className="sm:max-w-2xl"
+      >
+        <EmployeeForm
+          key={selectedEmployee?.id || "new-employee"}
+          initialData={selectedEmployee}
+          onSuccess={handleSuccess}
+          onCancel={handleClose}
+          onStartOffboarding={handleStartOffboarding}
+          isStartingOffboarding={startingOffboardingId === selectedEmployee?.id}
+        />
+      </AdaptiveModal>
     </div>
   );
 }

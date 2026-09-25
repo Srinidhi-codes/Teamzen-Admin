@@ -171,7 +171,6 @@ export function useGraphQLOrganizationMutation() {
 
 export function useGraphQLUpdateOrganizationMutation() {
     const [updateOrganizationMutation, updateOrganizationMutationState] = useMutation(UPDATE_ORGANIZATION, {
-        refetchQueries: [{ query: GET_ORGANIZATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -193,7 +192,6 @@ export function useGraphQLUpdateOrganizationMutation() {
 
 export function useGraphQLSuspendOrganizationMutation() {
     const [suspendOrganizationMutation, suspendOrganizationMutationState] = useMutation(SUSPEND_ORGANIZATION, {
-        refetchQueries: [{ query: GET_ORGANIZATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -215,7 +213,6 @@ export function useGraphQLSuspendOrganizationMutation() {
 
 export function useGraphQLActivateOrganizationMutation() {
     const [activateOrganizationMutation, activateOrganizationMutationState] = useMutation(ACTIVATE_ORGANIZATION, {
-        refetchQueries: [{ query: GET_ORGANIZATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -261,7 +258,6 @@ export function useGraphQLCreateOfficeLocationMutation() {
 
 export function useGraphQLUpdateOfficeLocationMutation() {
     const [updateOfficeLocationMutation, updateOfficeLocationMutationState] = useMutation(UPDATE_OFFICE_LOCATION, {
-        refetchQueries: [{ query: GET_OFFICE_LOCATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -283,7 +279,6 @@ export function useGraphQLUpdateOfficeLocationMutation() {
 
 export function useGraphQLSuspendOfficeLocationMutation() {
     const [suspendOfficeLocationMutation, suspendOfficeLocationMutationState] = useMutation(SUSPEND_OFFICE_LOCATION, {
-        refetchQueries: [{ query: GET_OFFICE_LOCATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -305,7 +300,6 @@ export function useGraphQLSuspendOfficeLocationMutation() {
 
 export function useGraphQLActivateOfficeLocationMutation() {
     const [activateOfficeLocationMutation, activateOfficeLocationMutationState] = useMutation(ACTIVATE_OFFICE_LOCATION, {
-        refetchQueries: [{ query: GET_OFFICE_LOCATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -351,7 +345,6 @@ export function useGraphQLDepartmentMutation() {
 
 export function useGraphQLUpdateDepartmentMutation() {
     const [updateDepartmentMutation, updateDepartmentMutationState] = useMutation(UPDATE_DEPARTMENT, {
-        refetchQueries: [{ query: GET_DEPARTMENTS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -373,7 +366,6 @@ export function useGraphQLUpdateDepartmentMutation() {
 
 export function useGraphQLSuspendDepartmentMutation() {
     const [suspendDepartmentMutation, suspendDepartmentMutationState] = useMutation(SUSPEND_DEPARTMENT, {
-        refetchQueries: [{ query: GET_DEPARTMENTS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -395,7 +387,6 @@ export function useGraphQLSuspendDepartmentMutation() {
 
 export function useGraphQLActivateDepartmentMutation() {
     const [activateDepartmentMutation, activateDepartmentMutationState] = useMutation(ACTIVATE_DEPARTMENT, {
-        refetchQueries: [{ query: GET_DEPARTMENTS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -441,7 +432,6 @@ export function useGraphQLDesignationMutation() {
 
 export function useGraphQLUpdateDesignationMutation() {
     const [updateDesignationMutation, updateDesignationMutationState] = useMutation(UPDATE_DESIGNATION, {
-        refetchQueries: [{ query: GET_DESIGNATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -463,7 +453,6 @@ export function useGraphQLUpdateDesignationMutation() {
 
 export function useGraphQLSuspendDesignationMutation() {
     const [suspendDesignationMutation, suspendDesignationMutationState] = useMutation(SUSPEND_DESIGNATION, {
-        refetchQueries: [{ query: GET_DESIGNATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -485,7 +474,6 @@ export function useGraphQLSuspendDesignationMutation() {
 
 export function useGraphQLActivateDesignationMutation() {
     const [activateDesignationMutation, activateDesignationMutationState] = useMutation(ACTIVATE_DESIGNATION, {
-        refetchQueries: [{ query: GET_DESIGNATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }

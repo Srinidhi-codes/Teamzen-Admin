@@ -49,16 +49,11 @@ export default function LetterTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Letter templates"
+        backHref="/onboarding"
         description="Offer, experience, relieving, and salary certificates. Tokens like {{exit_date}} work on exit letters."
         actions={
           <div className="flex flex-wrap gap-2">
             <HrOnboardingTourButton variant="letters" />
-            <Link
-              href="/onboarding"
-              className="rounded-lg border border-border px-3 py-2 text-sm"
-            >
-              Back to board
-            </Link>
           </div>
         }
       />

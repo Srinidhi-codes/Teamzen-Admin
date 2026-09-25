@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import axios from "axios";
 import moment from "moment";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2Icon, CheckCircleIcon, CheckIcon, Loader2, TicketCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -234,6 +234,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
   const [includeCtc, setIncludeCtc] = useState(false);
   const [annualCtc, setAnnualCtc] = useState("");
   const [sendAfterGenerate, setSendAfterGenerate] = useState(true);
+  const [offerMode, setOfferMode] = useState<"generate" | "upload">("generate");
   const [uploading, setUploading] = useState(false);
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [activateModalOpen, setActivateModalOpen] = useState(false);
@@ -361,16 +362,27 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
     <div className="space-y-6">
       <PageHeader
         title={onboarding.userName}
-        description={`${onboarding.userEmail} · ${onboarding.status.replace("_", " ")} · ${onboarding.progressPct}%`}
+        backHref="/onboarding"
+        description={
+          <div className="flex items-center gap-2 flex-wrap">
+            <span>{onboarding.userEmail}</span>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="capitalize">{onboarding.status.replace("_", " ")}</span>
+            <span className="text-muted-foreground/50">·</span>
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-2 bg-primary/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-500 ease-in-out" 
+                  style={{ width: `${onboarding.progressPct}%` }}
+                />
+              </div>
+              <span className="font-semibold">{onboarding.progressPct}%</span>
+            </div>
+          </div>
+        }
         actions={
           <div id="onboarding-detail-actions" className="flex flex-wrap gap-2">
             <HrOnboardingTourButton variant="detail" />
-            <Link
-              href="/onboarding"
-              className="rounded-lg border border-border px-3 py-2 text-sm"
-            >
-              Back
-            </Link>
             <Button
             className="cursor-pointer"
               type="button"
@@ -430,7 +442,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                     Cancelling…
                   </>
                 ) : (
-                  "Cancel"
+                  "Close Hire"
                 )}
               </Button>
             )}
@@ -447,7 +459,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
             {nextHrActions.map((action) => (
               <div
                 key={action.title}
-                className="rounded-lg border border-border bg-card p-4"
+                className="rounded-lg border border-border p-4 bg-gray-800"
               >
                 <p className="text-sm font-semibold text-foreground">
                   {action.title}
@@ -512,26 +524,27 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-card p-4 lg:col-span-1">
           <h3 className="mb-3 font-semibold">Summary</h3>
+          <hr className="mb-3 border-border" />
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Department</dt>
-              <dd>{onboarding.departmentName || "—"}</dd>
+              <dt className="font-medium">Department</dt>
+              <dd className="text-muted-foreground">{onboarding.departmentName || "—"}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Designation</dt>
-              <dd>{onboarding.designationName || "—"}</dd>
+              <dt className="font-medium">Designation</dt>
+              <dd className="text-muted-foreground">{onboarding.designationName || "—"}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Join date</dt>
-              <dd>{formatJoinDate(onboarding.joinDate)}</dd>
+              <dt className="font-medium">Join date</dt>
+              <dd className="text-muted-foreground">{formatJoinDate(onboarding.joinDate)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Template</dt>
-              <dd>{onboarding.templateName || "—"}</dd>
+              <dt className="font-medium">Template</dt>
+              <dd className="text-muted-foreground">{onboarding.templateName || "—"}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-muted-foreground">Activated</dt>
-              <dd>
+              <dt className="font-medium">Activated</dt>
+              <dd className="text-muted-foreground">
                 {onboarding.activatedAt
                   ? formatDateTime(onboarding.activatedAt)
                   : "—"}
@@ -545,117 +558,164 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
           className="rounded-xl border border-border bg-card p-4 lg:col-span-2"
         >
           <h3 className="mb-3 font-semibold">Offer letter</h3>
+          <hr className="mb-3 border-border" />
 
-          <div className="mb-4 space-y-3 rounded-lg border border-border bg-muted/20 p-3 text-sm">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={includeCtc}
-                onChange={(e) => setIncludeCtc(e.target.checked)}
-              />
-              Include CTC annexure in generated PDF
-            </label>
-            {includeCtc && (
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">
-                  Annual CTC (INR)
-                </label>
-                <Input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  className="w-full max-w-xs"
-                  placeholder="e.g. 1200000"
-                  value={annualCtc}
-                  onChange={(e) => setAnnualCtc(e.target.value)}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Uses employee salary structure when available; otherwise a standard
-                  Basic / HRA / Special Allowance split.
-                </p>
-              </div>
-            )}
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={sendAfterGenerate}
-                onChange={(e) => setSendAfterGenerate(e.target.checked)}
-              />
-              Email offer PDF to candidate (also shows on their preboarding portal)
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="default"
-                disabled={generateOfferLoading || uploading}
-                onClick={() => handleGenerateOffer()}
-              >
-                {generateOfferLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Generating…
-                  </>
-                ) : (
-                  "Generate branded PDF"
-                )}
-              </Button>
-              <input
-                ref={offerFileRef}
-                type="file"
-                accept="application/pdf,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) handleUploadOffer(f);
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                disabled={generateOfferLoading || uploading}
-                onClick={() => offerFileRef.current?.click()}
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Uploading…
-                  </>
-                ) : (
-                  "Upload offer PDF"
-                )}
-              </Button>
-              {onboarding.offerLetter?.pdfUrl && (
-                <Button
+          {onboarding.offerLetter?.status !== "accepted" && !onboarding.offerLetter?.acceptedAt && (
+            <div className="mb-4 rounded-lg border border-border bg-muted/20 text-sm overflow-hidden">
+              <div className="flex border-b border-border text-center">
+                <button
                   type="button"
-                  variant="outline"
-                  disabled={sendOfferEmailLoading}
-                  onClick={() =>
-                    run(
-                      () => sendOfferEmail({ variables: { onboardingId: id } }),
-                      "Offer letter emailed"
-                    )
-                  }
+                  className={`flex-1 py-2 font-medium transition-colors ${
+                    offerMode === "generate"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                  onClick={() => setOfferMode("generate")}
                 >
-                  {sendOfferEmailLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Emailing…
-                    </>
+                  Generate PDF
+                </button>
+                <button
+                  type="button"
+                  className={`flex-1 py-2 font-medium border-l border-border transition-colors ${
+                    offerMode === "upload"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted/50"
+                  }`}
+                  onClick={() => setOfferMode("upload")}
+                >
+                  Upload PDF
+                </button>
+              </div>
+
+              <div className="p-4 space-y-4">
+                {offerMode === "generate" && (
+                  <>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={includeCtc}
+                        onChange={(e) => setIncludeCtc(e.target.checked)}
+                      />
+                      Include CTC annexure in generated PDF
+                    </label>
+                    {includeCtc && (
+                      <div className="pl-6">
+                        <label className="mb-1 block text-xs text-muted-foreground">
+                          Annual CTC (INR)
+                        </label>
+                        <Input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          className="w-full max-w-xs"
+                          placeholder="e.g. 1200000"
+                          value={annualCtc}
+                          onChange={(e) => setAnnualCtc(e.target.value)}
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Uses employee salary structure when available; otherwise a
+                          standard Basic / HRA / Special Allowance split.
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={sendAfterGenerate}
+                    onChange={(e) => setSendAfterGenerate(e.target.checked)}
+                  />
+                  Email offer PDF to candidate
+                </label>
+
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {offerMode === "generate" ? (
+                    <Button
+                      type="button"
+                      variant="default"
+                      disabled={generateOfferLoading || uploading || onboarding.offerLetter?.source === "generated"}
+                      onClick={() => handleGenerateOffer()}
+                    >
+                      {generateOfferLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Generating…
+                        </>
+                      ) : onboarding.offerLetter?.source === "generated" ? (
+                        "Already generated"
+                      ) : (
+                        "Generate branded PDF"
+                      )}
+                    </Button>
                   ) : (
-                    "Email current PDF"
+                    <>
+                      <input
+                        ref={offerFileRef}
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUploadOffer(f);
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="default"
+                        disabled={generateOfferLoading || uploading}
+                        onClick={() => offerFileRef.current?.click()}
+                      >
+                        {uploading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Uploading…
+                          </>
+                        ) : (
+                          "Select & Upload PDF"
+                        )}
+                      </Button>
+                    </>
                   )}
-                </Button>
-              )}
+
+                  {onboarding.offerLetter?.pdfUrl && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={sendOfferEmailLoading}
+                      onClick={() =>
+                        run(
+                          () =>
+                            sendOfferEmail({ variables: { onboardingId: id } }),
+                          "Offer letter emailed"
+                        )
+                      }
+                    >
+                      {sendOfferEmailLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Emailing…
+                        </>
+                      ) : (
+                        "Resend email"
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {onboarding.offerLetter ? (
             <div className="space-y-2 text-sm">
               <p>
                 <span className="text-muted-foreground">Status:</span>{" "}
-                {onboarding.offerLetter.status}
-                {onboarding.offerLetter.source
-                  ? ` · ${onboarding.offerLetter.source}`
+                <span className="capitalize">{onboarding.offerLetter.status}</span>
+                {onboarding.offerLetter.source === "generated"
+                  ? " (Generated from template)"
+                  : onboarding.offerLetter.source === "uploaded"
+                  ? " (Uploaded manually)"
                   : ""}
               </p>
               <p className="font-medium">{onboarding.offerLetter.subject}</p>
@@ -674,9 +734,9 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   href={onboarding.offerLetter.pdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex text-primary underline"
+                  className="inline-flex text-primary font-semibold"
                 >
-                  Download offer PDF
+                  Preview offer PDF
                 </a>
               )}
               {onboarding.offerLetter.signedPdfUrl && (
@@ -696,9 +756,9 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                 </p>
               )}
               {onboarding.offerLetter.acceptedAt && (
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground flex gap-2 items-center">
                   Accepted by {onboarding.offerLetter.acceptedName} on{" "}
-                  {formatDateTime(onboarding.offerLetter.acceptedAt)}
+                  {formatDateTime(onboarding.offerLetter.acceptedAt)} <CheckCircle2Icon className="h-4 w-4 text-green-500"/>
                 </p>
               )}
               {onboarding.offerLetter.source !== "uploaded" && (
@@ -730,10 +790,10 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               className="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-medium">
+                <p className="font-medium capitalize">
                   {doc.category} · {doc.fileName || doc.title}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground capitalize">
                   {doc.verificationStatus}
                   {doc.aiSuggestedCategory
                     ? ` · AI suggest: ${doc.aiSuggestedCategory}`
@@ -744,7 +804,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                     href={doc.fileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-xs text-primary underline"
+                    className="text-xs text-primary font-semibold"
                   >
                     View file
                   </a>
@@ -818,14 +878,36 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
             >
               <div>
                 <p className="font-medium">{task.title}</p>
-                <p className="text-xs text-muted-foreground">
-                  {task.phase} · {task.assigneeRole}
-                  {task.assigneeName ? ` · ${task.assigneeName}` : ""} · {task.status}
-                  {task.dueAt ? ` · due ${formatJoinDate(task.dueAt)}` : ""}
-                  {task.completedAt
-                    ? ` · completed ${formatDateTime(task.completedAt)}`
-                    : ""}
-                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary">
+                    {task.phase}
+                  </span>
+                  <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                    {task.assigneeRole}
+                    {task.assigneeName ? ` (${task.assigneeName})` : ""}
+                  </span>
+                  <span
+                    className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
+                      task.status === "completed"
+                        ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                        : task.status === "skipped"
+                        ? "bg-muted text-muted-foreground"
+                        : "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                    }`}
+                  >
+                    {task.status}
+                  </span>
+                  {task.dueAt && (
+                    <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      due {formatJoinDate(task.dueAt)}
+                    </span>
+                  )}
+                  {task.completedAt && (
+                    <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      completed {formatDateTime(task.completedAt)}
+                    </span>
+                  )}
+                </div>
               </div>
               {task.status !== "completed" && task.status !== "skipped" && (
                 <Button
@@ -869,13 +951,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
             "Employee activated"
           )
         }
-        variant={activateWarning.incomplete ? "warning" : "success"}
+        variant={activateWarning.incomplete ? "destructive" : "success"}
         title={activateWarning.title}
         description={activateWarning.description}
         confirmText={
           activateWarning.incomplete ? "Activate anyway" : "Activate"
         }
-        cancelText="Not now"
+        cancelText="Cancel"
       />
     </div>
   );

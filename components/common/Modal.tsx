@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 interface ModalProps {
   isOpen: boolean;
   title: string;
+  description?: string;
   children: ReactNode;
   onClose: () => void;
   onConfirm?: () => void;
@@ -18,6 +19,7 @@ interface ModalProps {
 export function Modal({
   isOpen,
   title,
+  description,
   children,
   onClose,
   onConfirm,
@@ -36,8 +38,11 @@ export function Modal({
         aria-modal="true"
         className="relative w-full max-w-md overflow-hidden rounded-xl border border-border bg-card shadow-lg"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
-          <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        <div className="flex justify-between items-center p-6 border-b border-border/50">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+            {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
+          </div>
           <button
             type="button"
             onClick={onClose}

@@ -13,11 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import {
   useOnboardingMutations,
   useOnboardingTemplates,
 } from "@/lib/graphql/onboarding/onboardingHook";
+import { useGraphQLUsers } from "@/lib/graphql/users/userHook";
+import { useQuery } from "@apollo/client/react";
+import { GET_DEPARTMENTS } from "@/lib/graphql/organization/queries";
 import type {
   OnboardingTemplate,
   TaskDefinition,
@@ -65,10 +69,46 @@ export default function OnboardingTemplatesPage() {
     assigneeRole: "hire",
     dueOffsetDays: 0,
     requiresDocumentCategory: "",
+    defaultAssigneeId: "none",
   });
   const { templates, refetch, isLoading } = useOnboardingTemplates(
     organizationId || undefined
   );
+  
+  const { users } = useGraphQLUsers({
+    page: 1,
+    pageSize: 100,
+    filters: { organizationId: organizationId || undefined, isActive: true },
+  });
+  
+  const { data: departmentsData } = useQuery<{ departments: any[] }>(GET_DEPARTMENTS, {
+    variables: { organizationId: organizationId || undefined, isActive: true },
+    skip: !organizationId,
+  });
+  const departments = departmentsData?.departments || [];
+
+  const dynamicAssigneeOptions = useMemo(() => {
+    return [
+      ...ASSIGNEE_OPTIONS,
+      ...departments.map((d: any) => ({
+        value: `dept_${d.id}`,
+        label: `${d.name} (Department)`,
+      })),
+    ];
+  }, [departments]);
+  
+  const specificMembers = useMemo(() => {
+    if (!users) return [];
+    if (taskForm.assigneeRole === "hr" || taskForm.assigneeRole === "it") {
+      return users.filter(u => u.role === "hr" || u.role === "admin" || u.role === "superadmin");
+    }
+    if (taskForm.assigneeRole.startsWith("dept_")) {
+      const deptId = taskForm.assigneeRole.replace("dept_", "");
+      return users.filter(u => u.department?.id === deptId);
+    }
+    return users; // Fallback to all users if needed
+  }, [users, taskForm.assigneeRole]);
+
   const { createTemplate, upsertTask, deleteTaskDef, reorderTasks, suggestTasks, loading } =
     useOnboardingMutations();
 
@@ -161,13 +201,11 @@ export default function OnboardingTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Onboarding templates"
+        backHref="/onboarding"
         description="Checklist definitions by phase and assignee. Drag to reorder, then save."
         actions={
           <div className="flex flex-wrap gap-2">
             <HrOnboardingTourButton variant="templates" />
-            <Link href="/onboarding" className="rounded-lg border border-border px-3 py-2 text-sm">
-              Back to board
-            </Link>
           </div>
         }
       />
@@ -345,13 +383,27 @@ export default function OnboardingTemplatesPage() {
                           </span>
                           {task.title}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {task.phase} · {task.assigneeRole} · offset{" "}
-                          {task.dueOffsetDays}d
-                          {task.requiresDocumentCategory
-                            ? ` · doc:${task.requiresDocumentCategory}`
-                            : ""}
-                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                          <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary">
+                            {task.phase}
+                          </span>
+                          <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                            {
+                              task.assigneeRole.startsWith("dept_") 
+                                ? departments.find((d: any) => d.id === task.assigneeRole.replace("dept_", ""))?.name + " (Department)"
+                                : task.assigneeRole
+                            }
+                            {task.defaultAssigneeName ? ` (${task.defaultAssigneeName})` : ""}
+                          </span>
+                          <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                            offset {task.dueOffsetDays}d
+                          </span>
+                          {task.requiresDocumentCategory && (
+                            <span className="inline-flex items-center rounded-md bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                              doc: {task.requiresDocumentCategory}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button
@@ -386,7 +438,7 @@ export default function OnboardingTemplatesPage() {
                   Describe a hiring scenario to generate checklist tasks for this template.
                 </p>
                 <textarea
-                  className="min-h-[72px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  className="min-h-18 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   placeholder="e.g. Remote engineering intern joining in Bangalore"
                   value={copilotPrompt}
                   onChange={(e) => setCopilotPrompt(e.target.value)}
@@ -436,73 +488,111 @@ export default function OnboardingTemplatesPage() {
                     }
                   }}
                 >
-                  {copilotBusy ? "Generating…" : "Generate & apply to template"}
+                  {copilotBusy ? "Generating…" : "Generate template"}
                 </button>
               </div>
 
-              <div className="mt-4 grid gap-2 rounded-lg border border-dashed border-border p-3 sm:grid-cols-2">
-                <input
-                  className="rounded border border-border px-2 py-1.5 text-sm sm:col-span-2"
-                  placeholder="Task title"
-                  value={taskForm.title}
-                  onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                />
-                <Select
-                  value={taskForm.phase}
-                  onValueChange={(value) =>
-                    setTaskForm({ ...taskForm, phase: value })
-                  }
-                >
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue placeholder="Phase" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PHASE_OPTIONS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>
-                        {p.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={taskForm.assigneeRole}
-                  onValueChange={(value) =>
-                    setTaskForm({ ...taskForm, assigneeRole: value })
-                  }
-                >
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue placeholder="Assignee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ASSIGNEE_OPTIONS.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>
-                        {r.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <input
-                  type="number"
-                  className="rounded border border-border px-2 py-1.5 text-sm"
-                  value={taskForm.dueOffsetDays}
-                  onChange={(e) =>
-                    setTaskForm({
-                      ...taskForm,
-                      dueOffsetDays: Number(e.target.value),
-                    })
-                  }
-                />
-                <input
-                  className="rounded border border-border px-2 py-1.5 text-sm"
-                  placeholder="doc category (optional)"
-                  value={taskForm.requiresDocumentCategory}
-                  onChange={(e) =>
-                    setTaskForm({
-                      ...taskForm,
-                      requiresDocumentCategory: e.target.value,
-                    })
-                  }
-                />
+              <div className="mt-4 grid gap-3 rounded-lg border border-dashed border-border p-4 sm:grid-cols-2 items-start">
+                <div className="sm:col-span-2 space-y-1.5">
+                  <Label>Task Title</Label>
+                  <input
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    placeholder="e.g. Order laptop"
+                    value={taskForm.title}
+                    onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Phase</Label>
+                  <Select
+                    value={taskForm.phase}
+                    onValueChange={(value) =>
+                      setTaskForm({ ...taskForm, phase: value })
+                    }
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Phase" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PHASE_OPTIONS.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>
+                          {p.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Assignee</Label>
+                  <Select
+                    value={taskForm.assigneeRole}
+                    onValueChange={(value) =>
+                      setTaskForm({ ...taskForm, assigneeRole: value })
+                    }
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Assignee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {dynamicAssigneeOptions.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>
+                          {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {(!["hire", "manager"].includes(taskForm.assigneeRole)) && (
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <Label>Specific Member (Optional)</Label>
+                    <Select
+                      value={taskForm.defaultAssigneeId}
+                      onValueChange={(value) =>
+                        setTaskForm({ ...taskForm, defaultAssigneeId: value })
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-full border-dashed">
+                        <SelectValue placeholder="Specific Member (Optional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Any Member (Default)</SelectItem>
+                        {specificMembers.map((u) => (
+                          <SelectItem key={u.id} value={u.id}>
+                            {u.firstName} {u.lastName} ({u.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <Label>Due Offset Days</Label>
+                  <input
+                    type="number"
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    value={taskForm.dueOffsetDays}
+                    onChange={(e) =>
+                      setTaskForm({
+                        ...taskForm,
+                        dueOffsetDays: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Document Category</Label>
+                  <input
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                    placeholder="e.g. ID Proof (Optional)"
+                    value={taskForm.requiresDocumentCategory}
+                    onChange={(e) =>
+                      setTaskForm({
+                        ...taskForm,
+                        requiresDocumentCategory: e.target.value,
+                      })
+                    }
+                  />
+                </div>
                 <button
                   type="button"
                   disabled={!taskForm.title || loading}
@@ -527,6 +617,7 @@ export default function OnboardingTemplatesPage() {
                           requiresDocumentCategory:
                             taskForm.requiresDocumentCategory || "",
                           sortOrder: (orderedTasks.length + 1) * 10,
+                          defaultAssigneeId: taskForm.defaultAssigneeId === "none" ? null : taskForm.defaultAssigneeId,
                         },
                       },
                     });
@@ -536,6 +627,7 @@ export default function OnboardingTemplatesPage() {
                       assigneeRole: "hire",
                       dueOffsetDays: 0,
                       requiresDocumentCategory: "",
+                      defaultAssigneeId: "none",
                     });
                     setSavedOrderKey("");
                     refetch();

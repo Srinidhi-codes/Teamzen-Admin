@@ -1,7 +1,14 @@
 import { useQuery, useMutation } from "@apollo/client/react"
-import { GET_ATTENDANCE, GET_ATTENDANCE_CORRECTIONS, } from "./queries"
+import { GET_ATTENDANCE, GET_ATTENDANCE_CORRECTIONS, GET_ORG_ATTENDANCE_RECORDS } from "./queries"
 import { APPROVE_OR_REJECT_ATTENDANCE_CORRECTION, CANCEL_ATTENDANCE_CORRECTION, CHECK_IN, CHECK_OUT, REQUEST_ATTENDANCE_CORRECTION } from "./mutations"
-import { AttendanceInput, GetAttendanceCorrectionsResponse, GetAttendanceResponse, GetAttendanceVars } from "./types"
+import {
+  AttendanceInput,
+  GetAttendanceCorrectionsResponse,
+  GetAttendanceResponse,
+  GetAttendanceVars,
+  GetOrgAttendanceRecordsResponse,
+  OrgAttendanceFilterInput,
+} from "./types"
 
 export interface AttendanceCorrectionVariables {
     page?: number;
@@ -155,7 +162,7 @@ export function useCancelAttendanceCorrection() {
 
 export function useApproveOrRejectAttendanceCorrection() {
     const [approveOrRejectAttendanceCorrectionMutation, approveOrRejectAttendanceCorrectionState] = useMutation(APPROVE_OR_REJECT_ATTENDANCE_CORRECTION, {
-        refetchQueries: [{ query: GET_ATTENDANCE }, { query: GET_ATTENDANCE_CORRECTIONS }],
+        refetchQueries: [{ query: GET_ATTENDANCE }, { query: GET_ATTENDANCE_CORRECTIONS }, { query: GET_ORG_ATTENDANCE_RECORDS }],
         awaitRefetchQueries: true,
     });
 
@@ -171,4 +178,30 @@ export function useApproveOrRejectAttendanceCorrection() {
         approveOrRejectAttendanceCorrectionLoading: approveOrRejectAttendanceCorrectionState.loading,
         approveOrRejectAttendanceCorrectionError: approveOrRejectAttendanceCorrectionState.error,
     }
+}
+
+export interface OrgAttendanceRecordsVariables {
+  page?: number;
+  pageSize?: number;
+  filters?: OrgAttendanceFilterInput;
+}
+
+export function useGraphQLOrgAttendanceRecords(variables?: OrgAttendanceRecordsVariables) {
+  const { data, loading, error, refetch } = useQuery<
+    GetOrgAttendanceRecordsResponse
+  >(GET_ORG_ATTENDANCE_RECORDS, {
+    variables,
+    fetchPolicy: "cache-and-network",
+  });
+
+  return {
+    records: data?.orgAttendanceRecords?.results ?? [],
+    total: data?.orgAttendanceRecords?.total ?? 0,
+    page: data?.orgAttendanceRecords?.page ?? 1,
+    pageSize: data?.orgAttendanceRecords?.pageSize ?? 10,
+    isLoading: loading && !data,
+    isRefetching: loading && !!data,
+    error,
+    refetch,
+  };
 }

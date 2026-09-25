@@ -139,7 +139,7 @@ function Avatar({
 }: {
   name: string;
   src?: string | null;
-  tone?: "muted" | "amber" | "sky" | "emerald";
+  tone?: "muted" | "amber" | "sky" | "emerald" | "orange";
 }) {
   const toneClass =
     tone === "amber"
@@ -148,7 +148,9 @@ function Avatar({
         ? "bg-sky-500/10 text-sky-700 dark:text-sky-400"
         : tone === "emerald"
           ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-          : "bg-muted text-muted-foreground";
+          : tone === "orange"
+            ? "bg-orange-500/10 text-orange-700 dark:text-orange-400"
+            : "bg-muted text-muted-foreground";
 
   const resolved = profileSrc(src);
 
@@ -351,7 +353,9 @@ export default function AdminDashboard() {
                         ? "amber"
                         : event.type === "holiday" || event.type === "optional_holiday"
                           ? "emerald"
-                          : "sky"
+                          : event.type === "leave"
+                            ? "orange"
+                            : "sky"
                     }
                   />
                   <div className="min-w-0 flex-1">
@@ -363,7 +367,9 @@ export default function AdminDashboard() {
                           ? "Optional holiday"
                           : event.type === "holiday"
                             ? "Holiday"
-                            : "Work anniversary"}{" "}
+                            : event.type === "leave"
+                              ? "On Leave"
+                              : "Work anniversary"}{" "}
                       · {moment(event.date).format("MMM D")}
                     </p>
                   </div>

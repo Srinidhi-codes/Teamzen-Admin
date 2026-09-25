@@ -4,11 +4,14 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ExternalLink } from "lucide-react";
+import { FormSelect } from "@/components/common/FormSelect";
 import { PageHeader } from "@/components/common/PageHeader";
 import { FormSkeleton, Skeleton } from "@/components/common/Skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   APPROVE_FNF,
   CANCEL_OFFBOARDING,
@@ -20,6 +23,8 @@ import {
   RESEND_EXIT_INVITE,
   SKIP_OFFBOARDING_TASK,
 } from "@/lib/graphql/offboarding/queries";
+import { useLetterTemplates } from "@/lib/graphql/onboarding/onboardingHook";
+import { OffboardingTourButton } from "@/components/offboarding/OffboardingTour";
 
 function money(n: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -49,6 +54,7 @@ type EmployeeOffboarding = {
   userEmail?: string | null;
   status?: string | null;
   progressPct: number;
+  organizationId?: string | null;
   tasks?: OffboardingTask[] | null;
   settlement?: {
     proRataSalary: number;
@@ -74,6 +80,13 @@ export default function OffboardingDetail() {
   const [recoveries, setRecoveries] = useState("0");
   const [additions, setAdditions] = useState("0");
   const [deductions, setDeductions] = useState("0");
+
+  const [experienceTemplateId, setExperienceTemplateId] = useState("");
+  const [relievingTemplateId, setRelievingTemplateId] = useState("");
+  
+  const { templates: letterTemplates } = useLetterTemplates(
+    data?.employeeOffboarding?.organizationId || undefined
+  );
 
   const [computeFnf] = useMutation(COMPUTE_FNF);
   const [approveFnf] = useMutation(APPROVE_FNF);
@@ -147,29 +160,43 @@ export default function OffboardingDetail() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={ob.userName}
-        description={`${ob.userEmail} · ${ob.status?.replace(/_/g, " ")} · ${ob.progressPct}%`}
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={() =>
-                run(() => resendInvite({ variables: { offboardingId: id } }), "Invite sent")
-              }
-            >
-              Resend exit link
-            </Button>
-            <Button variant="outline" onClick={() => router.push("/offboarding")}>
-              Back
-            </Button>
-          </div>
-        }
-      />
+      <div id="offboarding-detail-header">
+        <PageHeader
+          title={ob.userName}
+          backHref="/offboarding"
+          description={`${ob.userEmail} · ${ob.status?.replace(/_/g, " ")} · ${ob.progressPct}%`}
+          actions={
+            <div id="offboarding-detail-actions" className="flex flex-wrap gap-2">
+              <OffboardingTourButton variant="detail" />
+              <Button
+                variant="outline"
+                onClick={() =>
+                  run(() => resendInvite({ variables: { offboardingId: id } }), "Invite sent")
+                }
+              >
+                Resend exit link
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() =>
+                  run(async () => {
+                    await cancelOb({ variables: { offboardingId: id } });
+                    router.push("/offboarding");
+                    return { data: { cancelOffboarding: { success: true } } };
+                  }, "Cancelled")
+                }
+              >
+                Cancel offboarding
+              </Button>
+            </div>
+          }
+        />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="space-y-3 p-4">
+        <Card id="offboarding-tasks" className="space-y-3 p-4">
           <h3 className="font-medium">Tasks</h3>
+          <Separator />
           <ul className="space-y-2">
             {(ob.tasks || []).map((t) => (
               <li
@@ -197,19 +224,7 @@ export default function OffboardingDetail() {
                         )
                       }
                     >
-                      Complete
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        run(
-                          () => skipTask({ variables: { taskId: t.id, notes: "Skipped by HR" } }),
-                          "Skipped"
-                        )
-                      }
-                    >
-                      Skip
+                      Mark complete
                     </Button>
                   </div>
                 )}
@@ -218,25 +233,26 @@ export default function OffboardingDetail() {
           </ul>
         </Card>
 
-        <Card className="space-y-3 p-4">
+        <Card id="offboarding-fnf" className="space-y-3 p-4">
           <h3 className="font-medium">F&F settlement</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-xs">
-              Bonus / gratuity
+          <Separator />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Bonus / gratuity</label>
               <Input value={bonus} onChange={(e) => setBonus(e.target.value)} />
-            </label>
-            <label className="text-xs">
-              Recoveries
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Recoveries</label>
               <Input value={recoveries} onChange={(e) => setRecoveries(e.target.value)} />
-            </label>
-            <label className="text-xs">
-              Other additions
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Other additions</label>
               <Input value={additions} onChange={(e) => setAdditions(e.target.value)} />
-            </label>
-            <label className="text-xs">
-              Other deductions
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Other deductions</label>
               <Input value={deductions} onChange={(e) => setDeductions(e.target.value)} />
-            </label>
+            </div>
           </div>
           <Button
             onClick={() =>
@@ -257,7 +273,7 @@ export default function OffboardingDetail() {
               )
             }
           >
-            Compute / refresh
+            Compute 
           </Button>
           {ob.settlement && (
             <dl className="grid grid-cols-2 gap-1 text-sm">
@@ -278,7 +294,7 @@ export default function OffboardingDetail() {
                 run(() => approveFnf({ variables: { offboardingId: id } }), "Approved")
               }
             >
-              Approve for employee
+              Approve
             </Button>
             <Button
               variant="outline"
@@ -291,68 +307,75 @@ export default function OffboardingDetail() {
           </div>
         </Card>
 
-        <Card className="space-y-3 p-4">
+        <Card id="offboarding-letters" className="space-y-3 p-4">
           <h3 className="font-medium">Letters</h3>
-          <div className="flex flex-wrap gap-2">
-            {["experience", "relieving"].map((type) => (
-              <Button
-                key={type}
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  run(
-                    () =>
-                      genLetter({
-                        variables: { offboardingId: id, letterType: type },
-                      }),
-                    `${type} letter issued`
-                  )
-                }
-              >
-                Issue {type}
-              </Button>
-            ))}
-          </div>
-          <ul className="space-y-2 text-sm">
-            {(ob.letters || []).map((l) => {
-              const href = l.downloadUrl || l.pdfUrl;
+          <Separator />
+          <div className="flex flex-col gap-3">
+            {["experience", "relieving"].map((type) => {
+              const options = letterTemplates
+                .filter((t) => t.letterType === type)
+                .map((t) => ({ value: t.id, label: t.name }));
+              
+              const val = type === "experience" ? experienceTemplateId : relievingTemplateId;
+              const setVal = type === "experience" ? setExperienceTemplateId : setRelievingTemplateId;
+
+              const generatedLetter = ob.letters?.find((l) => l.letterType === type);
+              const href = generatedLetter?.downloadUrl || generatedLetter?.pdfUrl;
+
               return (
-                <li key={l.id} className="flex justify-between gap-2">
-                  <span className="capitalize">{l.letterType}</span>
-                  {href ? (
-                    <a
-                      className="text-primary underline"
-                      href={href}
-                      target="_blank"
-                      rel="noreferrer"
-                      download
+                <div key={type} className="flex flex-col gap-3 rounded-lg border p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium capitalize text-sm">{type} Letter</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {generatedLetter ? "Already issued. You can re-issue with a new template if needed." : "Select a template and issue to the employee."}
+                      </p>
+                    </div>
+                    {href && (
+                      <Button asChild variant="default" size="sm">
+                        <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          Preview
+                        </a>
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex-1 min-w-[200px]">
+                      <FormSelect
+                        label=""
+                        placeholder={`Default ${type} template`}
+                        options={[{ value: "", label: `Default ${type} template` }, ...options]}
+                        value={val}
+                        onValueChange={setVal}
+                      />
+                    </div>
+                    <Button
+                      variant={generatedLetter ? "outline" : "default"}
+                      size="sm"
+                      onClick={() =>
+                        run(
+                          () =>
+                            genLetter({
+                              variables: { 
+                                offboardingId: id, 
+                                letterType: type,
+                                letterTemplateId: val || null
+                              },
+                            }),
+                          `${type} letter issued`
+                        )
+                      }
                     >
-                      Download
-                    </a>
-                  ) : (
-                    <span className="text-muted-foreground">No file URL — re-issue</span>
-                  )}
-                </li>
+                      {generatedLetter ? "Re-issue" : "Issue"}
+                    </Button>
+                  </div>
+                </div>
               );
             })}
-          </ul>
+          </div>
         </Card>
 
-        <Card className="space-y-3 p-4">
-          <h3 className="font-medium">Danger zone</h3>
-          <Button
-            variant="destructive"
-            onClick={() =>
-              run(async () => {
-                await cancelOb({ variables: { offboardingId: id } });
-                router.push("/offboarding");
-                return { data: { cancelOffboarding: { success: true } } };
-              }, "Cancelled")
-            }
-          >
-            Cancel offboarding
-          </Button>
-        </Card>
       </div>
     </div>
   );

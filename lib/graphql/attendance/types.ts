@@ -1,7 +1,18 @@
 import { User } from "../users/types";
 
-export interface AttendanceRecord {
+export interface AttendanceHeartbeat {
+  id: string;
+  timestamp: string;
+  latitude: number;
+  longitude: number;
+  distanceMeters: number;
+  isWithinGeofence: boolean;
+  accuracyMeters?: number | null;
+  isMocked: boolean;
+  batteryLevel?: number | null;
+}
 
+export interface AttendanceRecord {
   id: string;
   attendanceDate: string;
 
@@ -10,8 +21,16 @@ export interface AttendanceRecord {
   loginDistance?: number;
   logoutDistance?: number;
 
-  status: "present" | "absent" | "half_day" | "leave" | "holiday";
+  status: "present" | "absent" | "half_day" | "leave" | "holiday" | "late_login" | "early_logout";
   workedHours?: number | null;
+  effectiveWorkedHours?: number | null;
+  totalHeartbeats?: number;
+  validHeartbeats?: number;
+  outOfFenceHeartbeats?: number;
+  roamingAnomalyDetected?: boolean;
+  roamingNotes?: string | null;
+  heartbeats?: AttendanceHeartbeat[];
+  user?: User;
 
   isWithinGeofence: boolean;
   faceVerified?: boolean;
@@ -52,10 +71,28 @@ export interface AttendanceCorrection {
   requestedBy: User;
 }
 
-
 export type AttendanceInput = {
   startDate?: string;
   endDate?: string;
+};
+
+export type OrgAttendanceFilterInput = {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  status?: string;
+  roamingOnly?: boolean;
+  organizationId?: string;
+};
+
+export type GetOrgAttendanceRecordsResponse = {
+  orgAttendanceRecords: {
+    results: AttendanceRecord[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
 };
 
 export type GetAttendanceResponse = {

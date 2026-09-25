@@ -19,6 +19,7 @@ import {
   X,
   ScanFace,
   CalendarDays,
+  ChevronLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
@@ -255,18 +256,10 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
     <div className="page-shell mx-auto max-w-5xl">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-3">
-          <button
-            onClick={() => router.back()}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </button>
           <PageHeader title={organization.name} description="Organization profile and tax details" />
         </div>
         {isAuthorized && !isEditing && (
           <Button onClick={handleStartEdit} className="shrink-0">
-            <Edit3 className="mr-2 h-4 w-4" />
             Edit profile
           </Button>
         )}
@@ -325,6 +318,20 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                 >
                   {organization.isActive ? "Active" : "Suspended"}
                 </span>
+                <span
+                  className={cn(
+                    "rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
+                    organization.plan === "free"
+                      ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                      : organization.plan === "growth"
+                      ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                      : organization.plan === "enterprise"
+                      ? "bg-violet-500/10 text-violet-700 dark:text-violet-400"
+                      : "bg-red-500/10 text-red-700 dark:text-red-400"
+                  )}
+                >
+                  {organization.plan}
+                </span>
               </div>
 
               <div className="grid w-full grid-cols-2 gap-2">
@@ -347,16 +354,16 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
           <div className="rounded-xl border border-border bg-card p-5">
             <h3 className="mb-3 text-sm font-semibold text-foreground">Activity</h3>
             <div className="space-y-2 text-sm">
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Created</span>
+              <div className="flex justify-between gap-1 p-1 bg-gray-800 rounded-xl">
+                <span className="text-muted-foreground font-bold">Created</span>
                 <span className="text-foreground">
-                  {moment(organization.createdAt).format("DD MMM YYYY")}
+                  {moment(organization.createdAt).format("DD MMM YY")}
                 </span>
               </div>
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">Updated</span>
+              <div className="flex justify-between gap-1 p-1 bg-gray-800 rounded-xl">
+                <span className="text-muted-foreground font-bold">Updated</span>
                 <span className="text-foreground">
-                  {moment(organization.updatedAt).format("DD MMM YYYY")}
+                  {moment(organization.updatedAt).format("DD MMM YY")}
                 </span>
               </div>
             </div>
@@ -367,7 +374,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
           {isEditing ? (
             <div className="rounded-xl border border-border bg-card p-5">
               <div className="mb-5 flex items-center justify-between border-b border-border pb-4">
-                <h2 className="text-base font-semibold text-foreground">Edit details</h2>
+                <h2 className="text-xl font-semibold text-foreground">Edit details</h2>
                 <button
                   type="button"
                   onClick={handleCancel}
@@ -490,8 +497,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
                         Selected days are excluded from leave duration and shown as weekend
-                        on the employee dashboard. Toggle Saturday for a 5-day week, or add
-                        more days as needed.
+                        on the employee dashboard.
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -515,41 +521,6 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                         );
                       })}
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() =>
-                          setFormData({ ...formData, weekendDays: [6] })
-                        }
-                      >
-                        Sun only
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() =>
-                          setFormData({ ...formData, weekendDays: [5, 6] })
-                        }
-                      >
-                        Sat + Sun
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() =>
-                          setFormData({ ...formData, weekendDays: [4, 5] })
-                        }
-                      >
-                        Fri + Sat
-                      </Button>
-                    </div>
                   </div>
                 </div>
 
@@ -565,8 +536,7 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
                       </>
                     ) : (
                       <>
-                        <Save className="mr-2 h-4 w-4" />
-                        Save changes
+                        Save Changes
                       </>
                     )}
                   </Button>
@@ -636,8 +606,8 @@ export default function OrganizationProfile({ id }: OrganizationProfileProps) {
               <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-card p-5 sm:flex-row sm:items-center">
                 <div>
                   <h3 className="text-sm font-semibold text-foreground">Employees</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {organization.employeeCount || 0} people in this organization
+                  <p className="mt-0.5 text-sm text-muted-foreground font-bold">
+                    {organization.employeeCount || 0}
                   </p>
                 </div>
                 <Button onClick={() => router.push("/employees")} variant="outline">

@@ -57,3 +57,42 @@ export const VERIFY_VAULT_DOCUMENT = gql`
     }
   }
 `;
+
+export const ORG_EMPLOYEE_DOCUMENT_REQUESTS = gql`
+  query OrgEmployeeDocumentRequests($status: String) {
+    orgEmployeeDocumentRequests(status: $status) {
+      id
+      category
+      customTitle
+      reason
+      status
+      issuedDocumentUrl
+      issuedAt
+      rejectedReason
+      createdAt
+      userId
+      userName
+      userEmail
+    }
+  }
+`;
+
+export const ISSUE_EMPLOYEE_DOCUMENT = gql`
+  mutation IssueEmployeeDocument($input: IssueEmployeeDocumentInput!) {
+    issueEmployeeDocument(input: $input) {
+      success
+      error
+      id
+    }
+  }
+`;
+
+export const REJECT_EMPLOYEE_DOCUMENT = gql`
+  mutation RejectEmployeeDocument($input: RejectEmployeeDocumentInput!) {
+    rejectEmployeeDocument(input: $input) {
+      success
+      error
+      id
+    }
+  }
+`;

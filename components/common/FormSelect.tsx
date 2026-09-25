@@ -27,6 +27,7 @@ interface FormSelectProps {
   className?: string;
   /** Used to scroll/focus the control after validation fails */
   name?: string;
+  disabled?: boolean;
 }
 
 export function FormSelect({
@@ -40,6 +41,7 @@ export function FormSelect({
   children,
   className,
   name,
+  disabled,
 }: FormSelectProps) {
   return (
     <div data-field={name || undefined}>
@@ -52,6 +54,7 @@ export function FormSelect({
         // Radix Select treats "" as invalid and blanks the trigger — use undefined instead
         value={value || undefined}
         onValueChange={onValueChange}
+        disabled={disabled}
       >
         <SelectTrigger className={cn("h-auto px-5 py-4 w-full bg-background border rounded-2xl text-sm font-medium text-foreground transition-all duration-300 focus:ring-4 focus:ring-primary/10",
           error ? "border-destructive/50" : "border-border focus:border-primary/50",

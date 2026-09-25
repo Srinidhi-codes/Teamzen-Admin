@@ -39,6 +39,7 @@ import {
 import { useStore } from "@/lib/store/useStore";
 import { SegmentedTabs } from "@/components/common/SegmentedTabs";
 import { PageSkeleton, Skeleton } from "@/components/common/Skeleton";
+import { AdaptiveModal } from "@/components/common/AdaptiveModal";
 import {
   OrganizationFilterSelect,
   PlanFilterSelect,
@@ -172,27 +173,27 @@ export default function OrganizationsPage() {
 
   const createLabel =
     activeTab === "offices"
-      ? "Add office"
+      ? "Add Office"
       : activeTab === "organizations"
-        ? "Add organization"
+        ? "Add Organization"
         : activeTab === "departments"
-          ? "Add department"
-          : "Add designation";
+          ? "Add Department"
+          : "Add Designation";
 
   const dialogTitle =
     activeForm === "organization"
-      ? "Add organization"
+      ? "Add Organization"
       : activeForm === "office"
         ? editingOffLoc
-          ? "Edit office"
-          : "Add office"
+          ? "Edit Office"
+          : "Add Office"
         : activeForm === "department"
           ? editingDept
-            ? "Edit department"
-            : "Add department"
+            ? "Edit Department"
+            : "Add Department"
           : editingDesig
-            ? "Edit designation"
-            : "Add designation";
+            ? "Edit Designation"
+            : "Add Designation";
 
   return (
     <div className="page-shell">
@@ -236,12 +237,14 @@ export default function OrganizationsPage() {
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-          <SearchInput
-            placeholder={`Search ${activeTab}…`}
-            value={search}
-            onChange={setSearch}
-            containerClassName="max-w-md"
-          />
+          {!(activeTab === "organizations" && !isSuperadmin) && (
+            <SearchInput
+              placeholder={`Search ${activeTab}…`}
+              value={search}
+              onChange={setSearch}
+              containerClassName="max-w-md"
+            />
+          )}
           {isSuperadmin && activeTab === "organizations" && (
             <>
               <PlanFilterSelect value={planFilter} onChange={setPlanFilter} />
@@ -312,45 +315,40 @@ export default function OrganizationsPage() {
         </>
       )}
 
-      <Dialog open={activeForm !== null} onOpenChange={(open) => !open && closeForm()}>
-        <DialogContent className="flex h-[min(90vh,640px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
-          <DialogHeader className="shrink-0 border-b border-border px-6 py-4 text-left">
-            <DialogTitle>{dialogTitle}</DialogTitle>
-            <DialogDescription>
-              Fill in the details below and save when you’re done.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5">
-            {activeForm === "organization" && (
-              <CreateOrganizationForm
-                onCancel={closeForm}
-                onSubmit={async () => closeForm()}
-              />
-            )}
-            {activeForm === "office" && (
-              <AddOfficeForm
-                officeLocationEditData={editingOffLoc}
-                onCancel={closeForm}
-                onSubmit={async () => closeForm()}
-              />
-            )}
-            {activeForm === "department" && (
-              <AddDepartmentForm
-                departmentEditData={editingDept}
-                onCancel={closeForm}
-                onSubmit={async () => closeForm()}
-              />
-            )}
-            {activeForm === "designation" && (
-              <AddDesignationForm
-                designationEditData={editingDesig}
-                onCancel={closeForm}
-                onSubmit={async () => closeForm()}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AdaptiveModal
+        open={activeForm !== null}
+        onOpenChange={(open) => !open && closeForm()}
+        title={dialogTitle || ""}
+        description="Fill in the details below and save when you’re done."
+      >
+        {activeForm === "organization" && (
+          <CreateOrganizationForm
+            onCancel={closeForm}
+            onSubmit={async () => closeForm()}
+          />
+        )}
+        {activeForm === "office" && (
+          <AddOfficeForm
+            officeLocationEditData={editingOffLoc}
+            onCancel={closeForm}
+            onSubmit={async () => closeForm()}
+          />
+        )}
+        {activeForm === "department" && (
+          <AddDepartmentForm
+            departmentEditData={editingDept}
+            onCancel={closeForm}
+            onSubmit={async () => closeForm()}
+          />
+        )}
+        {activeForm === "designation" && (
+          <AddDesignationForm
+            designationEditData={editingDesig}
+            onCancel={closeForm}
+            onSubmit={async () => closeForm()}
+          />
+        )}
+      </AdaptiveModal>
     </div>
   );
 }
