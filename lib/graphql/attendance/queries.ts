@@ -153,6 +153,15 @@ export const GET_ORG_ATTENDANCE_RECORDS = gql`
           longitude
           geoRadiusMeters
         }
+        isWeekendWork
+        isOffHours
+        approvalStatus
+        approvalRemarks
+        approvedBy {
+          id
+          firstName
+          lastName
+        }
         heartbeats {
           id
           timestamp
@@ -168,6 +177,21 @@ export const GET_ORG_ATTENDANCE_RECORDS = gql`
       total
       page
       pageSize
+    }
+  }
+`;
+
+export const APPROVE_OR_REJECT_OFF_HOURS_ATTENDANCE = gql`
+  mutation ApproveOrRejectOffHoursAttendance($input: ApproveOffHoursAttendanceInput!) {
+    approveOrRejectOffHoursAttendance(input: $input) {
+      success
+      message
+      record {
+        id
+        status
+        approvalStatus
+        approvalRemarks
+      }
     }
   }
 `;
