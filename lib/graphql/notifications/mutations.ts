@@ -13,8 +13,8 @@ export const MARK_ALL_READ = gql`
 `;
 
 export const SEND_BROADCAST_NOTIFICATION = gql`
-  mutation SendBroadcastNotification($message: String!, $verb: String, $notificationType: String) {
-    sendBroadcastNotification(message: $message, verb: $verb, notificationType: $notificationType)
+  mutation SendBroadcastNotification($message: String!, $verb: String, $notificationType: String, $sendToBots: Boolean, $imageBase64: String) {
+    sendBroadcastNotification(message: $message, verb: $verb, notificationType: $notificationType, sendToBots: $sendToBots, imageBase64: $imageBase64)
   }
 `;
 

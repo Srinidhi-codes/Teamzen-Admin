@@ -1,7 +1,18 @@
 import { User } from "../users/types";
 
-export interface AttendanceRecord {
+export interface AttendanceHeartbeat {
+  id: string;
+  timestamp: string;
+  latitude: number;
+  longitude: number;
+  distanceMeters: number;
+  isWithinGeofence: boolean;
+  accuracyMeters?: number | null;
+  isMocked: boolean;
+  batteryLevel?: number | null;
+}
 
+export interface AttendanceRecord {
   id: string;
   attendanceDate: string;
 
@@ -10,16 +21,46 @@ export interface AttendanceRecord {
   loginDistance?: number;
   logoutDistance?: number;
 
-  status: "present" | "absent" | "half_day" | "leave" | "holiday";
+  status: "present" | "absent" | "half_day" | "leave" | "holiday" | "late_login" | "early_logout";
   workedHours?: number | null;
+  effectiveWorkedHours?: number | null;
+  totalHeartbeats?: number;
+  validHeartbeats?: number;
+  outOfFenceHeartbeats?: number;
+  roamingAnomalyDetected?: boolean;
+  roamingNotes?: string | null;
+  heartbeats?: AttendanceHeartbeat[];
+  user?: User;
 
   isWithinGeofence: boolean;
+  faceVerified?: boolean;
+  faceMatchScore?: number | null;
+  checkInSelfieUrl?: string | null;
+  checkOutSelfieUrl?: string | null;
   remarks?: string | null;
 
   correctionStatus?: string;
   correctionId?: string;
   correctionReason?: string;
   approvalComment?: string;
+
+  isWeekendWork?: boolean;
+  isOffHours?: boolean;
+  approvalStatus?: "auto_approved" | "pending" | "approved" | "rejected";
+  approvalRemarks?: string | null;
+  approvedBy?: User | null;
+
+  loginLatitude?: number | null;
+  loginLongitude?: number | null;
+  logoutLatitude?: number | null;
+  logoutLongitude?: number | null;
+  officeLocation?: {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    geoRadiusMeters: number;
+  } | null;
 }
 
 export interface AttendanceCorrection {
@@ -36,10 +77,45 @@ export interface AttendanceCorrection {
   requestedBy: User;
 }
 
-
 export type AttendanceInput = {
   startDate?: string;
   endDate?: string;
+};
+
+export type OrgAttendanceFilterInput = {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+  search?: string;
+  status?: string;
+  roamingOnly?: boolean;
+  approvalStatus?: string;
+  isWeekendWork?: boolean;
+  isOffHours?: boolean;
+  organizationId?: string;
+};
+
+export type ApproveOffHoursAttendanceInput = {
+  recordId: string;
+  status: "approved" | "rejected";
+  approvalRemarks?: string;
+};
+
+export type ApproveOffHoursAttendanceResponse = {
+  approveOrRejectOffHoursAttendance: {
+    success: boolean;
+    message: string;
+    record?: AttendanceRecord;
+  };
+};
+
+export type GetOrgAttendanceRecordsResponse = {
+  orgAttendanceRecords: {
+    results: AttendanceRecord[];
+    total: number;
+    page: number;
+    pageSize: number;
+  };
 };
 
 export type GetAttendanceResponse = {

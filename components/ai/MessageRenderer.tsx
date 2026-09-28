@@ -1,10 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { X, Calendar, Building2 } from "lucide-react";
 import { useMessageParser } from "./useMessageParser";
+import { useChatTypewriter } from "./useChatTypewriter";
 import { InsightCard } from "./cards/InsightCard";
 import { PayrollCard } from "./cards/PayrollCard";
+import { CitationChips } from "./CitationChips";
+import { CorrectionCard } from "./cards/CorrectionCard";
+import { RouteCard } from "./cards/RouteCard";
+import { TypingIndicator } from "./TypingIndicator";
+import type { PolicySource } from "@/lib/api/assistant";
 
 interface MessageRendererProps {
     content: string;
@@ -12,24 +19,168 @@ interface MessageRendererProps {
     handleSend?: (e?: React.FormEvent, customQuery?: string) => void;
     isLast?: boolean;
     isStreaming?: boolean;
+    activeTool?: { name: string; status: 'running' | 'completed' } | null;
+    sources?: PolicySource[];
 }
 
-export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming }: MessageRendererProps) => {
-    const parts = useMessageParser(content);
-    const showDots = isLast && isStreaming && role === 'assistant' && (parts.length === 0 || (parts.length === 1 && !parts[0].value.trim()));
+const renderInlineFormatting = (text: string, onPrimary = false) => {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return parts.map((part, idx) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+            const cleanBoldText = part.slice(2, -2);
+            return (
+                <span
+                    key={idx}
+                    className={cn(
+                        "font-semibold",
+                        onPrimary ? "text-primary-foreground" : "text-foreground"
+                    )}
+                >
+                    {cleanBoldText}
+                </span>
+            );
+        }
+        return part;
+    });
+};
 
-    if (showDots) {
+const renderTextWithFormatting = (
+    text: string,
+    trailingCursor?: React.ReactNode,
+    onPrimary = false
+) => {
+    let lines = text.split('\n');
+    const processedLines: string[] = [];
+    for (const line of lines) {
+        if (line.includes(' - **') || line.includes(' - *')) {
+            const parts = line.split(/(?=\s-\s)/);
+            for (const part of parts) {
+                processedLines.push(part.replace(/^\s*-\s*/, '').trim());
+            }
+        } else {
+            processedLines.push(line);
+        }
+    }
+    lines = processedLines;
+
+    return (
+        <div className="space-y-1.5 w-full">
+            {lines.map((line, lineIdx) => {
+                const isLastLine = lineIdx === lines.length - 1;
+                let currentLine = line.trim();
+                
+                if (currentLine === '') {
+                    return <div key={lineIdx} className="h-1" />;
+                }
+
+                const isOriginalListItem = /^[-*•]\s+/.test(line.trim());
+                currentLine = currentLine.replace(/^[-*•]\s+/, '');
+
+                const isHeading = line.trim().startsWith('###') || line.trim().startsWith('##') || line.trim().startsWith('#');
+                if (isHeading) {
+                    const cleanText = line.trim().replace(/^#+\s*/, '');
+                    return (
+                        <h4 
+                            key={lineIdx} 
+                            className={cn(
+                                "font-semibold text-sm pb-1 mb-1 mt-2 border-b",
+                                onPrimary
+                                    ? "text-primary-foreground border-primary-foreground/25"
+                                    : "text-foreground border-border"
+                            )}
+                        >
+                            {renderInlineFormatting(cleanText, onPrimary)}
+                            {isLastLine && trailingCursor}
+                        </h4>
+                    );
+                }
+
+                const isSubHeaderOnly = currentLine.endsWith(':') && !isOriginalListItem;
+                if (isSubHeaderOnly) {
+                    return (
+                        <div 
+                            key={lineIdx} 
+                            className={cn(
+                                "font-semibold text-sm mt-2 mb-0.5",
+                                onPrimary ? "text-primary-foreground" : "text-foreground"
+                            )}
+                        >
+                            {renderInlineFormatting(currentLine, onPrimary)}
+                            {isLastLine && trailingCursor}
+                        </div>
+                    );
+                }
+                
+                if (isOriginalListItem) {
+                    return (
+                        <div 
+                            key={lineIdx} 
+                            className="flex items-start gap-2 text-sm leading-relaxed pl-0.5"
+                        >
+                            <span
+                                className={cn(
+                                    "mt-2 shrink-0 block w-1 h-1 rounded-full",
+                                    onPrimary ? "bg-primary-foreground/70" : "bg-primary/70"
+                                )}
+                            />
+                            <span className="flex-1">
+                                {renderInlineFormatting(currentLine, onPrimary)}
+                                {isLastLine && trailingCursor}
+                            </span>
+                        </div>
+                    );
+                }
+                
+                return (
+                    <p key={lineIdx} className="text-sm leading-relaxed">
+                        {renderInlineFormatting(currentLine, onPrimary)}
+                        {isLastLine && trailingCursor}
+                    </p>
+                );
+            })}
+        </div>
+    );
+};
+
+export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming, activeTool, sources }: MessageRendererProps) => {
+    const [typeSession, setTypeSession] = useState(false);
+    useEffect(() => {
+        if (isStreaming && role === "assistant" && isLast) {
+            setTypeSession(true);
+        }
+    }, [isStreaming, role, isLast]);
+
+    const typewriterOn = role === "assistant" && !!isLast && (isStreaming || typeSession);
+    const { revealed, isTyping, done } = useChatTypewriter(content, typewriterOn);
+
+    useEffect(() => {
+        if (done && !isStreaming && typeSession) {
+            setTypeSession(false);
+        }
+    }, [done, isStreaming, typeSession]);
+
+    useEffect(() => {
+        if (!isLast || role !== "assistant") {
+            setTypeSession(false);
+        }
+    }, [isLast, role]);
+
+    const parts = useMessageParser(revealed);
+    const waitingForFirstToken =
+        typewriterOn && !content.trim() && (isStreaming || !!activeTool);
+
+    if (waitingForFirstToken) {
         return (
-            <div className="bg-muted/50 border border-border rounded-3xl rounded-tl-none p-4 flex items-center gap-1.5 w-max">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+            <div className="animate-in fade-in duration-300">
+                <TypingIndicator activeTool={activeTool} />
             </div>
         );
     }
 
+    const showCursor = typewriterOn && (isStreaming || isTyping);
+
     return (
-        <div className="space-y-3 w-full">
+        <div className="space-y-2.5 w-full">
             {parts.map((part, idx) => {
                 if (part.type === 'text') {
                     const text = part.value.trim();
@@ -37,23 +188,26 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     
                     if (!text) return null;
                     
+                    const isUser = role === 'user';
+                    const cursor = showCursor && isFinalPart ? (
+                        <span className="inline-block w-[2px] h-3.5 bg-current/70 ml-0.5 animate-pulse align-middle rounded-sm" />
+                    ) : undefined;
+                    
                     return (
                         <div key={idx} className={cn(
-                            "max-w-[85%] p-4 rounded-3xl text-sm leading-relaxed relative",
-                            role === 'user'
-                                ? "bg-primary text-primary-foreground rounded-tr-none ml-auto"
-                                : "bg-muted/50 border border-border rounded-tl-none font-medium text-foreground/90"
+                            "px-3.5 py-2.5 text-sm leading-relaxed relative shadow-sm",
+                            isUser
+                                ? "max-w-[min(100%,340px)] ml-auto rounded-2xl rounded-br-md bg-primary text-primary-foreground"
+                                : "w-full max-w-full rounded-2xl rounded-bl-md border border-border/70 bg-background/95 text-foreground"
                         )}>
-                            {text}
-                            {isLast && isStreaming && isFinalPart && (
-                                <span className="inline-block w-2 h-4 bg-primary/40 ml-1 animate-pulse align-middle rounded-sm" />
-                            )}
+                            {renderTextWithFormatting(text, cursor, isUser)}
                         </div>
                     );
                 } else if (part.type === 'balance') {
-                         const { name, total, used, available } = part.value;
+                         const { name, total, used, available, pending } = part.value;
                          const usedNum = parseFloat(used) || 0;
                          const totalNum = parseFloat(total) || 1;
+                         const pendingNum = parseFloat(pending) || 0;
                          const percent = Math.min((usedNum / totalNum) * 100, 100);
 
                          return (
@@ -77,6 +231,7 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                                  <div className="space-y-2">
                                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider">
                                          <span>Used: {used}</span>
+                                         {pendingNum > 0 && <span className="text-yellow-600 dark:text-yellow-500">Pending: {pending}</span>}
                                          <span>Total: {total}</span>
                                      </div>
                                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
@@ -142,9 +297,41 @@ export const MessageRenderer = ({ content, role, handleSend, isLast, isStreaming
                     return <InsightCard key={idx} {...part.value} />;
                 } else if (part.type === 'payroll') {
                     return <PayrollCard key={idx} {...part.value} />;
+                } else if (part.type === 'route') {
+                    return (
+                        <RouteCard
+                            key={idx}
+                            path={part.value.path || part.value.href || ""}
+                            label={part.value.label}
+                            reason={part.value.reason || part.value.message}
+                        />
+                    );
+                } else if (part.type === 'correction') {
+                    return (
+                        <CorrectionCard
+                            key={idx}
+                            id={String(part.value.id)}
+                            date={part.value.date}
+                            login={part.value.login}
+                            suggested_logout={part.value.suggested_logout}
+                            reason={part.value.reason}
+                            onConfirm={(id, suggested) => {
+                                const timePart = suggested && suggested !== '—'
+                                    ? ` with logout time ${suggested}`
+                                    : '';
+                                handleSend?.(
+                                    undefined,
+                                    `Confirm attendance correction ID ${id}${timePart}`
+                                );
+                            }}
+                        />
+                    );
                 }
                 return null;
             })}
+            {role === 'assistant' && sources && sources.length > 0 && !isTyping && (
+                <CitationChips sources={sources} />
+            )}
         </div>
     );
 };

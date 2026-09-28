@@ -6,6 +6,8 @@ export interface Organization {
     };
     gstNumber?: string;
     panNumber?: string;
+    tanNumber?: string;
+    citTdsOffice?: string;
     headquartersAddress?: string;
     isActive: boolean;
     registrationNumber: string;
@@ -13,6 +15,13 @@ export interface Organization {
     createdAt: string;
     updatedAt: string;
     llmApiKey?: string;
+    accent?: string;
+    canCustomizeAccent?: boolean;
+    faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
+    plan?: string;
+    planExpiresAt?: string | null;
+    daysUntilPlanExpiry?: number | null;
 }
 
 export interface OfficeLocation {
@@ -28,6 +37,11 @@ export interface OfficeLocation {
     latitude: number;
     longitude: number;
     geoRadiusMeters: number;
+    organizationId?: string;
+    organization?: {
+        id: string;
+        name: string;
+    };
     isActive: boolean;
     createdAt: string;
 }
@@ -55,10 +69,15 @@ export interface CreateOrganizationInput {
     logo?: string;
     gstNumber?: string;
     panNumber?: string;
+    tanNumber?: string;
+    citTdsOffice?: string;
     registrationNumber?: string;
     headquartersAddress?: string;
     isActive: boolean;
     llmApiKey?: string;
+    accent?: string;
+    faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
 }
 
 export interface OrganizationInput {
@@ -66,11 +85,16 @@ export interface OrganizationInput {
     logo?: string;
     gstNumber?: string;
     panNumber?: string;
+    tanNumber?: string;
+    citTdsOffice?: string;
     registrationNumber?: string;
     headquartersAddress?: string;
     isActive: boolean;
     id: string;
     llmApiKey?: string;
+    accent?: string;
+    faceAttendanceEnabled?: boolean;
+    weekendDays?: number[];
 }
 
 export interface CreateOfficeLocationInput {

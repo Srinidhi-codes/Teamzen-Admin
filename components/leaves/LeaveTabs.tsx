@@ -1,30 +1,33 @@
-
 interface LeaveTabsProps {
-    tabs: { id: string; label: string; icon: React.ReactNode; color?: string }[];
-    activeTab: string;
-    setActiveTab: (id: string) => void;
+  tabs: { id: string; label: string; icon: React.ReactNode; color?: string }[];
+  activeTab: string;
+  setActiveTab: (id: string) => void;
 }
 
 export function LeaveTabs({ tabs, activeTab, setActiveTab }: LeaveTabsProps) {
-
-
-    return (
-        <div className="p-2 rounded-[1.5rem] border border-border inline-flex space-x-1 overflow-x-auto bg-muted/40 backdrop-blur-md">
-            {tabs.map((tab) => (
-                <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-8 py-3.5 rounded-2xl text-premium-label transition-all duration-500 flex items-center space-x-3 whitespace-nowrap active:scale-95 ${activeTab === tab.id
-                        ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 -translate-y-0.5"
-                        : "text-muted-foreground hover:bg-background hover:text-foreground hover:shadow-lg hover:shadow-primary/5"
-                        }`}
-                >
-                    <span className="text-xl group-hover:scale-110 transition-transform">{tab.icon}</span>
-                    <span className="hidden sm:inline">{tab.label}</span>
-                </button>
-            ))}
-        </div>
-
-
-    );
+  return (
+    <div className="relative flex w-full gap-0 overflow-x-auto border-b border-border">
+      {tabs.map((tab) => {
+        const active = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            className={
+              active
+                ? "relative inline-flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground"
+                : "relative inline-flex shrink-0 items-center gap-2 px-4 py-2.5 text-sm text-muted-foreground hover:text-foreground"
+            }
+          >
+            <span className="h-4 w-4 shrink-0">{tab.icon}</span>
+            <span className="hidden sm:inline">{tab.label}</span>
+            {active && (
+              <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
 }

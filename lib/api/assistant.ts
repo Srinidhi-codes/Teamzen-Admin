@@ -3,10 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import client from "./client";
 import { API_ENDPOINTS } from "./endpoints";
 
+export type PolicySource = {
+    title: string;
+    page_number?: number | null;
+    file_id?: number | null;
+    file_url?: string | null;
+    chunk_id?: number;
+    score?: number;
+    match_type?: string;
+};
+
 export type ChatMessage = {
     role: 'user' | 'assistant';
     content: string;
     timestamp?: string;
+    sources?: PolicySource[];
 };
 
 export type AssistantResponse = {
@@ -21,12 +32,14 @@ export const useAssistant = () => {
     const { data, isLoading: isHistoryLoading } = useQuery({
         queryKey: ['assistant-history'],
         queryFn: async () => {
-            const response = await client.get<{ 
+            const response = await client.get<{
                 history: ChatMessage[],
-                config: { model_name: string } 
+                config: { model_name: string }
             }>(`${API_ENDPOINTS.SMART_CHAT}?context=admin`);
             return response.data;
         },
+        retry: 1,
+        refetchOnWindowFocus: false,
     });
 
     const [history, setHistory] = useState<ChatMessage[]>([]);
@@ -38,20 +51,30 @@ export const useAssistant = () => {
     }, [data]);
 
     const [isStreaming, setIsStreaming] = useState(false);
+    const [activeTool, setActiveTool] = useState<{ name: string; status: 'running' | 'completed' } | null>(null);
 
     const sendMessage = async ({ query, latitude, longitude }: { query: string, latitude?: number, longitude?: number }) => {
         setIsStreaming(true);
+        setActiveTool(null);
 
         try {
             // 2. Prepare streaming message
-            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString() };
+            const sourcesThisResponse: PolicySource[] = [];
+            const assistantMsg: ChatMessage = { role: 'assistant', content: '', timestamp: new Date().toISOString(), sources: [] };
             setHistory(prev => [...prev, assistantMsg]);
 
             // 3. Start Stream
             const response = await fetch(`/api${API_ENDPOINTS.SMART_CHAT}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, latitude, longitude, context: 'admin' }),
+                body: JSON.stringify({
+                    query,
+                    latitude,
+                    longitude,
+                    context: 'admin',
+                    page_path:
+                        typeof window !== 'undefined' ? window.location.pathname : '',
+                }),
                 credentials: 'include',
             });
 
@@ -87,6 +110,26 @@ export const useAssistant = () => {
                                     }
                                     return newHistory;
                                 });
+                            } else if (data.tool_start) {
+                                setActiveTool({ name: data.tool_start, status: 'running' });
+                            } else if (data.tool_end) {
+                                setActiveTool({ name: data.tool_end, status: 'completed' });
+                            } else if (data.sources && Array.isArray(data.sources)) {
+                                for (const src of data.sources as PolicySource[]) {
+                                    const key = `${src.file_id}-${src.page_number}-${src.chunk_id}`;
+                                    const exists = sourcesThisResponse.some(
+                                        s => `${s.file_id}-${s.page_number}-${s.chunk_id}` === key
+                                    );
+                                    if (!exists) sourcesThisResponse.push(src);
+                                }
+                                setHistory(prev => {
+                                    const newHistory = [...prev];
+                                    const last = newHistory[newHistory.length - 1];
+                                    if (last && last.role === 'assistant') {
+                                        last.sources = [...sourcesThisResponse];
+                                    }
+                                    return newHistory;
+                                });
                             } else if (data.error) {
                                 // Handle backend errors gracefully
                                 const errorMsg = `[ERROR_CARD] title: Assistant Error | message: ${data.error} [/ERROR_CARD]`;
@@ -100,8 +143,17 @@ export const useAssistant = () => {
                                 });
                                 break; // Stop streaming on error
                             } else if (data.history) {
-                                // Final sync
-                                setHistory(data.history);
+                                // Final sync — preserve sources
+                                setHistory(() => {
+                                    const serverHistory: ChatMessage[] = data.history;
+                                    if (sourcesThisResponse.length > 0 && serverHistory.length > 0) {
+                                        const lastMsg = serverHistory[serverHistory.length - 1];
+                                        if (lastMsg.role === 'assistant') {
+                                            lastMsg.sources = sourcesThisResponse;
+                                        }
+                                    }
+                                    return serverHistory;
+                                });
                             }
                         } catch (e) {
                             console.warn("Error parsing stream chunk", e);
@@ -113,6 +165,7 @@ export const useAssistant = () => {
             console.error("Streaming error", error);
         } finally {
             setIsStreaming(false);
+            setActiveTool(null);
             queryClient.invalidateQueries({ queryKey: ['assistant-history'] });
         }
     };
@@ -134,6 +187,7 @@ export const useAssistant = () => {
         isLoading: isStreaming || isHistoryLoading,
         isHistoryLoading,
         isStreaming,
+        activeTool,
         clearHistory,
         config: data?.config
     };

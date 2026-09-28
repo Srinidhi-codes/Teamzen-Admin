@@ -1,157 +1,179 @@
 "use client";
 
 import { User } from "@/lib/graphql/users/types";
-import {
-    Mail,
-    Phone,
-    Building2,
-    ShieldCheck,
-    Edit,
-    UserX,
-    UserCheck as UserCheckIcon,
-    MoreVertical,
-    Compass
-} from "lucide-react";
+import { Mail, Phone, Building2, Edit, MapPin, ClipboardList, Loader2, LogOut } from "lucide-react";
 import { Switch } from "../ui/switch";
 import Image from "next/image";
+import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
+import { cn } from "@/lib/utils";
+import { PhotoOverlay } from "@/components/common/PhotoOverlay";
 
 interface EmployeeCardProps {
-    employee: User;
-    onEdit: (employee: User) => void;
-    onStatusToggle: (userId: string, newStatus: boolean) => void;
+  employee: User;
+  onEdit: (employee: User) => void;
+  onStatusToggle: (userId: string, newStatus: boolean) => void;
+  onStartOnboarding?: (employee: User) => void | Promise<void>;
+  startingOnboardingId?: string | null;
+  onStartOffboarding?: (employee: User) => void | Promise<void>;
+  startingOffboardingId?: string | null;
 }
 
-export default function EmployeeCard({ employee, onEdit, onStatusToggle }: EmployeeCardProps) {
-    const { user: currentUser } = useStore();
-    const isAdminOrHr = currentUser?.role === 'admin' || currentUser?.role === 'hr' || currentUser?.role === 'superadmin';
+export default function EmployeeCard({
+  employee,
+  onEdit,
+  onStatusToggle,
+  onStartOnboarding,
+  startingOnboardingId,
+  onStartOffboarding,
+  startingOffboardingId,
+}: EmployeeCardProps) {
+  const [isPhotoOpen, setIsPhotoOpen] = useState(false);
+  const { user: currentUser } = useStore();
+  const isAdminOrHr =
+    currentUser?.role === "admin" ||
+    currentUser?.role === "hr" ||
+    currentUser?.role === "superadmin";
+  const isStarting = startingOnboardingId === employee.id;
+  const isStartingFnf = startingOffboardingId === employee.id;
 
-    return (
-        <div className="group premium-card p-0 overflow-hidden hover:scale-102 flex flex-col border-border/50 transition-all duration-500">
-            {/* Header / Banner */}
-            <div className="h-24 bg-linear-to-br from-primary/20 via-primary/5 to-background relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-full opacity-10">
-                    <Building2 className="w-48 h-48 -rotate-12 translate-x-32 -translate-y-16" />
-                </div>
-                <div className="absolute top-4 right-4">
-                    <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border backdrop-blur-xl shadow-sm ${employee.isActive
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                        : "bg-destructive/10 border-destructive/20 text-destructive"
-                        }`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${employee.isActive ? "bg-emerald-500" : "bg-destructive"} shadow-xs`} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                            {employee.isActive ? "Active" : "Inactive"}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="px-6 pb-6 flex-1 flex flex-col">
-                {/* Profile Picture & Basic Info */}
-                <div className="-mt-10 mb-6 flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-4">
-                        <div className="w-20 h-20 bg-card border-4 border-background rounded-3xl flex items-center justify-center shadow-2xl overflow-hidden relative">
-                            {employee.profilePictureUrl ? (
-                                <Image src={employee.profilePictureUrl} alt={employee.firstName} fill className="object-cover" />
-                            ) : (
-                                <div className="w-full h-full bg-primary/10 text-primary flex items-center justify-center font-black text-2xl">
-                                    {employee.firstName.charAt(0)}
-                                </div>
-                            )}
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-black text-foreground tracking-tight leading-none truncate max-w-[150px]">
-                                {employee.firstName} {employee.lastName}
-                            </h3>
-                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1.5">
-                                {employee.designation?.name || 'Talent'}
-                            </p>
-                        </div>
-                    </div>
-
-                    {isAdminOrHr && (
-                        <button
-                            onClick={() => onEdit(employee)}
-                            className="p-2 rounded-xl bg-card border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
-
-                {/* Details */}
-                <div className="space-y-4 flex-1">
-                    <div className="grid grid-cols-1 gap-3">
-                        <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/30 border border-border/50 group/item hover:bg-muted/50 transition-colors">
-                            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center text-primary shadow-sm">
-                                <Mail className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-1">Email</p>
-                                <p className="text-xs font-bold text-foreground truncate">{employee.email}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/30 border border-border/50 group/item hover:bg-muted/50 transition-colors">
-                            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center text-primary shadow-sm">
-                                <Phone className="w-4 h-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-1">Phone</p>
-                                <p className="text-xs font-bold text-foreground truncate">{employee.phoneNumber || 'N/A'}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/30 border border-border/50 group/item hover:bg-muted/50 transition-colors">
-                            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center text-primary shadow-sm">
-                                <Building2 className="w-4 shadow-sm" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-1">Department</p>
-                                <p className="text-xs font-bold text-foreground truncate">{employee.department?.name || 'General'}</p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 p-2.5 rounded-2xl bg-muted/30 border border-border/50 group/item hover:bg-muted/50 transition-colors">
-                            <div className="w-8 h-8 rounded-lg bg-card flex items-center justify-center text-primary shadow-sm">
-                                <Compass className="w-4 h-4 shadow-sm" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-1">Office</p>
-                                <p className="text-xs font-bold text-foreground truncate">{employee.officeLocation?.name || 'Main Office'}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-muted-foreground/60" />
-                            <span className="text-[10px] font-bold py-1 px-2.5 bg-muted rounded-lg text-muted-foreground uppercase tracking-wider">
-                                {employee.employmentType?.replace('_', ' ') || 'Part Time'}
-                            </span>
-                        </div>
-                        <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">
-                            ID: {employee.id.substring(0, 8).toUpperCase()}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Footer Controls */}
-                {isAdminOrHr && (
-                    <div className="mt-6 pt-5 border-t border-border/40 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest">System Access</span>
-                            <Switch
-                                checked={employee.isActive}
-                                onCheckedChange={(checked) => onStatusToggle(employee.id, checked)}
-                            />
-                        </div>
-                        <p className="text-[10px] font-bold text-muted-foreground/40">
-                            Joined {employee.dateOfJoining ? new Date(employee.dateOfJoining).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : 'N/A'}
-                        </p>
-                    </div>
+  return (
+    <>
+    <div className="flex flex-col rounded-2xl border border-border bg-card overflow-hidden relative shadow-sm hover:shadow-md transition-shadow">
+      {/* ID Card Banner Header */}
+      <div 
+        className="h-24 w-full relative bg-gradient-to-r from-primary/10 to-primary/5"
+        style={employee.organization?.accent ? { background: `linear-gradient(135deg, ${employee.organization.accent}20, transparent)` } : undefined}
+      >
+        <div className="absolute top-3 right-3">
+            <span
+                className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                employee.isActive
+                    ? "bg-emerald-500 text-white dark:bg-emerald-600"
+                    : "bg-destructive text-white"
                 )}
+            >
+                {employee.isActive ? "Active" : "Inactive"}
+            </span>
+        </div>
+      </div>
+
+      {/* Profile Photo & ID Number */}
+      <div className="px-5 relative flex justify-between items-end -mt-12 mb-3">
+        <button
+          type="button"
+          onClick={() => employee.profilePictureUrl && setIsPhotoOpen(true)}
+          className={cn(
+            "relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-sm",
+            employee.profilePictureUrl ? "cursor-zoom-in" : "cursor-default"
+          )}
+          title={employee.profilePictureUrl ? "View photo" : undefined}
+        >
+          {employee.profilePictureUrl ? (
+            <Image
+              src={employee.profilePictureUrl}
+              alt=""
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-primary bg-primary/10">
+              {employee.firstName?.charAt(0)}
+              {employee.lastName?.charAt(0)}
+            </div>
+          )}
+        </button>
+        
+        {employee.employeeId && (
+            <div className="text-right pb-1">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">ID Number</p>
+                <p className="font-mono text-sm font-bold text-foreground bg-muted/50 px-2 py-0.5 rounded border border-border/50 mt-0.5">{employee.employeeId}</p>
+            </div>
+        )}
+      </div>
+
+      {/* Main Details */}
+      <div className="flex flex-1 flex-col px-5 pb-5">
+        <div className="mb-5">
+            <h3 className="truncate text-xl font-bold text-foreground tracking-tight">
+                {employee.firstName} {employee.lastName}
+            </h3>
+            <p className="truncate text-sm font-semibold text-primary mt-0.5">
+                {employee.designation?.name || "No designation"}
+            </p>
+            <p className="truncate text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                <Building2 className="h-3 w-3" />
+                {employee.organization?.name || employee.department?.name
+                ? `${employee.organization?.name || ""} ${employee.organization?.name && employee.department?.name ? '·' : ''} ${employee.department?.name || ""}`
+                : "No department"}
+            </p>
+        </div>
+
+        {/* Contact Info Box */}
+        <div className="space-y-3 text-xs bg-muted/30 rounded-xl p-3.5 border border-border/50 shadow-sm">
+            <div className="flex items-center gap-3 text-muted-foreground">
+                <Mail className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+                <span className="truncate text-foreground font-medium">{employee.email}</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+                <Phone className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+                <span className="truncate text-foreground font-medium">{employee.phoneNumber || "—"}</span>
+            </div>
+            <div className="flex items-center gap-3 text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
+                <span className="truncate text-foreground font-medium">
+                {employee.officeLocation?.name || "No office"}
+                </span>
             </div>
         </div>
-    );
+
+        {/* Tags */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-md border border-border/60 bg-background px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm">
+                {employee.employmentType?.replace("_", " ") || "—"}
+            </span>
+            {employee.faceEnrolled && (
+                <span className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 shadow-sm">
+                Face Enrolled
+                </span>
+            )}
+        </div>
+      </div>
+
+      {/* Admin Actions Footer */}
+      {isAdminOrHr && (
+        <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/10 px-5 py-3.5">
+          <div className="flex items-center gap-2.5">
+            <Switch
+              checked={employee.isActive}
+              onCheckedChange={(checked) => onStatusToggle(employee.id, checked)}
+              className="scale-90"
+            />
+            <span className="text-xs font-medium text-muted-foreground">
+                {employee.isActive ? "Active" : "Suspended"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onEdit(employee)}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary/10 text-primary px-3 text-xs font-semibold hover:bg-primary/20 transition-colors"
+              aria-label="Edit employee"
+            >
+              <Edit className="h-3.5 w-3.5" />
+              Edit
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+    <PhotoOverlay
+      open={isPhotoOpen}
+      onOpenChange={setIsPhotoOpen}
+      src={employee.profilePictureUrl || null}
+      name={`${employee.firstName || ""} ${employee.lastName || ""}`.trim()}
+    />
+    </>
+  );
 }

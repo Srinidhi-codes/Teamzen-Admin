@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Sparkles, MinusCircle, PlusCircle } from "lucide-react";
+import { MinusCircle, PlusCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AdjustmentModalProps {
     isOpen: boolean;
@@ -57,76 +58,79 @@ export function PayrollAdjustmentModal({ isOpen, onClose, user, month, year, onS
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md p-0 overflow-hidden bg-card border-none rounded-[2rem] shadow-3xl">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-16 -mt-16 pointer-events-none" />
-                
-                <DialogHeader className="p-8 pb-4">
-                    <div className="flex flex-col items-center text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
-                            <Sparkles className="w-6 h-6" />
-                        </div>
-                        <DialogTitle className="text-2xl font-black italic tracking-tight">Manual Adjustment</DialogTitle>
-                        <p className="text-muted-foreground text-sm font-medium mt-1">Applying one-time factor for {user?.firstName} {user?.lastName}</p>
-                    </div>
+            <DialogContent className="max-w-md gap-0 overflow-hidden rounded-xl border border-border bg-card p-0 shadow-lg">
+                <DialogHeader className="border-b border-border px-6 py-4">
+                    <DialogTitle className="text-base font-semibold">Add adjustment</DialogTitle>
+                    <p className="text-sm font-normal text-muted-foreground">
+                        One-time adjustment for {user?.firstName} {user?.lastName}
+                    </p>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="p-8 pt-0 space-y-6">
-                    <div className="flex gap-2 p-1 bg-muted rounded-2xl border border-border/50">
+                <form onSubmit={handleSubmit} className="space-y-5 px-6 py-5">
+                    <div className="flex gap-1 rounded-md border border-border bg-muted/50 p-0.5">
                         <button
                             type="button"
                             onClick={() => setType("earning")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                type === "earning" ? "bg-card shadow-sm text-emerald-600" : "text-muted-foreground hover:text-foreground"
-                            }`}
+                            className={cn(
+                                "flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors",
+                                type === "earning"
+                                    ? "bg-card text-emerald-700 shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
                         >
-                            <PlusCircle className="w-3.5 h-3.5" /> Bonus/Add
+                            <PlusCircle className="h-4 w-4" /> Bonus / add
                         </button>
                         <button
                             type="button"
                             onClick={() => setType("deduction")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                type === "deduction" ? "bg-card shadow-sm text-rose-600" : "text-muted-foreground hover:text-foreground"
-                            }`}
+                            className={cn(
+                                "flex flex-1 items-center justify-center gap-1.5 rounded px-3 py-1.5 text-sm font-medium transition-colors",
+                                type === "deduction"
+                                    ? "bg-card text-rose-700 shadow-sm"
+                                    : "text-muted-foreground hover:text-foreground"
+                            )}
                         >
-                            <MinusCircle className="w-3.5 h-3.5" /> Fine/Deduct
+                            <MinusCircle className="h-4 w-4" /> Fine / deduct
                         </button>
                     </div>
 
                     <div className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Amount (₹)</label>
+                            <label className="text-sm font-medium text-foreground">Amount (₹)</label>
                             <Input
                                 type="number"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
                                 placeholder="e.g. 500"
-                                className="h-12 rounded-xl bg-muted/50 border-border focus:ring-primary/20 font-black text-lg tabular-nums"
+                                className="h-9 tabular-nums"
                                 required
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Reason / Factor</label>
+                            <label className="text-sm font-medium text-foreground">Reason</label>
                             <Input
                                 value={reason}
                                 onChange={(e) => setReason(e.target.value)}
-                                placeholder="e.g. Performance Bonus or Asset Damage"
-                                className="h-12 rounded-xl bg-muted/50 border-border focus:ring-primary/20 font-medium"
+                                placeholder="e.g. Performance bonus or asset damage"
+                                className="h-9"
                                 required
                             />
                         </div>
                     </div>
 
-                    <div className="pt-4 flex flex-col gap-3">
+                    <div className="flex flex-col gap-2 border-t border-border pt-4">
                         <Button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-6 h-auto rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] transition-all active:scale-95 ${
-                                type === "earning" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-rose-600 hover:bg-rose-700 text-white"
-                            }`}
+                            className={cn(
+                                type === "earning"
+                                    ? "bg-emerald-600 hover:bg-emerald-700"
+                                    : "bg-rose-600 hover:bg-rose-700"
+                            )}
                         >
-                            {loading ? "Processing..." : `Confirm ${type === "earning" ? "Addition" : "Deduction"}`}
+                            {loading ? "Saving…" : type === "earning" ? "Add earning" : "Add deduction"}
                         </Button>
-                        <Button type="button" variant="ghost" onClick={onClose} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <Button type="button" variant="outline" onClick={onClose}>
                             Cancel
                         </Button>
                     </div>

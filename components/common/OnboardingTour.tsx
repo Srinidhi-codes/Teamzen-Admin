@@ -61,6 +61,24 @@ export function useOnboardingTour() {
                     }
                 },
                 {
+                    element: '#nav-payroll',
+                    popover: {
+                        title: 'Payroll',
+                        description: 'Run monthly payroll, advances, publish payslips, and payouts. Open Payroll and use “Take payroll tour” for a guided walkthrough.',
+                        side: "right",
+                        align: 'start'
+                    }
+                },
+                {
+                    element: '#nav-onboarding',
+                    popover: {
+                        title: 'Employee Onboarding',
+                        description: 'Start hires, verify documents, and track preboarding → day-90 checklists. Open Onboarding and use “Take onboarding tour”.',
+                        side: "right",
+                        align: 'start'
+                    }
+                },
+                {
                     element: '#ai-assistant-trigger',
                     popover: {
                         title: 'Administrative AI',

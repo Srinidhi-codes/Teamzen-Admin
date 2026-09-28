@@ -88,7 +88,7 @@ export default function MapPicker({ lat, lng, onChange }: MapPickerProps) {
                 ) : (
                     <LocateFixed className="w-4 h-4 group-hover/locate:rotate-12 transition-transform" />
                 )}
-                <span className="text-[10px] font-black uppercase tracking-widest pr-1">Locate Me</span>
+                <span className="pr-1 text-xs font-medium">Locate me</span>
             </button>
 
             <MapContainer
