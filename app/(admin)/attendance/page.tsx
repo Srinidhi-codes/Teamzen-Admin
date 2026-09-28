@@ -235,18 +235,45 @@ export default function AttendancePage() {
     {
       key: "workedHours",
       label: "Gross Hours",
-      render: (val: number | null) => (
-        <span className="text-sm font-medium tabular-nums text-muted-foreground">
-          {val != null ? `${Number(val).toFixed(2)}h` : "—"}
-        </span>
-      ),
+      render: (val: number | null, row: AttendanceRecord) => {
+        let gross = val != null ? Number(val) : 0;
+        const isShiftActive = !row.logoutTime && row.loginTime;
+        if (isShiftActive && row.loginTime && row.attendanceDate) {
+          const loginDateTime = moment(`${row.attendanceDate} ${row.loginTime}`, "YYYY-MM-DD HH:mm:ss");
+          const now = moment();
+          gross = Math.max(0, now.diff(loginDateTime, "hours", true));
+        }
+
+        return (
+          <span className="text-sm font-medium tabular-nums text-muted-foreground">
+            {val != null || isShiftActive ? `${gross.toFixed(2)}h` : "—"}
+          </span>
+        );
+      },
     },
     {
       key: "effectiveWorkedHours",
       label: "Effective Hours",
       render: (_: any, row: AttendanceRecord) => {
-        const gross = Number(row.workedHours) || 0;
-        const effective = row.effectiveWorkedHours != null ? Number(row.effectiveWorkedHours) : gross;
+        let gross = Number(row.workedHours) || 0;
+        let effective = row.effectiveWorkedHours != null ? Number(row.effectiveWorkedHours) : gross;
+        const isShiftActive = !row.logoutTime && row.loginTime;
+
+        if (isShiftActive && row.loginTime && row.attendanceDate) {
+          const loginDateTime = moment(`${row.attendanceDate} ${row.loginTime}`, "YYYY-MM-DD HH:mm:ss");
+          const now = moment();
+          gross = Math.max(0, now.diff(loginDateTime, "hours", true));
+          
+          const outOfFence = row.outOfFenceHeartbeats || 0;
+          if (outOfFence > 0) {
+            const roamingHours = outOfFence * 0.33;
+            const excessRoaming = Math.max(0, roamingHours - 1.0);
+            effective = Math.max(0, gross - excessRoaming);
+          } else {
+            effective = gross;
+          }
+        }
+
         const diff = Math.max(0, Number((gross - effective).toFixed(2)));
 
         return (

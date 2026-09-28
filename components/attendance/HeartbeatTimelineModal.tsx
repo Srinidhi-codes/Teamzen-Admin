@@ -33,8 +33,24 @@ export function HeartbeatTimelineModal({ record, onClose }: HeartbeatTimelineMod
   const presencePct = total > 0 ? Math.round((valid / total) * 100) : 100;
   const hasAnomaly = record.roamingAnomalyDetected || outOfFence > 1;
 
-  const grossHours = Number(record.workedHours) || 0;
-  const effectiveHours = record.effectiveWorkedHours != null ? Number(record.effectiveWorkedHours) : grossHours;
+  const isShiftActive = !record.logoutTime && record.loginTime;
+  let grossHours = Number(record.workedHours) || 0;
+  let effectiveHours = record.effectiveWorkedHours != null ? Number(record.effectiveWorkedHours) : grossHours;
+
+  if (isShiftActive && record.loginTime && record.attendanceDate) {
+    const loginDateTime = moment(`${record.attendanceDate} ${record.loginTime}`, "YYYY-MM-DD HH:mm:ss");
+    const now = moment();
+    grossHours = Math.max(0, now.diff(loginDateTime, "hours", true));
+
+    if (outOfFence > 0) {
+      const roamingHours = outOfFence * 0.33;
+      const excessRoaming = Math.max(0, roamingHours - 1.0);
+      effectiveHours = Math.max(0, grossHours - excessRoaming);
+    } else {
+      effectiveHours = grossHours;
+    }
+  }
+
   const discrepancy = Math.max(0, Number((grossHours - effectiveHours).toFixed(2)));
 
   const formatHours = (hrs: number) => {
