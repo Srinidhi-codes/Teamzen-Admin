@@ -1,13 +1,10 @@
 "use client";
 
 import { ReactNode } from "react";
-import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface ModalProps {
   isOpen: boolean;
   title: string;
-  description?: string;
   children: ReactNode;
   onClose: () => void;
   onConfirm?: () => void;
@@ -19,7 +16,6 @@ interface ModalProps {
 export function Modal({
   isOpen,
   title,
-  description,
   children,
   onClose,
   onConfirm,
@@ -30,48 +26,54 @@ export function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-foreground/40" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-md animate-in fade-in duration-300" onClick={onClose} />
 
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="relative w-full max-w-md overflow-hidden rounded-xl border border-border bg-card shadow-lg"
-      >
-        <div className="flex justify-between items-center p-6 border-b border-border/50">
+
+      {/* Modal */}
+      <div className="relative bg-card rounded-4xl shadow-3xl max-w-md w-full mx-4 overflow-hidden border border-border animate-in zoom-in-95 duration-300">
+        {/* Header */}
+        <div className="flex justify-between items-center p-8 border-b border-border/50">
           <div>
-            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-            {description && <p className="text-sm text-muted-foreground mt-0.5">{description}</p>}
+            <h2 className="text-xl font-black text-foreground tracking-tight">{title}</h2>
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-0.5">Authentication Required</p>
           </div>
           <button
-            type="button"
             onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label="Close"
+            className="p-3 bg-muted rounded-2xl text-muted-foreground hover:text-foreground transition-all active:scale-90"
           >
-            <X className="h-4 w-4" />
+            ✕
           </button>
         </div>
 
-        <div className="px-5 py-4 text-sm text-foreground/80 leading-relaxed">
-          {children}
-        </div>
 
-        <div className="flex justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
+        {/* Body */}
+        <div className="p-8 text-foreground/80 font-medium leading-relaxed">{children}</div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 p-8 border-t border-border/50 bg-muted/20">
+          <button
+            onClick={onClose}
+            className="px-6 py-3 text-muted-foreground hover:text-foreground text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+            disabled={isLoading}
+          >
             {cancelText}
-          </Button>
+          </button>
           {onConfirm && (
-            <Button onClick={onConfirm} disabled={isLoading}>
+            <button
+              onClick={onConfirm}
+              className="px-8 py-3 bg-primary text-primary-foreground rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:opacity-90 active:scale-95 transition-all disabled:opacity-50"
+              disabled={isLoading}
+            >
               {isLoading ? (
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-              ) : (
-                confirmText
-              )}
-            </Button>
+                <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              ) : confirmText}
+            </button>
           )}
         </div>
       </div>
+
     </div>
   );
 }

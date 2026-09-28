@@ -1,721 +1,375 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  useApproveOrRejectAttendanceCorrection,
-  useGraphQLAttendanceCorrection,
-  useGraphQLOrgAttendanceRecords,
-  useApproveOrRejectOffHoursAttendance,
-} from "@/lib/graphql/attendance/attendanceHooks";
+import { Card } from "@/components/common/Card";
+import { useCancelAttendanceCorrection, useApproveOrRejectAttendanceCorrection, useGraphQLAttendanceCorrection } from "@/lib/graphql/attendance/attendanceHooks";
 import { ApprovalModal } from "@/components/attendance/ApprovalModal";
-import { HeartbeatTimelineModal } from "@/components/attendance/HeartbeatTimelineModal";
-import { AttendanceCorrection, AttendanceRecord } from "@/lib/graphql/attendance/types";
+import { AttendanceCorrection } from "@/lib/graphql/attendance/types";
 import { DataTable, Column } from "@/components/common/DataTable";
-import { PageHeader } from "@/components/common/PageHeader";
 import moment from "moment";
 import {
-  Calendar,
-  Search,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  ArrowRight,
-  User,
-  FilePenLine,
-  RotateCcw,
-  Activity,
-  ShieldCheck,
-  AlertTriangle,
-  ScanFace,
-  Layers,
+    Calendar,
+    Search,
+    Clock,
+    CheckCircle2,
+    XCircle,
+    NotebookPen,
+    ArrowRight,
+    User,
+    FilePenLine,
+    RotateCcw
 } from "lucide-react";
 import { DatePickerSimple } from "@/components/ui/datePicker";
 import { Stat } from "@/components/common/Stats";
 import { useDebounce } from "@/lib/hooks/useDebounce";
-import { SearchInput } from "@/components/common/SearchInput";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
-import { useStore } from "@/lib/store/useStore";
+import { SearchInput } from "@/components/common/SearchInput";
+
 
 export default function AttendancePage() {
-  const { user } = useStore();
-  const [activeTab, setActiveTab] = useState<"presence" | "corrections">("presence");
+    const [startDate, setStartDate] = useState(moment().startOf("month").format("YYYY-MM-DD"));
+    const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
+    const [selected, setSelected] = useState<AttendanceCorrection | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
+    const pageSize = 10;
+    const [currentPage, setCurrentPage] = useState(1);
 
-  const [startDate, setStartDate] = useState(
-    moment().startOf("month").format("YYYY-MM-DD")
-  );
-  const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
-  const [selectedCorrection, setSelectedCorrection] = useState<AttendanceCorrection | null>(null);
-  const [selectedTimelineRecord, setSelectedTimelineRecord] = useState<AttendanceRecord | null>(null);
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [organizationId, setOrganizationId] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-
-  const pageSize = 10;
-  const [presencePage, setPresencePage] = useState(1);
-  const [correctionsPage, setCorrectionsPage] = useState(1);
-
-  const buildPresenceFilters = (start: string, end: string) => ({
-    startDate: start,
-    endDate: end,
-    search: debouncedSearchTerm || undefined,
-    status: ["roaming", "pending_approval", "off_hours", "weekend_work"].includes(statusFilter)
-      ? undefined
-      : statusFilter || undefined,
-    roamingOnly: statusFilter === "roaming" ? true : undefined,
-    approvalStatus: statusFilter === "pending_approval" ? "pending" : undefined,
-    isOffHours: statusFilter === "off_hours" ? true : undefined,
-    isWeekendWork: statusFilter === "weekend_work" ? true : undefined,
-    organizationId: organizationId || undefined,
-  });
-
-  // 1. Organization Shift & Presence Logs Query
-  const {
-    records: presenceRecords,
-    total: presenceTotal,
-    isLoading: presenceLoading,
-    refetch: refetchPresence,
-  } = useGraphQLOrgAttendanceRecords({
-    page: presencePage,
-    pageSize,
-    filters: buildPresenceFilters(startDate, endDate),
-  });
-
-  // 2. Attendance Regularization Corrections Query
-  const {
-    attendanceCorrections,
-    total: correctionsTotal,
-    isLoading: correctionsLoading,
-    refetchAttendanceCorrections,
-  } = useGraphQLAttendanceCorrection({
-    page: correctionsPage,
-    pageSize,
-    filters: {
-      search: debouncedSearchTerm || undefined,
-      organizationId: organizationId || undefined,
-    },
-  });
-
-  const { approveOrReject: approveOffHours, loading: approvingOffHours } =
-    useApproveOrRejectOffHoursAttendance();
-
-  const handleApproveOffHours = async (record: AttendanceRecord, status: "approved" | "rejected") => {
-    try {
-      await approveOffHours(record.id, status);
-      await refetchPresence(buildPresenceFilters(startDate, endDate) as any);
-    } catch (err: any) {
-      console.error(err);
-    }
-  };
-
-  const loadData = async (start: string, end: string) => {
-    if (!start || !end) return;
-    await Promise.all([
-      refetchPresence({
-        page: presencePage,
-        pageSize,
-        filters: buildPresenceFilters(start, end),
-      }),
-      refetchAttendanceCorrections({ startDate: start, endDate: end }),
-    ]);
-  };
-
-  useEffect(() => {
-    loadData(startDate, endDate);
-  }, [startDate, endDate, statusFilter, debouncedSearchTerm, organizationId]);
-
-  const { approveOrRejectAttendanceCorrection } =
-    useApproveOrRejectAttendanceCorrection();
-
-  const handleCorrectionSubmit = async (status: "approved" | "rejected", comments: string) => {
-    if (!selectedCorrection) return;
-    try {
-      await approveOrRejectAttendanceCorrection(selectedCorrection.id!, status, comments);
-      setSelectedCorrection(null);
-      await loadData(startDate, endDate);
-    } catch (err: any) {
-      console.error(err);
-    }
-  };
-
-  // Stats calculation
-  const roamingCount = presenceRecords.filter((r) => r.roamingAnomalyDetected).length;
-  const verifiedCount = presenceRecords.filter(
-    (r) => !r.roamingAnomalyDetected && (r.validHeartbeats || 0) > 0
-  ).length;
-  const pendingApprovalsCount = presenceRecords.filter((r) => r.approvalStatus === "pending").length;
-
-  const presenceStats = [
-    {
-      label: "Total shift records",
-      value: presenceTotal || 0,
-      icon: Calendar,
-      color: "text-sky-700 dark:text-sky-400",
-      gradient: "bg-sky-500/10",
-    },
-    {
-      label: "Verified presence",
-      value: verifiedCount,
-      icon: ShieldCheck,
-      color: "text-emerald-700 dark:text-emerald-400",
-      gradient: "bg-emerald-500/10",
-    },
-    {
-      label: "Pending shift approvals",
-      value: pendingApprovalsCount,
-      icon: Clock,
-      color: "text-amber-700 dark:text-amber-400",
-      gradient: "bg-amber-500/10",
-    },
-    {
-      label: "Roaming flagged",
-      value: roamingCount,
-      icon: AlertTriangle,
-      color: "text-destructive",
-      gradient: "bg-destructive/10",
-    },
-  ];
-
-  // ---------------------------------------------------------------------------
-  // Columns: Presence & Heartbeats Table
-  // ---------------------------------------------------------------------------
-  const presenceColumns: Column<AttendanceRecord>[] = [
-    {
-      key: "user",
-      label: "Employee",
-      render: (_: any, row: AttendanceRecord) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-            {row.user?.firstName?.charAt(0) || <User className="h-3.5 w-3.5" />}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {row.user ? `${row.user.firstName} ${row.user.lastName}` : "Member"}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {row.user?.designation?.name || row.user?.email || "—"}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "attendanceDate",
-      label: "Date",
-      render: (val: string) => (
-        <div>
-          <p className="text-sm font-medium text-foreground">
-            {moment(val).format("DD MMM YYYY")}
-          </p>
-          <p className="text-xs text-muted-foreground">{moment(val).format("dddd")}</p>
-        </div>
-      ),
-    },
-    {
-      key: "timing",
-      label: "Recorded Shift",
-      render: (_: any, row: AttendanceRecord) => (
-        <div className="flex flex-col gap-1">
-          <div className="inline-flex items-center gap-1.5 text-sm tabular-nums text-foreground">
-            <span>{row.loginTime ? moment(row.loginTime, "HH:mm:ss").format("hh:mm A") : "—"}</span>
-            <ArrowRight className="h-3 w-3 text-muted-foreground" />
-            <span>{row.logoutTime ? moment(row.logoutTime, "HH:mm:ss").format("hh:mm A") : "Active"}</span>
-          </div>
-          {row.faceVerified && (
-            <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-              <ScanFace className="h-3 w-3" /> Face Verified
-            </span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "workedHours",
-      label: "Gross Hours",
-      render: (val: number | null, row: AttendanceRecord) => {
-        let gross = val != null ? Number(val) : 0;
-        const isShiftActive = !row.logoutTime && row.loginTime;
-        if (isShiftActive && row.loginTime && row.attendanceDate) {
-          const loginDateTime = moment(`${row.attendanceDate} ${row.loginTime}`, "YYYY-MM-DD HH:mm:ss");
-          const now = moment();
-          gross = Math.max(0, now.diff(loginDateTime, "hours", true));
+    const { cancelAttendanceCorrection } = useCancelAttendanceCorrection();
+    const { attendanceCorrections, total, isLoading, refetchAttendanceCorrections } = useGraphQLAttendanceCorrection({
+        page: currentPage,
+        pageSize: pageSize,
+        filters: {
+            search: debouncedSearchTerm
         }
+    });
 
-        return (
-          <span className="text-sm font-medium tabular-nums text-muted-foreground">
-            {val != null || isShiftActive ? `${gross.toFixed(2)}h` : "—"}
-          </span>
-        );
-      },
-    },
-    {
-      key: "effectiveWorkedHours",
-      label: "Effective Hours",
-      render: (_: any, row: AttendanceRecord) => {
-        let gross = Number(row.workedHours) || 0;
-        let effective = row.effectiveWorkedHours != null ? Number(row.effectiveWorkedHours) : gross;
-        const isShiftActive = !row.logoutTime && row.loginTime;
+    /** Fetch attendance */
+    const loadAttendance = async (startDate: string, endDate: string) => {
+        if (!startDate || !endDate) return;
+        await refetchAttendanceCorrections({ startDate, endDate });
+    };
 
-        if (isShiftActive && row.loginTime && row.attendanceDate) {
-          const loginDateTime = moment(`${row.attendanceDate} ${row.loginTime}`, "YYYY-MM-DD HH:mm:ss");
-          const now = moment();
-          gross = Math.max(0, now.diff(loginDateTime, "hours", true));
-          
-          const outOfFence = row.outOfFenceHeartbeats || 0;
-          if (outOfFence > 0) {
-            const roamingHours = outOfFence * 0.33;
-            const excessRoaming = Math.max(0, roamingHours - 1.0);
-            effective = Math.max(0, gross - excessRoaming);
-          } else {
-            effective = gross;
-          }
+    const handleCancelCorrection = async (correctionId: string) => {
+        try {
+            await cancelAttendanceCorrection(correctionId);
+            await refetchAttendanceCorrections({ startDate, endDate });
+        } catch (e) {
+            console.error(e);
         }
+    };
 
-        const diff = Math.max(0, Number((gross - effective).toFixed(2)));
+    useEffect(() => {
+        loadAttendance(startDate, endDate);
+    }, [startDate, endDate]);
 
-        return (
-          <div className="flex flex-col gap-0.5">
-            <span
-              className={cn(
-                "text-sm font-bold tabular-nums",
-                diff > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
-              )}
-            >
-              {effective.toFixed(2)}h
-            </span>
-            {diff > 0 && (
-              <span className="text-[10px] font-medium text-destructive">
-                -{diff.toFixed(2)}h roaming
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: "heartbeats",
-      label: "Presence & Heartbeats",
-      render: (_: any, row: AttendanceRecord) => {
-        const total = row.totalHeartbeats ?? (row.heartbeats?.length || 0);
-        const valid = row.validHeartbeats ?? (row.heartbeats?.filter((h) => h.isWithinGeofence).length || 0);
-        const pct = total > 0 ? Math.round((valid / total) * 100) : 100;
-        const hasAnomaly = row.roamingAnomalyDetected || (total - valid > 1);
+    const { approveOrRejectAttendanceCorrection } = useApproveOrRejectAttendanceCorrection();
 
-        if (total === 0) {
-          return <span className="text-xs text-muted-foreground">No pings logged</span>;
+    const handleSubmit = async (status: "approved" | "rejected", comments: string) => {
+        if (!selected) return;
+        try {
+            await approveOrRejectAttendanceCorrection(
+                selected.id!,
+                status,
+                comments
+            );
+            setSelected(null);
+            refetchAttendanceCorrections({ startDate, endDate });
+        } catch (err: any) {
+            console.error(err);
         }
+    };
 
-        return (
-          <div className="flex flex-col gap-1">
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-semibold w-fit",
-                hasAnomaly
-                  ? "border border-destructive/30 bg-destructive/10 text-destructive"
-                  : "border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-              )}
-            >
-              {hasAnomaly ? <AlertTriangle className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
-              {pct}% ({valid}/{total})
-            </span>
-            {row.roamingNotes && (
-              <span className="text-[10px] text-destructive truncate max-w-[140px]" title={row.roamingNotes}>
-                {row.roamingNotes}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: "status",
-      label: "Status & Shift Approval",
-      render: (_: any, row: AttendanceRecord) => {
-        const map: Record<string, string> = {
-          present: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-          late_login: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-          early_logout: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20",
-          half_day: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
-          absent: "bg-destructive/10 text-destructive border-destructive/20",
-        };
-        return (
-          <div className="flex flex-col gap-1">
-            <span
-              className={cn(
-                "inline-flex rounded-md border px-2 py-0.5 text-[11px] font-medium capitalize w-fit",
-                map[row.status] || "bg-muted text-muted-foreground"
-              )}
-            >
-              {row.status.replace(/_/g, " ")}
-            </span>
-            {row.approvalStatus === "pending" && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5 w-fit">
-                <Clock className="h-2.5 w-2.5" />
-                {row.isWeekendWork ? "Weekend Pending" : "Off-Hours Pending"}
-              </span>
-            )}
-            {row.approvalStatus === "approved" && (row.isWeekendWork || row.isOffHours) && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-                <CheckCircle2 className="h-2.5 w-2.5" />
-                Approved {row.isWeekendWork ? "Weekend" : "Overtime"}
-              </span>
-            )}
-            {row.approvalStatus === "rejected" && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-destructive">
-                <XCircle className="h-2.5 w-2.5" />
-                Rejected
-              </span>
-            )}
-            {row.approvalRemarks && (
-              <span className="text-[10px] text-muted-foreground truncate max-w-[150px]" title={row.approvalRemarks}>
-                {row.approvalRemarks}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      key: "actions",
-      label: "Actions",
-      render: (_: any, row: AttendanceRecord) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSelectedTimelineRecord(row)}
-            className="h-8 gap-1.5 text-xs hover:border-primary/50"
-            title="View GPS Breadcrumbs Timeline"
-          >
-            <Activity className="h-3.5 w-3.5 text-primary" />
-            Audit
-          </Button>
+    // Derived Stats
+    const statsList = [
+        {
+            label: "Total Requests",
+            value: total || 0,
+            icon: Calendar,
+            color: "text-blue-500",
+            gradient: "bg-blue-500/10",
+            index: "01"
+        },
+        // Note: Filtering these stats client-side based on `attendanceCorrections` (page results) 
+        // is inaccurate if there are multiple pages. Ideally, backend shoud provide stats.
+        // For now, keeping as is but logic operates on current page only.
+        {
+            label: "Pending Review",
+            value: attendanceCorrections.filter(c => c.status === "pending").length,
+            icon: Clock,
+            color: "text-amber-500",
+            gradient: "bg-amber-500/10",
+            index: "02"
+        },
+        {
+            label: "Approved",
+            value: attendanceCorrections.filter(c => c.status === "approved").length,
+            icon: CheckCircle2,
+            color: "text-emerald-500",
+            gradient: "bg-emerald-500/10",
+            index: "03"
+        },
+        {
+            label: "Rejected",
+            value: attendanceCorrections.filter(c => c.status === "rejected").length,
+            icon: XCircle,
+            color: "text-rose-500",
+            gradient: "bg-rose-500/10",
+            index: "04"
+        },
+    ];
 
-          {row.approvalStatus === "pending" && (
-            <>
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => handleApproveOffHours(row, "approved")}
-                disabled={approvingOffHours}
-                className="h-8 gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2.5"
-                title="Approve weekend/off-hours attendance"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Approve
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleApproveOffHours(row, "rejected")}
-                disabled={approvingOffHours}
-                className="h-8 gap-1 text-xs border-destructive/40 text-destructive hover:bg-destructive/10 px-2.5"
-                title="Reject and mark absent"
-              >
-                <XCircle className="h-3.5 w-3.5" />
-                Reject
-              </Button>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
+    const columns: Column<AttendanceCorrection>[] = [
+        {
+            key: "requestedBy",
+            label: "Employee",
+            render: (_: any, row: AttendanceCorrection) => (
+                <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xs shadow-inner">
+                        {row.requestedBy?.firstName?.charAt(0) || <User className="w-4 h-4" />}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className="font-black text-foreground tracking-tight">
+                            {row.requestedBy?.firstName} {row.requestedBy?.lastName}
+                        </span>
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-60">
+                            {row.requestedBy?.designation?.name || "Member"}
+                        </span>
+                    </div>
+                </div>
+            ),
+        },
 
-  // ---------------------------------------------------------------------------
-  // Columns: Corrections Table
-  // ---------------------------------------------------------------------------
-  const correctionColumns: Column<AttendanceCorrection>[] = [
-    {
-      key: "requestedBy",
-      label: "Employee",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-            {row.requestedBy?.firstName?.charAt(0) || <User className="h-3.5 w-3.5" />}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {row.requestedBy?.firstName} {row.requestedBy?.lastName}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {row.requestedBy?.designation?.name || "—"}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "attendanceRecord.attendanceDate",
-      label: "Date",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div>
-          <p className="text-sm text-foreground">
-            {moment(row.attendanceRecord?.attendanceDate).format("DD MMM YYYY")}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {moment(row.attendanceRecord?.attendanceDate).format("dddd")}
-          </p>
-        </div>
-      ),
-    },
-    {
-      key: "correctionRequest",
-      label: "Recorded",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div className="inline-flex items-center gap-1.5 text-sm tabular-nums text-foreground">
-          {row.attendanceRecord?.loginTime
-            ? moment(row.attendanceRecord.loginTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
-          {row.attendanceRecord?.logoutTime
-            ? moment(row.attendanceRecord.logoutTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-        </div>
-      ),
-    },
-    {
-      key: "loginInfo",
-      label: "Requested",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted-foreground">
-          {row.correctedLoginTime
-            ? moment(row.correctedLoginTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-          <ArrowRight className="h-3 w-3" />
-          {row.correctedLogoutTime
-            ? moment(row.correctedLogoutTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-        </div>
-      ),
-    },
-    {
-      key: "reason",
-      label: "Reason",
-      render: (_: string, row: AttendanceCorrection) => (
-        <p className="max-w-[200px] line-clamp-2 text-sm text-muted-foreground">
-          {row.reason || "—"}
-        </p>
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (_: string, row: AttendanceCorrection) => (
-        <span
-          className={cn(
-            "rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
-            row.status === "approved"
-              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-              : row.status === "rejected"
-                ? "bg-destructive/10 text-destructive"
-                : row.status === "pending"
-                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  : "bg-muted text-muted-foreground"
-          )}
-        >
-          {row.status}
-        </span>
-      ),
-    },
-    {
-      key: "correctionActions",
-      label: "Actions",
-      render: (_: unknown, row: AttendanceCorrection) => {
-        if (row.status === "pending") {
-          return (
-            <button
-              onClick={() => setSelectedCorrection(row)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium hover:bg-muted"
-            >
-              <FilePenLine className="h-3.5 w-3.5" />
-              Review
-            </button>
-          );
-        }
-        return <span className="text-xs text-muted-foreground">Processed</span>;
-      },
-    },
-  ];
+        {
+            key: "attendanceRecord.attendanceDate",
+            label: "Date",
+            render: (_: any, row: AttendanceCorrection) => (
+                <div className="flex flex-col">
+                    <span className="text-premium-data">
+                        {moment(row.attendanceRecord?.attendanceDate).format("DD MMM, YYYY")}
+                    </span>
+                    <span className="text-premium-label opacity-60">
+                        {moment(row.attendanceRecord?.attendanceDate).format("dddd")}
+                    </span>
+                </div>
+            ),
 
-  return (
-    <div className="page-shell space-y-6">
-      <PageHeader
-        title="Attendance & Presence Hub"
-        description="Monitor verified presence, periodic geo-heartbeats, effective work hours, and regularization requests."
-        actions={
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-border bg-muted/50 p-1">
-              <button
-                onClick={() => setActiveTab("presence")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
-                  activeTab === "presence"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Activity className="h-3.5 w-3.5 text-primary" />
-                Presence Logs & Heartbeats
-              </button>
-              <button
-                onClick={() => setActiveTab("corrections")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
-                  activeTab === "corrections"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <FilePenLine className="h-3.5 w-3.5" />
-                Regularization Requests
-                {(correctionsTotal || 0) > 0 && (
-                  <span className="rounded-full bg-primary/10 px-1.5 py-0.2 text-[10px] font-bold text-primary">
-                    {correctionsTotal}
-                  </span>
-                )}
-              </button>
+        },
+        {
+            key: "correctionRequest",
+            label: "Check-In / Out",
+            render: (_: any, row: AttendanceCorrection) => (
+                <div className="flex flex-col items-start gap-1">
+                    <div className="flex items-center gap-1.5 text-primary font-black text-sm bg-primary/5 px-3 py-1.5 rounded-xl border border-primary/10 shadow-sm shadow-primary/5">
+                        <Clock className="w-3.5 h-3.5" />
+                        {row.attendanceRecord?.loginTime ? moment(row.attendanceRecord.loginTime, "HH:mm:ss").format("hh:mm A") : "--:--"}
+                        <ArrowRight className="w-3 h-3 text-primary/30" />
+                        {row.attendanceRecord?.logoutTime ? moment(row.attendanceRecord.logoutTime, "HH:mm:ss").format("hh:mm A") : "--:--"}
+                    </div>
+                </div>
+
+            ),
+        },
+        {
+            key: "loginInfo",
+            label: "Requested Time",
+            render: (_: any, row: AttendanceCorrection) => (
+                <div className="flex items-center gap-3">
+                    <div className="flex flex-col items-end">
+                        <div className="flex items-center gap-1.5 text-muted-foreground font-black text-sm ring-1 ring-border px-3 py-1.5 rounded-lg bg-muted/50">
+                            <Clock className="w-3.5 h-3.5" />
+                            {row.correctedLoginTime ? moment(row.correctedLoginTime, "HH:mm:ss").format("hh:mm A") : "No Change"}
+                            <ArrowRight className="w-3 h-3 mx-1" />
+                            {row.correctedLogoutTime ? moment(row.correctedLogoutTime, "HH:mm:ss").format("hh:mm A") : "No Change"}
+                        </div>
+                    </div>
+
+                </div>
+            ),
+        },
+        {
+            key: "reason",
+            label: "Reason",
+            render: (value: string, row: AttendanceCorrection) => (
+                <div className="group relative flex items-start gap-2 max-w-[200px]">
+                    <p className="text-sm font-medium text-foreground/70 line-clamp-2 leading-relaxed italic">
+                        "{row.reason || "No reason provided"}"
+                    </p>
+                </div>
+
+            ),
+        },
+        {
+            key: "status",
+            label: "Verdict",
+            render: (value: string, row: AttendanceCorrection) => {
+                return (
+                    <span
+                        className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-full shadow-lg transition-all duration-300 ${row.status === "approved"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-emerald-500/5"
+                            : row.status === "rejected"
+                                ? "bg-destructive/10 text-destructive border border-destructive/20 shadow-destructive/5"
+                                : row.status === "pending"
+                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-amber-500/5"
+                                    : "bg-muted text-muted-foreground border border-border"
+                            }`}
+                    >
+                        {row.status}
+                    </span>
+                );
+            },
+
+        },
+
+        {
+            key: "correctionActions",
+            label: "Actions",
+            render: (_: unknown, row: AttendanceCorrection) => {
+                const status = row.status;
+                return (
+                    <div className="flex items-center gap-2">
+                        {status === "pending" && (
+                            <>
+                                <button
+                                    onClick={() => setSelected(row)}
+                                    className="p-3 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:opacity-95 hover:-translate-y-0.5 transition-all active:scale-90 group relative"
+                                    title="Review Correction"
+                                >
+                                    <FilePenLine className="w-4 h-4" />
+                                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-foreground text-background text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl">
+                                        Review Correction
+                                    </span>
+                                </button>
+                            </>
+                        )
+                        }
+                        {status !== 'pending' && (
+                            <div className="flex items-center gap-2 px-4 py-2 border border-border bg-muted/30 rounded-xl">
+                                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                                <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Processed</span>
+                            </div>
+                        )}
+
+                    </div>
+                );
+            },
+        },
+    ];
+
+
+    return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div className="flex flex-col lg:flex-row justify-between items-center gap-10 pl-5">
+                    <div className="relative">
+                        <div className="absolute -left-4 top-0 w-1 h-full bg-primary rounded-full shadow-sm shadow-primary/20" />
+                        <h1 className="text-3xl font-black text-foreground tracking-tight">Regularization Requests</h1>
+                        <p className="text-premium-label mt-2 opacity-60">Review and process attendance regularization requests.</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 bg-muted/30 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-sm">
+                    <div className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest">
+                        Snapshot
+                    </div>
+                    <div className="px-4 py-2 text-foreground text-xs font-bold uppercase tracking-widest">
+                        {moment(startDate).format("MMM DD")} — {moment(endDate).format("MMM DD, YYYY")}
+                    </div>
+                </div>
             </div>
-          </div>
-        }
-      />
 
-      {/* Stats Summary Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {presenceStats.map((stat, i) => (
-          <Stat
-            key={i}
-            icon={stat.icon}
-            label={stat.label}
-            value={stat.value}
-            color={stat.color}
-            gradient={stat.gradient}
-          />
-        ))}
-      </div>
 
-      {/* Filter Toolbar */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end">
-          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
-            <DatePickerSimple
-              label="Start date"
-              value={startDate}
-              onChange={(date) => setStartDate(moment(date).format("YYYY-MM-DD"))}
-            />
-            <DatePickerSimple
-              label="End date"
-              value={endDate}
-              onChange={(date) => setEndDate(moment(date).format("YYYY-MM-DD"))}
-            />
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => loadData(startDate, endDate)}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 md:flex-none"
-            >
-              <Search className="h-4 w-4" />
-              Apply
-            </button>
-            <button
-              onClick={() => loadData(startDate, endDate)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-              title="Refresh"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
+            {/* Smart Metrics Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {statsList.map((stat, i) => (
+                    <Stat
+                        key={i}
+                        icon={stat.icon}
+                        label={stat.label}
+                        value={stat.value}
+                        color={stat.color}
+                        gradient={stat.gradient}
+                        index={stat.index}
+                    />
+                ))}
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
-          <div className="max-w-md flex-1">
-            <SearchInput
-              placeholder="Search employees by name or email…"
-              value={searchTerm}
-              onChange={setSearchTerm}
-            />
-          </div>
-
-          {activeTab === "presence" && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {[
-                { label: "All", value: "" },
-                { label: "Present", value: "present" },
-                { label: "Late Login", value: "late_login" },
-                { label: "⏳ Pending Approval", value: "pending_approval" },
-                { label: "🌙 Off-Hours", value: "off_hours" },
-                { label: "🏖️ Weekend Work", value: "weekend_work" },
-                { label: "🚩 Roaming Flagged", value: "roaming" },
-              ].map((pill) => (
-                <button
-                  key={pill.value}
-                  onClick={() => setStatusFilter(pill.value)}
-                  className={cn(
-                    "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors border",
-                    statusFilter === pill.value
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
-                  )}
-                >
-                  {pill.label}
-                </button>
-              ))}
             </div>
-          )}
 
-          {user?.role === "superadmin" && (
-            <OrganizationFilterSelect
-              value={organizationId}
-              onChange={setOrganizationId}
-            />
-          )}
-        </div>
-      </div>
 
-      {/* Main Content Table based on Active Tab */}
-      {activeTab === "presence" ? (
-        <DataTable
-          data={presenceRecords}
-          columns={presenceColumns}
-          isLoading={presenceLoading}
-          total={presenceTotal}
-          currentPage={presencePage}
-          pageSize={pageSize}
-          onPageChange={setPresencePage}
-          paginationLabel="attendance records"
-        />
-      ) : (
-        <DataTable
-          data={attendanceCorrections}
-          columns={correctionColumns}
-          isLoading={correctionsLoading}
-          total={correctionsTotal}
-          currentPage={correctionsPage}
-          pageSize={pageSize}
-          onPageChange={setCorrectionsPage}
-          paginationLabel="corrections"
-        />
-      )}
 
-      {/* Regularization Approval Modal */}
-      {selectedCorrection && (
-        <ApprovalModal
-          correction={selectedCorrection}
-          onClose={() => setSelectedCorrection(null)}
-          onSubmit={handleCorrectionSubmit}
-        />
-      )}
 
-      {/* Periodic Geo-Heartbeat Audit Timeline Modal */}
-      {selectedTimelineRecord && (
-        <HeartbeatTimelineModal
-          record={selectedTimelineRecord}
-          onClose={() => setSelectedTimelineRecord(null)}
-        />
-      )}
-    </div>
-  );
+            {/* Content Section */}
+            <div className="grid grid-cols-1 gap-8">
+                {/* Filters */}
+                <div className="premium-card flex flex-col gap-y-5">
+                    <div className="flex flex-col md:flex-row gap-6 items-end">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+                            <DatePickerSimple
+                                label="Start Date"
+                                value={startDate}
+                                onChange={(date) => setStartDate(moment(date).format("YYYY-MM-DD"))}
+                            />
+                            <DatePickerSimple
+                                label="End Date"
+                                value={endDate}
+                                onChange={(date) => setEndDate(moment(date).format("YYYY-MM-DD"))}
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 w-full md:w-auto">
+                            <button
+                                onClick={() => loadAttendance(startDate, endDate)}
+                                className="btn-primary flex-1 md:flex-none"
+                            >
+                                <Search className="w-5 h-5 mr-3" />
+                                Synchronize
+                            </button>
+                            <button
+                                onClick={() => refetchAttendanceCorrections({ startDate, endDate })}
+                                className="p-4 bg-muted/50 hover:bg-primary/10 hover:text-primary border border-border rounded-2xl transition-all active:rotate-180 duration-500"
+                                title="Synchronize Data"
+                            >
+                                <RotateCcw className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="relative w-full md:max-w-lg group">
+                        <SearchInput
+                            placeholder="Search for employee..."
+                            value={searchTerm}
+                            onChange={setSearchTerm}
+                        />
+                    </div>
+                </div>
+
+
+
+                {/* Table Card */}
+                <div className="p-2">
+                    <DataTable
+                        data={attendanceCorrections}
+                        columns={columns}
+                        isLoading={isLoading}
+                        total={total}
+                        currentPage={currentPage}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        paginationLabel="corrections"
+                    />
+                </div>
+            </div>
+
+            {/* Correction Modal */}
+            {
+                selected && (
+                    <ApprovalModal
+                        correction={selected}
+                        onClose={() => setSelected(null)}
+                        onSubmit={handleSubmit}
+                    />
+                )
+            }
+        </div >
+    );
 }
+

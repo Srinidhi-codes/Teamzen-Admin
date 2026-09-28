@@ -23,20 +23,10 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     const accessToken = request.cookies.get('access_token')?.value;
     const forwardedHeaders: Record<string, string> = {};
 
-    // Drop hop-by-hop / framing headers. We re-read the body below, so the
-    // original content-length is often wrong and triggers UND_ERR_REQ_CONTENT_LENGTH_MISMATCH.
-    const stripRequestHeaders = new Set([
-        'host',
-        'connection',
-        'transfer-encoding',
-        'cookie',
-        'accept-encoding',
-        'content-length',
-        'content-encoding',
-    ]);
-
     request.headers.forEach((value, key) => {
-        if (!stripRequestHeaders.has(key.toLowerCase())) {
+        // Strip accept-encoding to prevent backend from gzipping, 
+        // passing compressed bytes verbatim can cause ERR_CONTENT_DECODING_FAILED
+        if (!['host', 'connection', 'transfer-encoding', 'cookie', 'accept-encoding'].includes(key.toLowerCase())) {
             forwardedHeaders[key] = value;
         }
     });
@@ -48,7 +38,7 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
     let body: BodyInit | undefined;
     const method = request.method;
     if (!['GET', 'HEAD', 'DELETE'].includes(method)) {
-        body = await request.arrayBuffer();
+        body = await request.blob();
     }
 
     try {
@@ -76,7 +66,9 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
             }
         });
 
-        return new NextResponse(djangoResponse.body, {
+        const responseBody = await djangoResponse.arrayBuffer();
+
+        return new NextResponse(responseBody, {
             status: djangoResponse.status,
             headers: responseHeaders,
         });

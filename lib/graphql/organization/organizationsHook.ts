@@ -7,19 +7,11 @@ import { toast } from "sonner";
 import { useStore } from "@/lib/store/useStore";
 
 
-export function useGraphQLOrganizations(
-    search?: string,
-    filters?: { plan?: string; isActive?: boolean | null },
-    options?: { skip?: boolean }
-) {
-    const { setOrganizations, isAuthenticated } = useStore();
+export function useGraphQLOrganizations(search?: string) {
+    const { setOrganizations } = useStore();
     const { data, loading, error, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
-        variables: {
-            search: search || undefined,
-            plan: filters?.plan || undefined,
-            isActive: filters?.isActive ?? undefined,
-        },
-        skip: !isAuthenticated || !!options?.skip,
+        fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -30,16 +22,16 @@ export function useGraphQLOrganizations(
 
     return {
         organizations: data?.organizations,
-        isOrganizationsLoading: loading && !data,
+        isOrganizationsLoading: loading,
         isOrganizationsError: error,
         refetchOrganizations: refetch
     }
 }
 
 export function useGraphQLOrganization(id: string) {
-    const { setOrganizations, isAuthenticated } = useStore();
+    const { setOrganizations } = useStore();
     const { data: pluralData, loading: pluralLoading, error: pluralError, refetch } = useQuery<OrganizationResponse>(GET_ORGANIZATIONS, {
-        skip: !isAuthenticated,
+        fetchPolicy: 'cache-and-network',
     });
 
     useEffect(() => {
@@ -54,25 +46,18 @@ export function useGraphQLOrganization(id: string) {
 
     return {
         organization,
-        isOrganizationLoading: pluralLoading && !pluralData,
+        isOrganizationLoading: pluralLoading,
         isOrganizationError: pluralError,
         refetchOrganization: refetch
     }
 }
 
 
-export function useGraphQLOfficeLocations(
-    search?: string,
-    organizationId?: string,
-    options?: { skip?: boolean }
-) {
-    const { setOfficeLocations, isAuthenticated } = useStore();
+export function useGraphQLOfficeLocations(search?: string) {
+    const { setOfficeLocations } = useStore();
     const { data, loading, error, refetch } = useQuery<OfficeLocationResponse>(GET_OFFICE_LOCATIONS, {
-        variables: {
-            search: search || undefined,
-            organizationId: organizationId || undefined,
-        },
-        skip: !isAuthenticated || !!options?.skip,
+        fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -83,24 +68,17 @@ export function useGraphQLOfficeLocations(
 
     return {
         officeLocations: data?.officeLocations,
-        isOfficeLocationsLoading: loading && !data,
+        isOfficeLocationsLoading: loading,
         isOfficeLocationsError: error,
         refetchOfficeLocations: refetch
     }
 }
 
-export function useGraphQLDepartments(
-    search?: string,
-    organizationId?: string,
-    options?: { skip?: boolean }
-) {
-    const { setDepartments, isAuthenticated } = useStore();
+export function useGraphQLDepartments(search?: string) {
+    const { setDepartments } = useStore();
     const { data, loading, error, refetch } = useQuery<DepartmentResponse>(GET_DEPARTMENTS, {
-        variables: {
-            search: search || undefined,
-            organizationId: organizationId || undefined,
-        },
-        skip: !isAuthenticated || !!options?.skip,
+        fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -111,24 +89,17 @@ export function useGraphQLDepartments(
 
     return {
         departments: data?.departments,
-        isDepartmentsLoading: loading && !data,
+        isDepartmentsLoading: loading,
         isDepartmentsError: error,
         refetchDepartments: refetch
     }
 }
 
-export function useGraphQLDesignations(
-    search?: string,
-    organizationId?: string,
-    options?: { skip?: boolean }
-) {
-    const { setDesignations, isAuthenticated } = useStore();
+export function useGraphQLDesignations(search?: string) {
+    const { setDesignations } = useStore();
     const { data, loading, error, refetch } = useQuery<DesignationResponse>(GET_DESIGNATIONS, {
-        variables: {
-            search: search || undefined,
-            organizationId: organizationId || undefined,
-        },
-        skip: !isAuthenticated || !!options?.skip,
+        fetchPolicy: 'cache-and-network',
+        variables: { search }
     })
 
     useEffect(() => {
@@ -139,7 +110,7 @@ export function useGraphQLDesignations(
 
     return {
         designations: data?.designations,
-        isDesignationsLoading: loading && !data,
+        isDesignationsLoading: loading,
         isDesignationsError: error,
         refetchDesignations: refetch
     }
@@ -171,6 +142,7 @@ export function useGraphQLOrganizationMutation() {
 
 export function useGraphQLUpdateOrganizationMutation() {
     const [updateOrganizationMutation, updateOrganizationMutationState] = useMutation(UPDATE_ORGANIZATION, {
+        refetchQueries: [{ query: GET_ORGANIZATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -192,6 +164,7 @@ export function useGraphQLUpdateOrganizationMutation() {
 
 export function useGraphQLSuspendOrganizationMutation() {
     const [suspendOrganizationMutation, suspendOrganizationMutationState] = useMutation(SUSPEND_ORGANIZATION, {
+        refetchQueries: [{ query: GET_ORGANIZATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -213,6 +186,7 @@ export function useGraphQLSuspendOrganizationMutation() {
 
 export function useGraphQLActivateOrganizationMutation() {
     const [activateOrganizationMutation, activateOrganizationMutationState] = useMutation(ACTIVATE_ORGANIZATION, {
+        refetchQueries: [{ query: GET_ORGANIZATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -258,6 +232,7 @@ export function useGraphQLCreateOfficeLocationMutation() {
 
 export function useGraphQLUpdateOfficeLocationMutation() {
     const [updateOfficeLocationMutation, updateOfficeLocationMutationState] = useMutation(UPDATE_OFFICE_LOCATION, {
+        refetchQueries: [{ query: GET_OFFICE_LOCATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -279,6 +254,7 @@ export function useGraphQLUpdateOfficeLocationMutation() {
 
 export function useGraphQLSuspendOfficeLocationMutation() {
     const [suspendOfficeLocationMutation, suspendOfficeLocationMutationState] = useMutation(SUSPEND_OFFICE_LOCATION, {
+        refetchQueries: [{ query: GET_OFFICE_LOCATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -300,6 +276,7 @@ export function useGraphQLSuspendOfficeLocationMutation() {
 
 export function useGraphQLActivateOfficeLocationMutation() {
     const [activateOfficeLocationMutation, activateOfficeLocationMutationState] = useMutation(ACTIVATE_OFFICE_LOCATION, {
+        refetchQueries: [{ query: GET_OFFICE_LOCATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -345,6 +322,7 @@ export function useGraphQLDepartmentMutation() {
 
 export function useGraphQLUpdateDepartmentMutation() {
     const [updateDepartmentMutation, updateDepartmentMutationState] = useMutation(UPDATE_DEPARTMENT, {
+        refetchQueries: [{ query: GET_DEPARTMENTS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -366,6 +344,7 @@ export function useGraphQLUpdateDepartmentMutation() {
 
 export function useGraphQLSuspendDepartmentMutation() {
     const [suspendDepartmentMutation, suspendDepartmentMutationState] = useMutation(SUSPEND_DEPARTMENT, {
+        refetchQueries: [{ query: GET_DEPARTMENTS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -387,6 +366,7 @@ export function useGraphQLSuspendDepartmentMutation() {
 
 export function useGraphQLActivateDepartmentMutation() {
     const [activateDepartmentMutation, activateDepartmentMutationState] = useMutation(ACTIVATE_DEPARTMENT, {
+        refetchQueries: [{ query: GET_DEPARTMENTS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -432,6 +412,7 @@ export function useGraphQLDesignationMutation() {
 
 export function useGraphQLUpdateDesignationMutation() {
     const [updateDesignationMutation, updateDesignationMutationState] = useMutation(UPDATE_DESIGNATION, {
+        refetchQueries: [{ query: GET_DESIGNATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -453,6 +434,7 @@ export function useGraphQLUpdateDesignationMutation() {
 
 export function useGraphQLSuspendDesignationMutation() {
     const [suspendDesignationMutation, suspendDesignationMutationState] = useMutation(SUSPEND_DESIGNATION, {
+        refetchQueries: [{ query: GET_DESIGNATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }
@@ -474,6 +456,7 @@ export function useGraphQLSuspendDesignationMutation() {
 
 export function useGraphQLActivateDesignationMutation() {
     const [activateDesignationMutation, activateDesignationMutationState] = useMutation(ACTIVATE_DESIGNATION, {
+        refetchQueries: [{ query: GET_DESIGNATIONS }],
         onError: (error) => {
             toast.error(error.message)
         }

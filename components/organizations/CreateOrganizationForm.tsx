@@ -10,8 +10,6 @@ import { Input } from "../common/Input";
 import { Camera, Loader2 } from "lucide-react";
 import api from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
-import { AccentPicker } from "./AccentPicker";
-import { hasPlanFeature, planLabel } from "@/lib/plans";
 
 interface CreateOrganizationFormProps {
     orgEditData?: any;
@@ -33,14 +31,8 @@ export default function CreateOrganizationForm({
         logo: null as string | null,
         registrationNumber: "",
         llmApiKey: "",
-        accent: "teal",
         isActive: true,
     });
-    const canCustomAccent = hasPlanFeature(
-        orgEditData?.plan,
-        orgEditData?.planExpiresAt,
-        "custom_accent"
-    );
 
     useEffect(() => {
         if (orgEditData) {
@@ -52,7 +44,6 @@ export default function CreateOrganizationForm({
                 logo: orgEditData.logo?.url || null,
                 registrationNumber: orgEditData.registrationNumber || "",
                 llmApiKey: orgEditData.llmApiKey || "",
-                accent: orgEditData.accent || "teal",
                 isActive: orgEditData.isActive ?? true,
             })
         }
@@ -102,7 +93,6 @@ export default function CreateOrganizationForm({
                 logo: null,
                 registrationNumber: "",
                 llmApiKey: "",
-                accent: "teal",
                 isActive: true,
             });
 
@@ -140,9 +130,8 @@ export default function CreateOrganizationForm({
     };
 
     return (
-        <form id="create-org-form" className="flex flex-col min-h-full" onSubmit={handleSubmit}>
-            <div className="p-6 space-y-8 flex-1">
-                <div className="relative group/logo mx-auto w-fit">
+        <form id="create-org-form" className="space-y-8" onSubmit={handleSubmit}>
+            <div className="relative group/logo mx-auto w-fit">
                 <div
                     onClick={() => orgEditData && document.getElementById('logo-upload')?.click()}
                     className={`w-28 h-28 bg-linear-to-br from-primary to-primary/60 rounded-4xl flex items-center justify-center text-primary-foreground text-4xl font-black shadow-2xl shadow-primary/20 overflow-hidden ring-8 ring-background mb-10 group-hover:scale-105 transition-transform ${orgEditData ? 'cursor-pointer' : ''}`}
@@ -166,7 +155,7 @@ export default function CreateOrganizationForm({
                             ) : (
                                 <>
                                     <Camera className="w-6 h-6 mb-1" />
-                                    <span className="text-[10px] font-medium">Change</span>
+                                    <span className="text-[8px] font-black uppercase tracking-tighter">Change</span>
                                 </>
                             )}
                         </div>
@@ -235,20 +224,8 @@ export default function CreateOrganizationForm({
                     hint="This key will be used for AI insights specifically for this organization."
                 />
 
-                {canCustomAccent ? (
-                    <AccentPicker
-                        value={formData.accent}
-                        onChange={(accent) => setFormData((prev) => ({ ...prev, accent }))}
-                    />
-                ) : orgEditData ? (
-                    <p className="text-xs text-muted-foreground">
-                        Color themes require the {planLabel("pro")} plan. Free orgs can use light and
-                        dark mode only.
-                    </p>
-                ) : null}
-
                 <div className="space-y-3">
-                    <label className="text-sm font-medium text-muted-foreground ml-1">
+                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
                         Operational Headquarters
                     </label>
                     <Textarea
@@ -262,25 +239,26 @@ export default function CreateOrganizationForm({
                     />
                 </div>
             </div>
-            </div>
 
-            <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-end gap-2 mt-auto">
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
                 <Button
                     variant="outline"
                     type="button"
                     onClick={onCancel}
+                    className="px-8 h-12"
                     disabled={isCreatingOrganizationLoading}
                 >
-                    Cancel
+                    Dismiss
                 </Button>
                 <Button
                     type="submit"
+                    className="px-10 h-12 min-w-[160px]"
                     disabled={isCreatingOrganizationLoading || isUpdatingOrganizationLoading}
                 >
                     {isCreatingOrganizationLoading || isUpdatingOrganizationLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     ) : (
-                        orgEditData ? "Save changes" : "Create organization"
+                        orgEditData ? "Update Organization" : "Create Organization"
                     )}
                 </Button>
             </div>

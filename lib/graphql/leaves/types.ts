@@ -15,14 +15,10 @@ export interface LeaveType {
     prorateOnJoin: boolean;
     prorateOnExit: boolean;
     prorationBasis: string;
-    organization?: {
+    organizationId: {
         id: string;
         name: string;
-    } | null;
-    organizationId?: string | {
-        id: string;
-        name: string;
-    };
+    }
     isActive: boolean;
 }
 
@@ -31,10 +27,6 @@ export interface LeaveBalance {
     user: {
         id: string;
         firstName: string;
-        lastName?: string;
-        manager?: { id: string } | null;
-        department?: { id: string; name: string } | null;
-        organization?: { id: string; name: string } | null;
     };
     leaveType: LeaveType;
     year: number;
@@ -59,10 +51,6 @@ export interface LeaveRequest {
         id: string;
         firstName: string;
         lastName: string;
-        organization?: {
-            id: string;
-            name: string;
-        } | null;
     };
     leaveType: LeaveType;
     fromDate: string;
@@ -109,10 +97,6 @@ export interface CompanyHoliday {
     isOptional: boolean;
     description: string;
     createdAt: string;
-    organization?: {
-        id: string;
-        name: string;
-    } | null;
 }
 
 export type GetCompanyHolidaysResponse = {

@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_LEAVES = gql`  
-    query LeaveTypes($search: String, $organizationId: ID){
-    leaveTypes(search: $search, organizationId: $organizationId){
+    query LeaveTypes($search: String){
+    leaveTypes(search: $search){
     id
     name
     code
@@ -20,33 +20,17 @@ export const GET_LEAVES = gql`
     prorateOnExit
     prorationBasis
     isActive
-    organization {
-      id
-      name
-    }
   }
 }
 `;
 
 export const GET_LEAVE_BALANCE = gql`
-    query LeaveBalance($allOrg: Boolean, $search: String, $organizationId: ID) {
-    leaveBalance(allOrg: $allOrg, search: $search, organizationId: $organizationId){
+    query LeaveBalance($allOrg: Boolean, $search: String) {
+    leaveBalance(allOrg: $allOrg, search: $search){
     id
     user{
         id
         firstName
-        lastName
-        manager {
-          id
-        }
-        department {
-          id
-          name
-        }
-        organization {
-          id
-          name
-        }
     }
     leaveType{
         id
@@ -69,17 +53,13 @@ export const GET_LEAVE_BALANCE = gql`
 `;
 
 export const GET_LEAVE_REQUESTS = gql`
-  query getLeaveRequests($approvalsOnly: Boolean, $search: String, $organizationId: ID){
-    getLeaveRequests(approvalsOnly: $approvalsOnly, search: $search, organizationId: $organizationId){
+  query getLeaveRequests($approvalsOnly: Boolean, $search: String){
+    getLeaveRequests(approvalsOnly: $approvalsOnly, search: $search){
       id
       user{
         id
         firstName
         lastName
-        organization {
-          id
-          name
-        }
       }
       leaveType{
         id
@@ -101,18 +81,15 @@ export const GET_LEAVE_REQUESTS = gql`
 `
 
 export const GET_COMPANY_HOLIDAYS = gql`
-  query CompanyHolidays($search: String, $organizationId: ID) {
-    companyHolidays(search: $search, organizationId: $organizationId) {
+  query CompanyHolidays($search: String) {
+    companyHolidays(search: $search) {
       id
       name
       holidayDate
       isOptional
       description
       createdAt
-      organization {
-        id
-        name
-      }
     }
   }
 `;
+

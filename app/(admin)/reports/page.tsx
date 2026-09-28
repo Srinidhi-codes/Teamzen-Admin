@@ -1,15 +1,5 @@
-"use client";
-
-import ReportsPage from "@/components/reports/Reports";
-import { EliteRouteGuard } from "@/components/common/EliteRouteGuard";
+import ReportsPage from '@/components/reports/Reports';
 
 export default function Page() {
-  return (
-    <EliteRouteGuard
-      feature="advanced_analytics"
-      roles={["superadmin", "admin", "hr"]}
-    >
-      <ReportsPage />
-    </EliteRouteGuard>
-  );
+    return <ReportsPage />;
 }

@@ -27,6 +27,7 @@ export function useGraphQLUsers(variables?: UsersVariables) {
         }
     }>(GET_ALL_USERS, {
         variables,
+        fetchPolicy: 'cache-and-network',
     })
 
     return {
@@ -34,8 +35,7 @@ export function useGraphQLUsers(variables?: UsersVariables) {
         total: data?.allUsers.total,
         page: data?.allUsers.page,
         pageSize: data?.allUsers.pageSize,
-        isUsersLoading: loading && !data,
-        isUsersRefetching: loading && !!data,
+        isUsersLoading: loading,
         isUsersError: error,
         refetchUsers: refetch
     }

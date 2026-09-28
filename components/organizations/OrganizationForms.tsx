@@ -21,7 +21,7 @@ import dynamic from "next/dynamic";
 
 const MapPicker = dynamic(() => import("../common/MapPicker"), { 
     ssr: false,
-    loading: () => <div className="mt-4 flex h-[300px] w-full items-center justify-center rounded-xl bg-muted text-sm text-muted-foreground animate-pulse">Loading map…</div>
+    loading: () => <div className="h-[300px] w-full bg-muted animate-pulse rounded-2xl mt-4 flex items-center justify-center text-xs font-black uppercase tracking-widest text-muted-foreground">Initializing Cartography...</div>
 });
 
 
@@ -94,7 +94,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
         setLoading(true);
         try {
             const organizationId =
-                (user?.role === "superadmin")
+                (user?.role === "admin" || user?.role === "superadmin")
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
@@ -145,12 +145,11 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-full">
-            <div className="p-6 space-y-6 flex-1">
-                <Input name="name" label="Name *" value={formData?.name} onChange={handleChange} placeholder="e.g. Headquarters" maxLength={255} />
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Input name="name" label="Name" value={formData?.name} onChange={handleChange} required placeholder="e.g. Headquarters" maxLength={255} />
 
             <div className="space-y-4">
-                {(user?.role === "superadmin") && (
+                {(user?.role === "admin" || user?.role === "superadmin") && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Organization</label>
 
@@ -171,7 +170,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
             </div>
 
             <div>
-                <label className="block text-sm font-medium mb-1">Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address *</label>
                 <Textarea
                     name="address"
                     rows={3}
@@ -200,7 +199,7 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
             </div>
 
             <div className="space-y-3">
-                <label className="text-sm font-medium text-muted-foreground ml-1">
+                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">
                     Geospatial Selection
                 </label>
                 <MapPicker 
@@ -217,11 +216,10 @@ export function AddOfficeForm({ onCancel, onSubmit, officeLocationEditData }: Ba
                 <p className="text-[10px] text-muted-foreground italic px-1">Drop a pin or click on the map to automatically capture coordinates.</p>
             </div>
 
-            </div>
-            <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-end gap-2 mt-auto">
-                <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-                <Button type="submit" disabled={loading || isCreatingOfficeLocationLoading || isUpdatingOfficeLocationLoading}>
-                    {loading ? "Saving…" : officeLocationEditData ? "Save changes" : "Create location"}
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button variant={"outline"} type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
+                <Button variant={"default"} type="submit" className="px-8 h-11 rounded-xl min-w-[140px]" disabled={loading || isCreatingOfficeLocationLoading || isUpdatingOfficeLocationLoading}>
+                    {loading ? "Processing..." : officeLocationEditData ? "Update Location" : "Create Location"}
                 </Button>
             </div>
         </form>
@@ -267,7 +265,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
 
         try {
             const organizationId =
-                (user?.role === "superadmin")
+                (user?.role === "admin" || user?.role === "superadmin")
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
@@ -281,10 +279,10 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
                     ...payload,
                     id: departmentEditData.id,
                 });
-                toast.success("Department updated successfully");
+                toast.success("Department optimized successfully");
             } else {
                 await createDepartment(payload);
-                toast.success("Department created successfully");
+                toast.success("Business unit established successfully");
             }
             await onSubmit(formData);
         } catch (error: any) {
@@ -296,9 +294,8 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-full">
-            <div className="p-6 space-y-6 flex-1">
-                <Input
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
                 name="name"
                 label="Department Name"
                 required
@@ -309,7 +306,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
             />
 
             <div className="space-y-4">
-                {(user?.role === "superadmin") && (
+                {(user?.role === "admin" || user?.role === "superadmin") && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Organization</label>
 
@@ -330,7 +327,7 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
             </div>
 
             <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <Textarea
                     name="description"
                     rows={3}
@@ -341,11 +338,10 @@ export function AddDepartmentForm({ onCancel, onSubmit, departmentEditData }: Ba
                 />
             </div>
 
-            </div>
-            <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-end gap-2 mt-auto">
-                <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-                <Button type="submit" disabled={loading}>
-                    {loading ? "Saving…" : departmentEditData ? "Save changes" : "Create department"}
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button variant="outline" type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
+                <Button variant="default" className="px-8 h-11 rounded-xl min-w-[140px]" type="submit" disabled={loading}>
+                    {loading ? "Processing..." : departmentEditData ? "Update Department" : "Save Department"}
                 </Button>
             </div>
         </form>
@@ -390,7 +386,7 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
         setLoading(true);
         try {
             const organizationId =
-                (user?.role === "superadmin")
+                (user?.role === "admin" || user?.role === "superadmin")
                     ? formData.organizationId
                     : (user?.organization?.id || "");
 
@@ -419,9 +415,8 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col min-h-full">
-            <div className="p-6 space-y-6 flex-1">
-                <Input
+        <form onSubmit={handleSubmit} className="space-y-6">
+            <Input
                 name="name"
                 label="Designation Title"
                 required
@@ -432,7 +427,7 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
             />
 
             <div className="space-y-4">
-                {(user?.role === "superadmin") && (
+                {(user?.role === "admin" || user?.role === "superadmin") && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Organization</label>
                         <Select value={String(formData.organizationId)} onValueChange={handleOrgChange}>
@@ -452,7 +447,7 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
             </div>
 
             <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <Textarea
                     name="description"
                     rows={3}
@@ -463,11 +458,10 @@ export function AddDesignationForm({ onCancel, onSubmit, designationEditData }: 
                 />
             </div>
 
-            </div>
-            <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-end gap-2 mt-auto">
-                <Button variant="outline" type="button" onClick={onCancel}>Cancel</Button>
-                <Button type="submit" disabled={loading}>
-                    {loading ? "Saving…" : designationEditData ? "Save changes" : "Create designation"}
+            <div className="flex justify-end gap-3 pt-8 mt-4 border-t border-border/50">
+                <Button variant="outline" type="button" className="px-8 h-11 rounded-xl" onClick={onCancel}>Cancel</Button>
+                <Button variant="default" className="px-8 h-11 rounded-xl min-w-[140px]" type="submit" disabled={loading}>
+                    {loading ? "Processing..." : designationEditData ? "Update Designation" : "Save Designation"}
                 </Button>
             </div>
         </form>

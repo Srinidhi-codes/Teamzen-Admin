@@ -1,61 +1,32 @@
-"use client";
-
+"use client"
+import { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
+import { Menu } from "lucide-react";
+import { useTokenRefresh } from "@/lib/api/hooks";
 import { Navbar } from "../common/Navbar";
-import { LocationSyncBanner } from "../common/LocationSyncBanner";
-import { PlanExpiryBanner } from "../common/PlanExpiryBanner";
+import AssistantWidget from "../ai";
+import { OnboardingTour } from "../common/OnboardingTour";
 import { useStore } from "@/lib/store/useStore";
-import { cn } from "@/lib/utils";
-import dynamic from "next/dynamic";
-import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
+import { LocationSyncBanner } from "../common/LocationSyncBanner";
 
-const AssistantWidget = dynamic(() => import("../ai"), {
-  ssr: false,
-  loading: () => null,
-});
-const OnboardingTour = dynamic(
-  () => import("../common/OnboardingTour").then((mod) => mod.OnboardingTour),
-  { ssr: false, loading: () => null }
-);
-
-import { useState, useEffect } from "react";
-import { AnnouncementModal, AnnouncementItem } from "../common/AnnouncementModal";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const {
-    sidebarCollapsed: isCollapsed,
-    setSidebarCollapsed: setIsCollapsed,
-    sidebarMobileOpen: isMobileOpen,
-    setSidebarMobileOpen: setIsMobileOpen,
+  const { 
+    sidebarCollapsed: isCollapsed, 
+    setSidebarCollapsed: setIsCollapsed, 
+    sidebarMobileOpen: isMobileOpen, 
+    setSidebarMobileOpen: setIsMobileOpen 
   } = useStore();
-  const { can } = useOrgPlan();
-
-  const [activeAnnouncement, setActiveAnnouncement] = useState<AnnouncementItem | null>(null);
-
-  useEffect(() => {
-    const handleRealtimeAnnouncement = (e: any) => {
-      const data = e.detail;
-      if (data && data.verb === "announcement") {
-        setActiveAnnouncement({
-          id: data.id,
-          message: data.message,
-          imageUrl: data.imageUrl,
-          createdAt: data.createdAt,
-          actor: data.actor,
-        });
-      }
-    };
-
-    window.addEventListener("teamzen_announcement", handleRealtimeAnnouncement);
-    return () => window.removeEventListener("teamzen_announcement", handleRealtimeAnnouncement);
-  }, []);
+  useTokenRefresh();
 
   return (
-    <div className="min-h-screen bg-background text-foreground" style={{ scrollbarGutter: "stable" }}>
+    <div className="flex min-h-screen bg-background text-foreground mt-20" style={{ scrollbarGutter: 'stable' }}>
+      <LocationSyncBanner />
+
       <AdminSidebar
         isCollapsed={isCollapsed}
         toggleCollapse={() => setIsCollapsed(!isCollapsed)}
@@ -63,26 +34,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         closeMobile={() => setIsMobileOpen(false)}
       />
 
-      <div
-        className={cn(
-          "flex min-h-screen flex-col transition-[margin] duration-200 ease-out",
-          isCollapsed ? "md:ml-16" : "md:ml-60"
-        )}
-      >
-        <PlanExpiryBanner />
-        <LocationSyncBanner />
+      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 w-full md:ml-24">
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-8 pt-24 sm:pt-24 bg-background">
+          {children}
+        </main>
       </div>
-
-      {can("ai_assistant") && <AssistantWidget />}
+      <AssistantWidget />
       <OnboardingTour />
-
-      <AnnouncementModal
-        isOpen={!!activeAnnouncement}
-        announcement={activeAnnouncement}
-        onClose={() => setActiveAnnouncement(null)}
-      />
     </div>
   );
 }
