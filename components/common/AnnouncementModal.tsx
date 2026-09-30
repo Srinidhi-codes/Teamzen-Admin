@@ -44,6 +44,18 @@ export function AnnouncementModal({
     ? `${announcement.actor.firstName} ${announcement.actor.lastName || ""}`.trim()
     : "Company Leadership";
 
+  let parsedMessage = null;
+  try {
+    parsedMessage = JSON.parse(announcement.message);
+  } catch (e) {
+    // legacy or plain text announcement
+  }
+
+  const title = parsedMessage?.title || "Company Announcement";
+  const body = parsedMessage?.body || announcement.message;
+  const footer = parsedMessage?.footer || null;
+  const department = parsedMessage?.department || "Company Wide";
+
   const handleAcknowledge = async () => {
     if (!isPreview && announcement.id) {
       try {
@@ -65,7 +77,7 @@ export function AnnouncementModal({
     <>
        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="sm:max-w-xl p-0 overflow-hidden border-border/80 bg-card rounded-2xl shadow-2xl gap-0">
-          <DialogTitle className="sr-only">Company Announcement</DialogTitle>
+          <DialogTitle className="sr-only">{title}</DialogTitle>
           <DialogDescription className="sr-only">
             Official company announcement broadcast
           </DialogDescription>
@@ -80,13 +92,17 @@ export function AnnouncementModal({
                 <div>
                   <div className="flex items-center gap-2">
                   <h3 className="text-base sm:text-lg font-bold text-foreground">
-                    Company Announcement
+                    {title}
                   </h3>
                     {isPreview && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                         Live Preview
                       </span>
                     )}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-0.5 font-medium flex items-center gap-1.5">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/60"></span>
+                    {department}
                   </div>
                 </div>
               </div>
@@ -95,11 +111,29 @@ export function AnnouncementModal({
 
           {/* Body Content */}
           <div className="p-6 max-h-[65vh] overflow-y-auto space-y-4">
+            {/* Formatted Message */}
+            <div className="px-1">
+              <p className="text-[15px] sm:text-base leading-relaxed text-foreground/90 whitespace-pre-wrap font-normal">
+                {body}
+              </p>
+            </div>
+
+            {/* Footer */}
+            {footer && (
+              <div className="mt-2 px-1">
+                <div className="border-l-2 border-primary/50 pl-4 py-1">
+                  <p className="text-sm text-muted-foreground italic whitespace-pre-wrap">
+                    {footer}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Announcement Image Preview */}
             {announcement.imageUrl && (
               <div
                 onClick={() => setIsZoomed(true)}
-                className="group relative cursor-pointer overflow-hidden rounded-xl border border-border/80 bg-muted/40 shadow-xs max-h-72 flex items-center justify-center"
+                className="group relative cursor-pointer overflow-hidden rounded-xl border border-border/80 bg-muted/40 shadow-xs max-h-72 flex items-center justify-center mt-2"
               >
                 <img
                   src={announcement.imageUrl}
@@ -112,13 +146,6 @@ export function AnnouncementModal({
                 </div>
               </div>
             )}
-
-            {/* Formatted Message */}
-            <div className="bg-muted/30 border border-border/50 rounded-xl p-4 sm:p-5">
-              <p className="text-sm sm:text-base leading-relaxed text-foreground whitespace-pre-wrap font-normal">
-                {announcement.message}
-              </p>
-            </div>
 
             {/* Author & Timestamp Info */}
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40 text-xs text-muted-foreground">

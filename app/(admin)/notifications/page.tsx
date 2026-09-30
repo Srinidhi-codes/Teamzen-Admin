@@ -19,9 +19,13 @@ import { toast } from "sonner";
 import { Bell, Megaphone, Eye } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
+import { Input } from "@/components/common/Input";
 
 export default function NotificationsPage() {
+  const [title, setTitle] = useState("");
+  const [department, setDepartment] = useState("Company Wide");
   const [message, setMessage] = useState("");
+  const [footer, setFooter] = useState("");
   const [notificationType, setNotificationType] = useState("PUSH");
   const [sendToBots, setSendToBots] = useState(false);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -51,15 +55,22 @@ export default function NotificationsPage() {
 
   const handleBroadcast = async () => {
     if (!message.trim()) {
-      toast.error("Please enter a message");
+      toast.error("Please enter a message body");
       return;
     }
+
+    const payload = JSON.stringify({
+      title: title.trim() || undefined,
+      body: message.trim(),
+      footer: footer.trim() || undefined,
+      department: department.trim() || "Company Wide",
+    });
 
     setIsSending(true);
     try {
       await sendBroadcast({
         variables: {
-          message,
+          message: payload,
           verb: "announcement",
           notificationType,
           sendToBots,
@@ -67,7 +78,9 @@ export default function NotificationsPage() {
         },
       });
       toast.success("Broadcast sent");
+      setTitle("");
       setMessage("");
+      setFooter("");
       setSendToBots(false);
       setImageBase64(null);
       // Reset file input
@@ -126,13 +139,40 @@ export default function NotificationsPage() {
             </p>
 
             <div className="mt-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Title</label>
+                  <Input
+                    placeholder="e.g., Q3 Update"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium">Audience Badge</label>
+                  <Input
+                    placeholder="e.g., Company Wide, Engineering..."
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                  />
+                </div>
+              </div>
               <FormTextarea
-                label="Message"
-                placeholder="Write your announcement…"
-                rows={6}
+                label="Message Body"
+                placeholder="Write your announcement details…"
+                rows={5}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
               />
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Footer Info (Optional)</label>
+                <Input
+                  placeholder="e.g., Reach out to HR for more details"
+                  value={footer}
+                  onChange={(e) => setFooter(e.target.value)}
+                />
+              </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Attach Image</label>
@@ -282,7 +322,12 @@ export default function NotificationsPage() {
         isOpen={showLivePreview}
         isPreview={true}
         announcement={{
-          message,
+          message: JSON.stringify({
+            title: title.trim() || undefined,
+            body: message.trim(),
+            footer: footer.trim() || undefined,
+            department: department.trim() || "Company Wide",
+          }),
           imageUrl: imageBase64,
           createdAt: new Date().toISOString(),
           actor: { firstName: "Admin (You)" },
