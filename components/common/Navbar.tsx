@@ -292,7 +292,12 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <a
-                    href={process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000/dashboard"}
+                    href={
+                      process.env.NEXT_PUBLIC_FRONTEND_URL ||
+                      (typeof window !== "undefined"
+                        ? `${window.location.origin.replace("3001", "3000")}/dashboard`
+                        : "http://localhost:3000/dashboard")
+                    }
                     className="flex cursor-pointer items-center gap-2"
                   >
                     <ExternalLink className="h-4 w-4" />
