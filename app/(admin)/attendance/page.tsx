@@ -299,12 +299,14 @@ export default function AttendancePage() {
       key: "heartbeats",
       label: "Presence & Heartbeats",
       render: (_: any, row: AttendanceRecord) => {
+        const officeRadius = row.officeLocation?.geoRadiusMeters || 200;
         const total = row.totalHeartbeats ?? (row.heartbeats?.length || 0);
         const valid = row.validHeartbeats ?? (row.heartbeats?.filter((h) => h.isWithinGeofence).length || 0);
-        const pct = total > 0 ? Math.round((valid / total) * 100) : 100;
-        const hasAnomaly = row.roamingAnomalyDetected || (total - valid > 1);
+        const isFarCheckIn = row.loginDistance != null && row.loginDistance > officeRadius;
+        const pct = total > 0 ? Math.round((valid / total) * 100) : (isFarCheckIn ? 0 : 100);
+        const hasAnomaly = row.roamingAnomalyDetected || (total - valid > 0) || isFarCheckIn;
 
-        if (total === 0) {
+        if (total === 0 && !isFarCheckIn) {
           return <span className="text-xs text-muted-foreground">No pings logged</span>;
         }
 
@@ -319,7 +321,7 @@ export default function AttendancePage() {
               )}
             >
               {hasAnomaly ? <AlertTriangle className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
-              {pct}% ({valid}/{total})
+              {total > 0 ? `${pct}% (${valid}/${total})` : `0% (${Math.round((row.loginDistance || 0) / 100) / 10}km away)`}
             </span>
             {row.roamingNotes && (
               <span className="text-[10px] text-destructive truncate max-w-[140px]" title={row.roamingNotes}>

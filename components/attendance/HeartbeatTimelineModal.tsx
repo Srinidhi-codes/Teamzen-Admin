@@ -25,13 +25,39 @@ interface HeartbeatTimelineModalProps {
 }
 
 export function HeartbeatTimelineModal({ record, onClose }: HeartbeatTimelineModalProps) {
-  const heartbeats = record.heartbeats || [];
-  const total = record.totalHeartbeats ?? heartbeats.length;
-  const valid = record.validHeartbeats ?? heartbeats.filter((h) => h.isWithinGeofence).length;
-  const outOfFence = record.outOfFenceHeartbeats ?? (total - valid);
+  const officeRadius = record.officeLocation?.geoRadiusMeters || 200;
+  const rawHeartbeats = record.heartbeats || [];
+  const heartbeats: AttendanceHeartbeat[] =
+    rawHeartbeats.length > 0
+      ? rawHeartbeats
+      : record.loginLatitude && record.loginLongitude
+        ? [
+            {
+              id: -1,
+              timestamp:
+                record.attendanceDate && record.loginTime
+                  ? `${record.attendanceDate}T${record.loginTime}`
+                  : new Date().toISOString(),
+              latitude: Number(record.loginLatitude),
+              longitude: Number(record.loginLongitude),
+              distanceMeters: record.loginDistance ?? 0,
+              isWithinGeofence: Boolean(
+                record.isWithinGeofence ??
+                  ((record.loginDistance ?? 9999) <= officeRadius)
+              ),
+              accuracyMeters: null,
+              isMocked: false,
+              batteryLevel: null,
+            } as unknown as AttendanceHeartbeat,
+          ]
+        : [];
 
-  const presencePct = total > 0 ? Math.round((valid / total) * 100) : 100;
-  const hasAnomaly = record.roamingAnomalyDetected || outOfFence > 1;
+  const total = record.totalHeartbeats && record.totalHeartbeats > 0 ? record.totalHeartbeats : heartbeats.length;
+  const valid = record.validHeartbeats != null && record.totalHeartbeats ? record.validHeartbeats : heartbeats.filter((h) => h.isWithinGeofence).length;
+  const outOfFence = record.outOfFenceHeartbeats != null && record.totalHeartbeats ? record.outOfFenceHeartbeats : Math.max(0, total - valid);
+
+  const presencePct = total > 0 ? Math.round((valid / total) * 100) : (record.loginDistance && record.loginDistance > officeRadius ? 0 : 100);
+  const hasAnomaly = record.roamingAnomalyDetected || outOfFence > 0 || (record.loginDistance && record.loginDistance > officeRadius);
 
   const isShiftActive = !record.logoutTime && record.loginTime;
   let grossHours = Number(record.workedHours) || 0;
