@@ -293,10 +293,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                 <DropdownMenuItem asChild>
                   <a
                     href={
-                      process.env.NEXT_PUBLIC_FRONTEND_URL ||
-                      (typeof window !== "undefined"
-                        ? `${window.location.origin.replace("3001", "3000")}/dashboard`
-                        : "http://localhost:3000/dashboard")
+                      process.env.NEXT_PUBLIC_FRONTEND_URL
+                        ? `${process.env.NEXT_PUBLIC_FRONTEND_URL.replace(/\/$/, "")}/dashboard`
+                        : (typeof window !== "undefined"
+                            ? `${window.location.origin.replace("3001", "3000")}/dashboard`
+                            : "http://localhost:3000/dashboard")
                     }
                     className="flex cursor-pointer items-center gap-2"
                   >

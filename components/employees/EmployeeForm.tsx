@@ -788,6 +788,31 @@ export default function EmployeeForm({
                             ]}
                         />
                     </div>
+                    <div className="mt-6 rounded-xl border border-border bg-muted/30 p-4">
+                        <h4 className="text-sm font-medium mb-4">Account status</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-sm font-medium">Active Account</p>
+                                    <p className="text-xs text-muted-foreground">User can log into the platform.</p>
+                                </div>
+                                <Switch
+                                    checked={formData.isActive}
+                                    onCheckedChange={(v) => handleSwitchChange("isActive", v)}
+                                />
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-sm font-medium">Manual Verification</p>
+                                    <p className="text-xs text-muted-foreground">Mark user as fully verified.</p>
+                                </div>
+                                <Switch
+                                    checked={formData.isVerified}
+                                    onCheckedChange={(v) => handleSwitchChange("isVerified", v)}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="employment" forceMount className={cn("mt-0 pb-4 space-y-4 data-[state=inactive]:hidden")}>

@@ -1,13 +1,16 @@
 "use client";
 
 import { User } from "@/lib/graphql/users/types";
-import { Mail, Phone, Building2, Edit, MapPin, ClipboardList, Loader2, LogOut } from "lucide-react";
+import { Mail, Phone, Building2, Edit, MapPin, QrCode, ShieldCheck, Briefcase, Download } from "lucide-react";
 import { Switch } from "../ui/switch";
 import Image from "next/image";
 import { useState } from "react";
 import { useStore } from "@/lib/store/useStore";
 import { cn } from "@/lib/utils";
 import { PhotoOverlay } from "@/components/common/PhotoOverlay";
+import { Badge } from "@/components/common/Badge";
+import { QRCodeSVG } from "qrcode.react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface EmployeeCardProps {
   employee: User;
@@ -29,13 +32,39 @@ export default function EmployeeCard({
   startingOffboardingId,
 }: EmployeeCardProps) {
   const [isPhotoOpen, setIsPhotoOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const { user: currentUser } = useStore();
   const isAdminOrHr =
     currentUser?.role === "admin" ||
     currentUser?.role === "hr" ||
     currentUser?.role === "superadmin";
-  const isStarting = startingOnboardingId === employee.id;
-  const isStartingFnf = startingOffboardingId === employee.id;
+
+  const profileUrl = `${process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000"}/p/${employee.id}`;
+
+  const downloadQr = () => {
+    const svg = document.getElementById(`qr-code-${employee.id}`);
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new window.Image();
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.width; // square
+      // Add white background
+      if (ctx) {
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+      }
+      const pngFile = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.download = `${employee.firstName}-${employee.lastName}-QR.png`;
+      downloadLink.href = `${pngFile}`;
+      downloadLink.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
 
   return (
     <>
@@ -45,10 +74,17 @@ export default function EmployeeCard({
         className="h-24 w-full relative bg-gradient-to-r from-primary/10 to-primary/5"
         style={employee.organization?.accent ? { background: `linear-gradient(135deg, ${employee.organization.accent}20, transparent)` } : undefined}
       >
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 flex gap-2">
+            <button
+                onClick={() => setIsQrOpen(true)}
+                className="rounded-full bg-background/50 p-1.5 backdrop-blur-md hover:bg-background/80 transition-colors shadow-sm"
+                title="View QR Code"
+            >
+                <QrCode className="h-4 w-4 text-foreground" />
+            </button>
             <span
                 className={cn(
-                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider shadow-sm flex items-center justify-center",
                 employee.isActive
                     ? "bg-emerald-500 text-white dark:bg-emerald-600"
                     : "bg-destructive text-white"
@@ -94,34 +130,39 @@ export default function EmployeeCard({
         )}
       </div>
 
-      {/* Main Details */}
-      <div className="flex flex-1 flex-col px-5 pb-5">
-        <div className="mb-5">
-            <h3 className="truncate text-xl font-bold text-foreground tracking-tight">
-                {employee.firstName} {employee.lastName}
-            </h3>
-            <p className="truncate text-sm font-semibold text-primary mt-0.5">
-                {employee.designation?.name || "No designation"}
-            </p>
-            <p className="truncate text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                <Building2 className="h-3 w-3" />
-                {employee.organization?.name || employee.department?.name
-                ? `${employee.organization?.name || ""} ${employee.organization?.name && employee.department?.name ? '·' : ''} ${employee.department?.name || ""}`
-                : "No department"}
-            </p>
+      {/* Main Details (Mixed with Profile view styling) */}
+      <div className="flex flex-1 flex-col px-5 pb-5 space-y-4">
+        <div>
+            <div className="flex items-center gap-1.5">
+                <h3 className="truncate text-xl font-bold text-foreground tracking-tight">
+                    {employee.firstName} {employee.lastName}
+                </h3>
+                {employee.isVerified && <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />}
+            </div>
+            
+            <div className="mt-2 flex flex-wrap gap-2">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 rounded text-xs font-medium text-muted-foreground border border-border/50">
+                    <Briefcase className="h-3 w-3 text-primary" />
+                    {employee.designation?.name || "Not set"}
+                </div>
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-muted/50 rounded text-xs font-medium text-muted-foreground border border-border/50">
+                    <Building2 className="h-3 w-3 text-primary" />
+                    {employee.department?.name || "Not set"}
+                </div>
+            </div>
         </div>
 
         {/* Contact Info Box */}
-        <div className="space-y-3 text-xs bg-muted/30 rounded-xl p-3.5 border border-border/50 shadow-sm">
-            <div className="flex items-center gap-3 text-muted-foreground">
+        <div className="space-y-2.5 text-xs bg-muted/20 rounded-xl p-3 border border-border/50 shadow-sm">
+            <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Mail className="h-3.5 w-3.5 shrink-0 text-primary/70" />
                 <span className="truncate text-foreground font-medium">{employee.email}</span>
             </div>
-            <div className="flex items-center gap-3 text-muted-foreground">
+            <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Phone className="h-3.5 w-3.5 shrink-0 text-primary/70" />
                 <span className="truncate text-foreground font-medium">{employee.phoneNumber || "—"}</span>
             </div>
-            <div className="flex items-center gap-3 text-muted-foreground">
+            <div className="flex items-center gap-2.5 text-muted-foreground">
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-primary/70" />
                 <span className="truncate text-foreground font-medium">
                 {employee.officeLocation?.name || "No office"}
@@ -130,12 +171,12 @@ export default function EmployeeCard({
         </div>
 
         {/* Tags */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-md border border-border/60 bg-background px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="default" className="text-[10px] capitalize tracking-wider">
                 {employee.employmentType?.replace("_", " ") || "—"}
-            </span>
+            </Badge>
             {employee.faceEnrolled && (
-                <span className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 shadow-sm">
+                <span className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                 Face Enrolled
                 </span>
             )}
@@ -144,21 +185,11 @@ export default function EmployeeCard({
 
       {/* Admin Actions Footer */}
       {isAdminOrHr && (
-        <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/10 px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <Switch
-              checked={employee.isActive}
-              onCheckedChange={(checked) => onStatusToggle(employee.id, checked)}
-              className="scale-90"
-            />
-            <span className="text-xs font-medium text-muted-foreground">
-                {employee.isActive ? "Active" : "Suspended"}
-            </span>
-          </div>
+        <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/10 px-5 py-3.5">
           <div className="flex items-center gap-2">
             <button
               onClick={() => onEdit(employee)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary/10 text-primary px-3 text-xs font-semibold hover:bg-primary/20 transition-colors"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-4 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm"
               aria-label="Edit employee"
             >
               <Edit className="h-3.5 w-3.5" />
@@ -168,6 +199,39 @@ export default function EmployeeCard({
         </div>
       )}
     </div>
+
+    {/* Dialog for QR Code */}
+    <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Employee Profile QR</DialogTitle>
+                <DialogDescription>Scan to view their digital profile.</DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center p-6 bg-muted/10 rounded-xl space-y-6">
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-border">
+                    <QRCodeSVG 
+                        id={`qr-code-${employee.id}`} 
+                        value={profileUrl} 
+                        size={200} 
+                        level="H" 
+                        includeMargin={false}
+                    />
+                </div>
+                <div className="text-center space-y-1">
+                    <p className="font-semibold text-lg">{employee.firstName} {employee.lastName}</p>
+                    <p className="text-sm text-muted-foreground">{employee.designation?.name || "Employee"}</p>
+                </div>
+                <button
+                    onClick={downloadQr}
+                    className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+                >
+                    <Download className="w-4 h-4" />
+                    Download QR
+                </button>
+            </div>
+        </DialogContent>
+    </Dialog>
+
     <PhotoOverlay
       open={isPhotoOpen}
       onOpenChange={setIsPhotoOpen}

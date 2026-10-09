@@ -82,6 +82,7 @@ const navItems: NavItem[] = [
     feature: "policies",
   },
   { name: "Feedback", href: "/feedback", icon: MessageSquare },
+  { name: "Moderation", href: "/moderation", icon: ShieldCheck, roles: ["admin", "superadmin"] },
   { name: "Security", href: "/settings/security", icon: ShieldCheck, roles: ["admin", "superadmin"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["admin", "superadmin"] },
 ];

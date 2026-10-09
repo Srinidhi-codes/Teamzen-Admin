@@ -47,6 +47,7 @@ export const CREATE_USER = gql`
         lastName
         role
         isActive
+        isVerified
         department {
             id
             name
@@ -72,6 +73,7 @@ export const UPDATE_USER = gql`
         lastName
         role
         isActive
+        isVerified
         department {
             id
             name
