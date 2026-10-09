@@ -202,32 +202,45 @@ export default function EmployeeCard({
 
     {/* Dialog for QR Code */}
     <Dialog open={isQrOpen} onOpenChange={setIsQrOpen}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Employee Profile QR</DialogTitle>
-                <DialogDescription>Scan to view their digital profile.</DialogDescription>
+        <DialogContent className="sm:max-w-md p-6 gap-5">
+            <DialogHeader className="pr-8 text-left space-y-1">
+                <DialogTitle className="flex items-center gap-2">
+                    <QrCode className="w-5 h-5 text-primary" />
+                    <span>Employee Profile QR</span>
+                </DialogTitle>
+                <DialogDescription>Scan to view their digital visiting card.</DialogDescription>
             </DialogHeader>
-            <div className="flex flex-col items-center justify-center p-6 bg-muted/10 rounded-xl space-y-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-border">
+            <div className="flex flex-col items-center justify-center p-5 bg-muted/20 rounded-2xl space-y-4 border border-border/50">
+                <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-border">
                     <QRCodeSVG 
                         id={`qr-code-${employee.id}`} 
                         value={profileUrl} 
-                        size={200} 
+                        size={180} 
                         level="H" 
                         includeMargin={false}
                     />
                 </div>
                 <div className="text-center space-y-1">
-                    <p className="font-semibold text-lg">{employee.firstName} {employee.lastName}</p>
-                    <p className="text-sm text-muted-foreground">{employee.designation?.name || "Employee"}</p>
+                    <p className="font-bold text-lg text-foreground">{employee.firstName} {employee.lastName}</p>
+                    <p className="text-xs text-muted-foreground">{employee.designation?.name || "Employee"} {employee.department && `• ${employee.department.name}`}</p>
                 </div>
-                <button
-                    onClick={downloadQr}
-                    className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                >
-                    <Download className="w-4 h-4" />
-                    Download QR
-                </button>
+                <div className="flex items-center justify-center gap-2 w-full pt-1">
+                    <button
+                        onClick={downloadQr}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-xs font-medium transition-colors cursor-pointer"
+                    >
+                        <Download className="w-3.5 h-3.5" />
+                        Download QR
+                    </button>
+                    <a
+                        href={profileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium transition-colors shadow-sm cursor-pointer"
+                    >
+                        Open Profile
+                    </a>
+                </div>
             </div>
         </DialogContent>
     </Dialog>
