@@ -129,7 +129,7 @@ export default function ModerationPage() {
                   {post.title && <h4 className="font-bold mb-2">{post.title}</h4>}
                   
                   <div 
-                    className="text-sm prose prose-sm dark:prose-invert max-w-none mb-4"
+                    className="text-sm prose prose-sm dark:prose-invert max-w-none mb-4 [&_img]:w-full [&_img]:rounded-xl [&_img]:my-3 [&_img]:h-auto [&_img]:max-h-none [&_img]:object-contain [&_img]:block"
                     dangerouslySetInnerHTML={{ __html: post.content }}
                   />
                   

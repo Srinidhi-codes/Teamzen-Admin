@@ -1,5 +1,6 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,6 +20,8 @@ import {
   ShieldCheck,
   MessageSquare,
   ClipboardList,
+  UserMinus,
+  Bell,
   X,
 } from "lucide-react";
 import Image from "next/image";
@@ -30,61 +33,80 @@ interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  section?: string;
   roles?: string[];
   /** Plan feature required to see this nav item */
   feature?: "advanced_analytics" | "policies";
 }
 
 const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Organizations", href: "/organizations", icon: Building2, roles: ["admin", "superadmin"] },
-  { name: "Employees", href: "/employees", icon: Users },
+  // ── 1. Overview ────────────────────────────────
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, section: "Overview" },
+  {
+    name: "Reports",
+    href: "/reports",
+    icon: BarChart3,
+    section: "Overview",
+    roles: ["superadmin", "admin", "hr"],
+    feature: "advanced_analytics",
+  },
+
+  // ── 2. People & Workforce ──────────────────────
+  { name: "Employees", href: "/employees", icon: Users, section: "Workforce" },
   {
     name: "Onboarding",
     href: "/onboarding",
     icon: ClipboardList,
+    section: "Workforce",
     roles: ["superadmin", "admin", "hr"],
   },
   {
     name: "Offboarding",
     href: "/offboarding",
-    icon: FileText,
+    icon: UserMinus,
+    section: "Workforce",
     roles: ["superadmin", "admin", "hr"],
   },
   {
     name: "Documents",
     href: "/documents",
     icon: FileSpreadsheet,
+    section: "Workforce",
     roles: ["superadmin", "admin", "hr"],
   },
-  { name: "Attendance", href: "/attendance", icon: Clock },
-  { name: "Leaves", href: "/leaves", icon: Calendar },
-  { name: "Payroll", href: "/payroll", icon: DollarSign, roles: ["admin", "superadmin"] },
+
+  // ── 3. Time & Attendance ───────────────────────
+  { name: "Attendance", href: "/attendance", icon: Clock, section: "Time & Work" },
+  { name: "Leaves", href: "/leaves", icon: Calendar, section: "Time & Work" },
+
+  // ── 4. Compensation & Payroll ──────────────────
+  { name: "Payroll", href: "/payroll", icon: DollarSign, section: "Finance", roles: ["admin", "superadmin"] },
+
+  // ── 5. Talent & Workspace ──────────────────────
   {
     name: "Performance",
     href: "/performance",
     icon: TrendingUp,
+    section: "Talent & Culture",
     roles: ["superadmin", "admin", "hr", "manager"],
-    feature: "advanced_analytics",
-  },
-  {
-    name: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-    roles: ["superadmin", "admin", "hr"],
     feature: "advanced_analytics",
   },
   {
     name: "Policies",
     href: "/policies",
     icon: FileText,
+    section: "Talent & Culture",
     roles: ["admin", "superadmin"],
     feature: "policies",
   },
-  { name: "Feedback", href: "/feedback", icon: MessageSquare },
-  { name: "Moderation", href: "/moderation", icon: ShieldCheck, roles: ["admin", "superadmin"] },
-  { name: "Security", href: "/settings/security", icon: ShieldCheck, roles: ["admin", "superadmin"] },
-  { name: "Settings", href: "/settings", icon: Settings, roles: ["admin", "superadmin"] },
+  { name: "Feedback", href: "/feedback", icon: MessageSquare, section: "Talent & Culture" },
+
+  // ── 6. System & Administration ─────────────────
+  { name: "Organizations", href: "/organizations", icon: Building2, section: "Administration", roles: ["admin", "superadmin"] },
+  { name: "Moderation", href: "/moderation", icon: ShieldCheck, section: "Administration", roles: ["admin", "superadmin"] },
+  { name: "Notifications", href: "/notifications", icon: Bell, section: "Administration" },
+  { name: "Security", href: "/settings/security", icon: ShieldCheck, section: "Administration", roles: ["admin", "superadmin"] },
+  { name: "Settings", href: "/settings", icon: Settings, section: "Administration", roles: ["admin", "superadmin"] },
 ];
 
 export interface AdminSidebarProps {
@@ -172,8 +194,8 @@ export function AdminSidebar({
           </button>
         </div>
 
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-          {filteredNavItems.map((item) => {
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3 custom-scrollbar">
+          {filteredNavItems.map((item, index) => {
             const isActive =
               pathname === item.href ||
               (pathname.startsWith(item.href + "/") &&
@@ -185,25 +207,38 @@ export function AdminSidebar({
                 ));
             const Icon = item.icon;
             const showLabel = !isCollapsed || isMobileOpen;
+            const prevItem = index > 0 ? filteredNavItems[index - 1] : null;
+            const isNewSection = !prevItem || prevItem.section !== item.section;
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                id={`nav-${item.name.toLowerCase()}`}
-                onClick={() => isMobileOpen && closeMobile()}
-                title={!showLabel ? item.name : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
-                  showLabel ? "" : "justify-center px-0",
-                  isActive
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
+              <Fragment key={item.href}>
+                {isNewSection && item.section && showLabel && (
+                  <div className={cn("px-2.5 pb-1 select-none", index > 0 ? "pt-4" : "pt-0.5")}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      {item.section}
+                    </p>
+                  </div>
                 )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                {showLabel && <span className="truncate">{item.name}</span>}
-              </Link>
+                {isNewSection && !showLabel && index > 0 && (
+                  <div className="my-2 h-px bg-sidebar-border/60 mx-1.5" aria-hidden="true" />
+                )}
+                <Link
+                  href={item.href}
+                  id={`nav-${item.name.toLowerCase()}`}
+                  onClick={() => isMobileOpen && closeMobile()}
+                  title={!showLabel ? item.name : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
+                    showLabel ? "" : "justify-center px-0",
+                    isActive
+                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-4 w-4 shrink-0" />
+                  {showLabel && <span className="truncate">{item.name}</span>}
+                </Link>
+              </Fragment>
             );
           })}
         </nav>
