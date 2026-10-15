@@ -52,30 +52,38 @@ export default function LoginForm() {
 
   return (
     <>
-      <AuthShell title="Sign in" description="Use your admin credentials to continue.">
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <Input
-          label="Email"
-          icon={<Mail className="h-4 w-4" />}
-          name="email"
-          type="email"
-          autoComplete="email"
-          required
-          placeholder="admin@company.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={AUTH_INPUT_CLASS}
-        />
+      <AuthShell
+        title="Admin Sign In"
+        description="Enter your administrator credentials to access the console."
+      >
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground" htmlFor="email">
+            Admin Email
+          </label>
+          <Input
+            id="email"
+            icon={<Mail className="h-4 w-4" />}
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="admin@company.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={AUTH_INPUT_CLASS}
+          />
+        </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between gap-3">
-            <label className="text-sm font-medium text-foreground" htmlFor="password">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground" htmlFor="password">
               Password
             </label>
             <Link
               href="/forgot-password"
               prefetch={false}
-              className="text-sm font-medium text-primary hover:underline"
+              className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-500 dark:hover:text-teal-300 transition-colors hover:underline"
             >
               Forgot password?
             </Link>
@@ -87,7 +95,7 @@ export default function LoginForm() {
             autoComplete="current-password"
             required
             icon={<Lock className="h-4 w-4" />}
-            placeholder="Enter your password"
+            placeholder="Enter your admin password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={AUTH_INPUT_CLASS}
@@ -95,7 +103,7 @@ export default function LoginForm() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground/70 hover:text-foreground transition-colors"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -104,22 +112,27 @@ export default function LoginForm() {
           />
         </div>
 
-        <label className="flex cursor-pointer items-center gap-2.5">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            className="h-4 w-4 rounded border-border text-primary accent-primary"
-          />
-          <span className="text-sm text-muted-foreground">Remember me</span>
-        </label>
+        <div className="flex items-center justify-between pt-0.5">
+          <label className="flex cursor-pointer items-center gap-2 select-none">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-border text-teal-600 focus:ring-teal-500 accent-teal-600 cursor-pointer"
+            />
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground">Remember this workstation</span>
+          </label>
+          <span className="text-[11px] text-muted-foreground/75">Protected session</span>
+        </div>
 
-        <AuthSubmitButton type="submit" disabled={login.isPending} loading={login.isPending}>
-          {login.isPending ? "Signing in…" : "Sign in"}
-        </AuthSubmitButton>
+        <div className="pt-2">
+          <AuthSubmitButton type="submit" disabled={login.isPending} loading={login.isPending}>
+            {login.isPending ? "Authenticating…" : "Sign In to Console"}
+          </AuthSubmitButton>
+        </div>
       </form>
 
-      <AuthFooterLink prompt="New here?" href="/register" label="Create an account" />
+      <AuthFooterLink prompt="New organization?" href="/register" label="Set up an admin account" />
     </AuthShell>
 
     <ConfirmationModal
