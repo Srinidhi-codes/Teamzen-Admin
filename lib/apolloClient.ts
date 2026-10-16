@@ -29,6 +29,27 @@ const httpLink = createHttpLink({
   },
 });
 
+function getDynamicFrontendUrl(): string {
+  const envUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "";
+  if (typeof window !== "undefined") {
+    const origin = window.location.origin;
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      return origin.replace(":3001", ":3000");
+    }
+    if (envUrl && !envUrl.includes("localhost")) {
+      return envUrl.replace(/\/+$/, "");
+    }
+    if (origin.includes("-admin")) {
+      return origin.replace("-admin", "-client");
+    }
+    if (origin.includes("admin.")) {
+      return origin.replace("admin.", "");
+    }
+    return origin;
+  }
+  return envUrl.replace(/\/+$/, "") || "http://localhost:3000";
+}
+
 const authLink = setContext((_, { headers }) => {
   let csrftoken = "";
   if (typeof document !== "undefined") {
@@ -38,10 +59,15 @@ const authLink = setContext((_, { headers }) => {
     }
   }
 
+  const dynamicFrontendUrl = getDynamicFrontendUrl();
+  const adminOrigin = typeof window !== "undefined" ? window.location.origin : "";
+
   return {
     headers: {
       ...headers,
       "X-CSRFToken": csrftoken,
+      ...(dynamicFrontendUrl ? { "X-Frontend-Url": dynamicFrontendUrl } : {}),
+      ...(adminOrigin ? { "X-Admin-Origin": adminOrigin } : {}),
     },
   };
 });

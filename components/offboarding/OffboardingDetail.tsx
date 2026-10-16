@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { normalizePortalUrl } from "@/lib/utils";
 import { ExternalLink } from "lucide-react";
 import { FormSelect } from "@/components/common/FormSelect";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -147,8 +148,9 @@ export default function OffboardingDetail() {
         return;
       }
       if (payload?.inviteUrl) {
-        toast.success(`Invite: ${payload.inviteUrl}`);
-        await navigator.clipboard?.writeText(payload.inviteUrl).catch(() => undefined);
+        const cleanExitUrl = normalizePortalUrl(payload.inviteUrl);
+        toast.success(`Invite: ${cleanExitUrl}`);
+        await navigator.clipboard?.writeText(cleanExitUrl).catch(() => undefined);
       } else {
         toast.success(ok);
       }

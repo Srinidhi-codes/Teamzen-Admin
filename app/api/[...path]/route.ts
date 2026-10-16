@@ -45,6 +45,28 @@ async function handler(request: NextRequest, { params }: { params: Promise<{ pat
         forwardedHeaders['Authorization'] = `Bearer ${accessToken}`;
     }
 
+    if (!forwardedHeaders['x-frontend-url'] && !forwardedHeaders['X-Frontend-Url']) {
+        const envFrontend = process.env.NEXT_PUBLIC_FRONTEND_URL || '';
+        if (envFrontend && !envFrontend.includes('localhost')) {
+            forwardedHeaders['X-Frontend-Url'] = envFrontend.replace(/\/+$/, '');
+        } else {
+            const host = request.headers.get('host') || '';
+            const proto = request.nextUrl.protocol ? request.nextUrl.protocol.replace(':', '') : 'https';
+            let derived = `${proto}://${host}`;
+            if (derived.includes('-admin')) {
+                derived = derived.replace('-admin', '-client');
+            } else if (derived.includes('admin.')) {
+                derived = derived.replace('admin.', '');
+            } else if (derived.includes(':3001')) {
+                derived = derived.replace(':3001', ':3000');
+            }
+            forwardedHeaders['X-Frontend-Url'] = derived;
+        }
+    }
+    if (!forwardedHeaders['x-admin-origin'] && !forwardedHeaders['X-Admin-Origin']) {
+        forwardedHeaders['X-Admin-Origin'] = request.nextUrl.origin;
+    }
+
     let body: BodyInit | undefined;
     const method = request.method;
     if (!['GET', 'HEAD', 'DELETE'].includes(method)) {

@@ -43,6 +43,7 @@ import { useSearchParams } from "next/navigation";
 import { useStore } from "@/lib/store/useStore";
 import { useOnboardingMutations } from "@/lib/graphql/onboarding/onboardingHook";
 import { toast } from "sonner";
+import { normalizePortalUrl } from "@/lib/utils";
 import { useMutation } from "@apollo/client/react";
 import { START_OFFBOARDING } from "@/lib/graphql/offboarding/queries";
 
@@ -168,7 +169,8 @@ export default function EmployeesPage() {
             : `F&F started for ${employee.firstName}. Employee marked inactive.`
         );
         if (payload.inviteUrl) {
-          await navigator.clipboard?.writeText(payload.inviteUrl).catch(() => undefined);
+          const cleanExitUrl = normalizePortalUrl(payload.inviteUrl);
+          await navigator.clipboard?.writeText(cleanExitUrl).catch(() => undefined);
         }
         refetchUsers();
         router.push(`/offboarding/${payload.offboardingId}`);

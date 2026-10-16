@@ -22,6 +22,8 @@ import type {
   OfferLetter,
 } from "@/lib/graphql/onboarding/types";
 import { useStore } from "@/lib/store/useStore";
+import { normalizePortalUrl } from "@/lib/utils";
+import { toast } from "sonner";
 
 function formatJoinDate(value?: string | Date | null) {
   if (value == null || value === "") return "—";
@@ -290,11 +292,22 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
   async function run(action: () => Promise<unknown>, okMsg: string) {
     setMessage("");
     try {
-      await action();
-      setMessage(okMsg);
+      const res: any = await action();
+      const payload = res?.data?.sendPreboardingInvite;
+      if (payload?.inviteUrl) {
+        const cleanUrl = normalizePortalUrl(payload.inviteUrl);
+        await navigator.clipboard?.writeText(cleanUrl).catch(() => undefined);
+        setMessage(`${okMsg} — link copied: ${cleanUrl}`);
+        toast.success(`Invite resent & link copied: ${cleanUrl}`);
+      } else {
+        setMessage(okMsg);
+        toast.success(okMsg);
+      }
       refetch();
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Action failed");
+      const errMsg = e instanceof Error ? e.message : "Action failed";
+      setMessage(errMsg);
+      toast.error(errMsg);
     }
   }
 

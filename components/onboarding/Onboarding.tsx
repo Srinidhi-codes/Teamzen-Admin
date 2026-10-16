@@ -14,6 +14,8 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 import { Skeleton } from "@/components/common/Skeleton";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
+import { normalizePortalUrl } from "@/lib/utils";
+import { toast } from "sonner";
 import {
   useOnboardingMutations,
   useOnboardingOverview,
@@ -184,7 +186,12 @@ export default function OnboardingPage() {
       }
       // Close modal immediately so UI doesn't feel stuck during refetch
       setShowStart(false);
-      setInviteUrl(payload.inviteUrl || "");
+      const cleanInviteUrl = normalizePortalUrl(payload.inviteUrl || "");
+      setInviteUrl(cleanInviteUrl);
+      if (cleanInviteUrl) {
+        await navigator.clipboard?.writeText(cleanInviteUrl).catch(() => undefined);
+        toast.success("Preboarding link ready & copied to clipboard");
+      }
       setForm({
         email: "",
         firstName: "",
@@ -289,15 +296,33 @@ export default function OnboardingPage() {
       </div>
 
       {inviteUrl && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <a
-            className="inline-flex items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-800"
-            href={inviteUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open joining link
-          </a>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-emerald-800">Preboarding Link:</span>
+            <span className="truncate text-xs font-mono text-emerald-700 max-w-xs md:max-w-md">{normalizePortalUrl(inviteUrl)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="border-emerald-300 bg-white hover:bg-emerald-100 text-emerald-800 h-8 text-xs"
+              onClick={async () => {
+                await navigator.clipboard?.writeText(normalizePortalUrl(inviteUrl)).catch(() => undefined);
+                toast.success("Preboarding link copied to clipboard");
+              }}
+            >
+              Copy link
+            </Button>
+            <a
+              className="inline-flex items-center rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-800"
+              href={normalizePortalUrl(inviteUrl)}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open joining link
+            </a>
+          </div>
         </div>
       )}
 
