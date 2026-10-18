@@ -2,7 +2,7 @@
 
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { toast } from "sonner";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 function buildWsHost(): { protocol: string; host: string } {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -36,104 +36,131 @@ export function useNotifications(
   options: { silent?: boolean } = { silent: false }
 ) {
   const [socketUrl, setSocketUrl] = useState<string | null>(null);
+  const [shouldConnect, setShouldConnect] = useState(false);
   const callbackRef = useRef(onMessageReceived);
-  const warnedRef = useRef(false);
+  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     callbackRef.current = onMessageReceived;
   }, [onMessageReceived]);
 
-  useEffect(() => {
-    let cancelled = false;
-    let retryTimer: ReturnType<typeof setTimeout> | undefined;
-
-    const fetchTokenAndConnect = async () => {
-      try {
-        const res = await fetch("/api/auth/ws-token", { credentials: "include" });
-        if (!res.ok) {
-          // Not logged in / token not ready — retry quietly, don't open an anonymous socket
-          if (!cancelled) {
-            retryTimer = setTimeout(fetchTokenAndConnect, 8000);
-          }
-          return;
-        }
-
-        const data = await res.json();
-        const token = data?.token;
-        if (!token || cancelled) return;
-
-        const { protocol, host } = buildWsHost();
-        setSocketUrl(
-          `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`
-        );
-      } catch {
-        if (!cancelled) {
-          retryTimer = setTimeout(fetchTokenAndConnect, 8000);
-        }
-      }
-    };
-
-    fetchTokenAndConnect();
-
-    return () => {
-      cancelled = true;
-      if (retryTimer) clearTimeout(retryTimer);
-    };
-  }, []);
-
-  const { readyState } = useWebSocket(socketUrl, {
-    shouldReconnect: () => true,
-    reconnectAttempts: 50,
-    reconnectInterval: (attempt) => Math.min(1000 * 2 ** attempt, 15000),
-    share: true,
-    onOpen: () => {
-      warnedRef.current = false;
-    },
-    onClose: () => {},
-    onError: () => {
-      // Browser WebSocket error events are empty Event objects (`{}`) — not useful.
-      // Log once per disconnect streak so the console isn't spammed.
-      if (!warnedRef.current && process.env.NODE_ENV === "development") {
-        warnedRef.current = true;
-        console.warn(
-          "[notifications] WebSocket connection issue — will keep retrying in the background."
-        );
-      }
-    },
-    onMessage: (event) => {
-      let data: any;
-      try {
-        data = JSON.parse(event.data);
-      } catch {
+  const initConnection = useCallback(async (forceRefresh = false) => {
+    try {
+      const url = forceRefresh ? "/api/auth/ws-token?refresh=1" : "/api/auth/ws-token";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        setSocketUrl(null);
+        setShouldConnect(false);
         return;
       }
 
-      if (data.level !== "admin" && data.level !== "personal") return;
+      const data = await res.json();
+      const token = data?.token;
+      if (!token) {
+        setSocketUrl(null);
+        setShouldConnect(false);
+        return;
+      }
 
-      if (!options.silent) {
-        const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
-        const description = data.verb?.endsWith("_self")
-          ? "Action confirmed"
-          : `${data.actor?.firstName ?? ""} ${displayVerb ?? ""}`.trim();
+      const { protocol, host } = buildWsHost();
+      setSocketUrl(
+        `${protocol}//${host}/ws/notifications/?token=${encodeURIComponent(token)}`
+      );
+      setShouldConnect(true);
+    } catch {
+      setSocketUrl(null);
+      setShouldConnect(false);
+    }
+  }, []);
 
-        if (data.verb?.includes("rejected")) {
-          toast.error(data.message, { description, duration: 6000 });
-        } else if (data.verb?.includes("approved")) {
-          toast.success(data.message, { description, duration: 6000 });
-        } else if (data.verb?.includes("cancelled")) {
-          toast(data.message, { description, duration: 6000 });
-        } else {
-          toast.success(data.message, { description, duration: 5000 });
+  useEffect(() => {
+    let mounted = true;
+    initConnection();
+
+    return () => {
+      mounted = false;
+      if (refreshTimerRef.current) {
+        clearTimeout(refreshTimerRef.current);
+      }
+    };
+  }, [initConnection]);
+
+  const { readyState } = useWebSocket(
+    socketUrl,
+    {
+      shouldReconnect: (closeEvent) => {
+        // Never blindly reconnect if rejected with authentication error
+        if (
+          closeEvent?.code === 4401 ||
+          closeEvent?.code === 4001 ||
+          closeEvent?.code === 1008
+        ) {
+          return false;
         }
-      }
+        return shouldConnect;
+      },
+      reconnectAttempts: 10,
+      reconnectInterval: (attempt) => Math.min(2000 * 1.5 ** attempt, 20000),
+      share: true,
+      onOpen: () => {
+        if (refreshTimerRef.current) {
+          clearTimeout(refreshTimerRef.current);
+          refreshTimerRef.current = null;
+        }
+      },
+      onClose: (event) => {
+        // Stop retrying immediately upon 4401/4001 and attempt one quiet token refresh
+        if (event.code === 4401 || event.code === 4001) {
+          setShouldConnect(false);
+          setSocketUrl(null);
 
-      if (typeof window !== "undefined" && data.verb === "announcement") {
-        window.dispatchEvent(new CustomEvent("teamzen_announcement", { detail: data }));
-      }
+          if (refreshTimerRef.current) {
+            clearTimeout(refreshTimerRef.current);
+          }
+          refreshTimerRef.current = setTimeout(() => {
+            initConnection(true);
+          }, 3000);
+        }
+      },
+      onError: () => {
+        // Suppress noisy generic WebSocket error events
+      },
+      onMessage: (event) => {
+        let data: any;
+        try {
+          data = JSON.parse(event.data);
+        } catch {
+          return;
+        }
 
-      callbackRef.current?.(data);
+        if (data.level !== "admin" && data.level !== "personal") return;
+
+        if (!options.silent) {
+          const displayVerb = data.verb?.replace(/_self$/, "").replace(/_/g, " ");
+          const description = data.verb?.endsWith("_self")
+            ? "Action confirmed"
+            : `${data.actor?.firstName ?? ""} ${displayVerb ?? ""}`.trim();
+
+          if (data.verb?.includes("rejected")) {
+            toast.error(data.message, { description, duration: 6000 });
+          } else if (data.verb?.includes("approved")) {
+            toast.success(data.message, { description, duration: 6000 });
+          } else if (data.verb?.includes("cancelled")) {
+            toast(data.message, { description, duration: 6000 });
+          } else {
+            toast.success(data.message, { description, duration: 5000 });
+          }
+        }
+
+        if (typeof window !== "undefined" && data.verb === "announcement") {
+          window.dispatchEvent(new CustomEvent("teamzen_announcement", { detail: data }));
+        }
+
+        callbackRef.current?.(data);
+      },
     },
-  }, socketUrl !== null);
+    shouldConnect && socketUrl !== null
+  );
 
   return { readyState, isConnected: readyState === ReadyState.OPEN };
 }
