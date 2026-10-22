@@ -23,6 +23,8 @@ export interface UISlice {
     setAssistantOpen: (state: boolean) => void;
     assistantQuery: string;
     setAssistantQuery: (query: string) => void;
+    hasHydrated: boolean;
+    setHasHydrated: (state: boolean) => void;
 }
 
 export const createUISlice: StateCreator<UISlice> = (set) => ({
@@ -39,4 +41,6 @@ export const createUISlice: StateCreator<UISlice> = (set) => ({
     setAssistantOpen: (assistantOpen) => set({ assistantOpen }),
     assistantQuery: '',
     setAssistantQuery: (assistantQuery) => set({ assistantQuery }),
+    hasHydrated: false,
+    setHasHydrated: (hasHydrated) => set({ hasHydrated }),
 });

@@ -24,9 +24,38 @@ export default function EmployeeImportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  const role = (user?.role || "").toLowerCase();
+  const isHigherLevel =
+    role === "superadmin" ||
+    role === "admin" ||
+    role === "hr" ||
+    (user?.hierarchyLevel !== undefined && user?.hierarchyLevel !== null && user.hierarchyLevel <= 2);
+
   const backHref = organizationId
     ? `/employees?organizationId=${encodeURIComponent(organizationId)}`
     : "/employees";
+
+  if (user && !isHigherLevel) {
+    return (
+      <div className="page-shell">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-8 text-center max-w-lg mx-auto mt-12">
+          <h2 className="text-base font-semibold text-foreground">Access restricted</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Only administrators and HR personnel have permission to import employee records.
+          </p>
+          <div className="mt-4">
+            <Link
+              href="/employees"
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to employees
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-shell">

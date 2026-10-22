@@ -23,7 +23,8 @@ const navItems: NavItem[] = [
   { name: "Performance", href: "/performance", icon: "🎯", roles: ["admin", "hr", "manager", "superadmin"] },
   { name: "Reports", href: "/reports", icon: "📈", roles: ["admin", "hr", "superadmin"] },
   { name: "Feedback", href: "/feedback", icon: "💬" },
-  { name: "Notifications", href: "/notifications", icon: "🔔" },
+  { name: "Access Control", href: "/access-control", icon: "🛡️", roles: ["admin", "superadmin"] },
+  { name: "Email Templates", href: "/settings/email-templates", icon: "✉️", roles: ["admin", "superadmin"] },
   { name: "Settings", href: "/settings", icon: "⚙️", roles: ["admin", "hr", "superadmin"] },
 ];
 

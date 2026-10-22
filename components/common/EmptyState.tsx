@@ -12,12 +12,28 @@ type EmptyStateProps = {
   size?: EmptyStateSize;
   children?: React.ReactNode;
   action?: { label: string; onClick: () => void };
+  contentClassName?: string;
+  headingClassName?: string;
+  descriptionClassName?: string;
+  imageClassName?: string;
 };
 
 const minH: Record<EmptyStateSize, string> = {
   compact: "min-h-[220px] sm:min-h-[280px]",
-  default: "min-h-[320px] sm:min-h-[400px]",
-  wide: "h-[360px] sm:h-[460px]",
+  default: "min-h-[300px] sm:min-h-[360px] lg:min-h-[400px]",
+  wide: "h-[320px] sm:h-[400px] lg:h-[440px]",
+};
+
+const headingSize: Record<EmptyStateSize, string> = {
+  compact: "text-lg sm:text-xl font-bold",
+  default: "text-xl sm:text-2xl font-bold",
+  wide: "text-xl sm:text-2xl lg:text-3xl font-bold",
+};
+
+const descSize: Record<EmptyStateSize, string> = {
+  compact: "text-xs sm:text-sm max-w-sm leading-relaxed",
+  default: "text-sm sm:text-base max-w-md leading-relaxed",
+  wide: "text-sm sm:text-base max-w-md leading-relaxed",
 };
 
 /** Illustrated empty state — art fills the parent card; copy sits in the left cream space. */
@@ -30,10 +46,20 @@ export function EmptyState({
   size = "default",
   children,
   action,
+  contentClassName,
+  headingClassName,
+  descriptionClassName,
+  imageClassName,
 }: EmptyStateProps) {
   if (src) {
     return (
-      <div className={cn("relative w-full overflow-hidden", minH[size], className)}>
+      <div
+        className={cn(
+          "relative w-full rounded-2xl border border-border/60 overflow-hidden shadow-xs",
+          minH[size],
+          className
+        )}
+      >
         <Image
           src={src}
           alt=""
@@ -41,14 +67,31 @@ export function EmptyState({
           loading="lazy"
           decoding="async"
           sizes="100vw"
-          className="object-cover object-bottom"
+          className={cn("object-cover object-bottom", imageClassName)}
         />
-        <div className="absolute inset-y-0 left-0 z-10 flex w-[58%] max-w-lg flex-col justify-center px-5 py-6 text-left sm:w-[46%] sm:px-8">
-          <h3 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+        <div
+          className={cn(
+            "absolute inset-y-0 left-0 z-10 flex w-[62%] sm:w-[48%] max-w-lg flex-col justify-center px-6 py-8 text-left sm:px-10",
+            contentClassName
+          )}
+        >
+          <h3
+            className={cn(
+              headingSize[size],
+              "tracking-tight text-slate-900",
+              headingClassName
+            )}
+          >
             {title}
           </h3>
           {description ? (
-            <p className="mt-1.5 max-w-xs text-sm leading-relaxed text-slate-600">
+            <p
+              className={cn(
+                "mt-2 text-slate-600",
+                descSize[size],
+                descriptionClassName
+              )}
+            >
               {description}
             </p>
           ) : null}

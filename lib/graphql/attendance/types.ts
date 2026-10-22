@@ -87,6 +87,7 @@ export type OrgAttendanceFilterInput = {
   startDate?: string;
   endDate?: string;
   search?: string;
+  userId?: string;
   status?: string;
   roamingOnly?: boolean;
   approvalStatus?: string;

@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useReportedPosts, useModerationMutations } from "@/lib/graphql/feed/feedHooks";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,24 @@ import { AlertTriangle, CheckCircle, Trash2, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Pagination } from "@/components/common/Pagination";
 
 export default function ModerationPage() {
   const { reportedPosts, loading, refetch } = useReportedPosts();
   const { dismissReport, deletePost } = useModerationMutations();
+
+  const [page, setPage] = useState(1);
+  const pageSize = 5;
+
+  useEffect(() => {
+    setPage(1);
+  }, [reportedPosts.length]);
+
+  const totalPages = Math.ceil(reportedPosts.length / pageSize) || 1;
+  const paginatedPosts = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return reportedPosts.slice(start, start + pageSize);
+  }, [reportedPosts, page, pageSize]);
 
   const [deleteReason, setDeleteReason] = useState("");
   const [selectedPostId, setSelectedPostId] = useState<string | null>(null);
@@ -73,75 +86,90 @@ export default function ModerationPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6">
-          {reportedPosts.map((post: any) => (
-            <Card key={post.id} className="border-red-100 dark:border-red-950 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-              <CardHeader className="pb-3 flex flex-row items-start justify-between">
-                <div>
-                  <CardTitle className="text-red-600 flex items-center gap-2 text-lg">
-                    <AlertTriangle className="h-5 w-5" />
-                    Reported Content
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    Reported by <strong>{post.reportedBy?.firstName} {post.reportedBy?.lastName}</strong> ({post.reportedBy?.email})
-                  </CardDescription>
-                  <div className="mt-2 p-3 bg-red-50 dark:bg-red-950/30 rounded-md text-sm border border-red-100 dark:border-red-900/50">
-                    <span className="font-semibold text-red-800 dark:text-red-300">Reason:</span>{" "}
-                    <span className="text-red-700 dark:text-red-400">{post.reportReason}</span>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleDismiss(post.id)}>
-                    Dismiss Report
-                  </Button>
-                  <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(post.id)}>
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Delete Post
-                  </Button>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="border rounded-lg p-5 bg-muted/10">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground border">
-                      {post.author.profilePictureUrl ? (
-                        <img 
-                          src={post.author.profilePictureUrl.startsWith('http') ? post.author.profilePictureUrl : `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}${post.author.profilePictureUrl}`} 
-                          alt="avatar"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        post.author.firstName?.[0] || '?'
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">
-                        {post.author.firstName} {post.author.lastName}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Posted {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                      </p>
+        <div className="space-y-6">
+          <div className="grid gap-6">
+            {paginatedPosts.map((post: any) => (
+              <Card key={post.id} className="border-red-100 dark:border-red-950 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                <CardHeader className="pb-3 flex flex-row items-start justify-between">
+                  <div>
+                    <CardTitle className="text-red-600 flex items-center gap-2 text-lg">
+                      <AlertTriangle className="h-5 w-5" />
+                      Reported Content
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Reported by <strong>{post.reportedBy?.firstName} {post.reportedBy?.lastName}</strong> ({post.reportedBy?.email})
+                    </CardDescription>
+                    <div className="mt-2 p-3 bg-red-50 dark:bg-red-950/30 rounded-md text-sm border border-red-100 dark:border-red-900/50">
+                      <span className="font-semibold text-red-800 dark:text-red-300">Reason:</span>{" "}
+                      <span className="text-red-700 dark:text-red-400">{post.reportReason}</span>
                     </div>
                   </div>
-                  
-                  {post.title && <h4 className="font-bold mb-2">{post.title}</h4>}
-                  
-                  <div 
-                    className="text-sm prose prose-sm dark:prose-invert max-w-none mb-4 [&_img]:w-full [&_img]:rounded-xl [&_img]:my-3 [&_img]:h-auto [&_img]:max-h-none [&_img]:object-contain [&_img]:block"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                  />
-                  
-                  {post.mediaUrls?.length > 0 && (
-                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-4 border-t pt-3">
-                      <Eye className="w-3 h-3" /> This post contains {post.mediaUrls.length} attachment(s).
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleDismiss(post.id)}>
+                      Dismiss Report
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => openDeleteDialog(post.id)}>
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete Post
+                    </Button>
+                  </div>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="border rounded-lg p-5 bg-muted/10">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground border">
+                        {post.author.profilePictureUrl ? (
+                          <img 
+                            src={post.author.profilePictureUrl.startsWith('http') ? post.author.profilePictureUrl : `${process.env.NEXT_PUBLIC_BACKEND_URL || ''}${post.author.profilePictureUrl}`} 
+                            alt="avatar"
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          post.author.firstName?.[0] || '?'
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {post.author.firstName} {post.author.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Posted {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    
+                    {post.title && <h4 className="font-bold mb-2">{post.title}</h4>}
+                    
+                    <div 
+                      className="text-sm prose prose-sm dark:prose-invert max-w-none mb-4 [&_img]:w-full [&_img]:rounded-xl [&_img]:my-3 [&_img]:h-auto [&_img]:max-h-none [&_img]:object-contain [&_img]:block"
+                      dangerouslySetInnerHTML={{ __html: post.content }}
+                    />
+                    
+                    {post.mediaUrls?.length > 0 && (
+                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-4 border-t pt-3">
+                        <Eye className="w-3 h-3" /> This post contains {post.mediaUrls.length} attachment(s).
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="pt-2">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                total={reportedPosts.length}
+                pageSize={pageSize}
+                label="reported posts"
+              />
+            </div>
+          )}
         </div>
       )}
 

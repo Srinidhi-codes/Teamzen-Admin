@@ -58,6 +58,7 @@ export interface Department {
 export interface Designation {
     id: string;
     name: string;
+    hierarchyLevel?: number;
     organization: Organization;
     description: string;
     isActive: boolean;

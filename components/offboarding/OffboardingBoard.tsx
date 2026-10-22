@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import moment from "moment";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormSelect } from "@/components/common/FormSelect";
 import { Skeleton } from "@/components/common/Skeleton";
+import { Pagination } from "@/components/common/Pagination";
 import { OFFBOARDING_OVERVIEW, OFFBOARDINGS } from "@/lib/graphql/offboarding/queries";
 import { OffboardingTourButton } from "@/components/offboarding/OffboardingTour";
 
@@ -49,6 +50,8 @@ function statusBadge(status: string) {
 export default function OffboardingBoard() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
   const { data: overviewData, loading: overviewLoading } = useQuery<{
     offboardingOverview?: OffboardingOverview | null;
@@ -73,6 +76,13 @@ export default function OffboardingBoard() {
     }
     return true;
   });
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, status]);
+
+  const totalPages = Math.ceil(rows.length / pageSize) || 1;
+  const paginatedRows = rows.slice((page - 1) * pageSize, page * pageSize);
 
   const showOverviewSkeleton = overviewLoading && !overview;
   const showTableSkeleton = loading && rawRows.length === 0;
@@ -202,7 +212,7 @@ export default function OffboardingBoard() {
                 </td>
               </tr>
             )}
-            {rows.map((row) => (
+            {paginatedRows.map((row) => (
               <tr key={row.id} className="border-b last:border-0">
                 <td className="px-4 py-3">
                   <div className="font-medium">{row.userName}</div>
@@ -236,6 +246,18 @@ export default function OffboardingBoard() {
             ))}
           </tbody>
         </table>
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-border">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              total={rows.length}
+              pageSize={pageSize}
+              label="offboardings"
+            />
+          </div>
+        )}
       </Card>
     </div>
   );

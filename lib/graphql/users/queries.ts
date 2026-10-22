@@ -114,6 +114,9 @@ export const GET_ALL_USERS = gql`
         lastName
         phoneNumber
         role
+        hierarchyLevel
+        hierarchyLabel
+        isManager
         isActive
         isVerified
         onboardingStarted
@@ -125,6 +128,9 @@ export const GET_ALL_USERS = gql`
         employmentType
         faceEnrolled
         faceEnrolledAt
+        isPresentToday
+        isOnLeaveToday
+        todayAttendanceStatus
         organization {
           id
           name
@@ -227,6 +233,30 @@ export const GET_MY_LOGIN_HISTORY = gql`
         latitude
         longitude
       }
+    }
+  }
+`;
+
+export const GET_ELIGIBLE_MANAGERS = gql`
+  query EligibleManagers($organizationId: ID, $search: String) {
+    eligibleManagers(organizationId: $organizationId, search: $search) {
+      id
+      email
+      firstName
+      lastName
+      role
+      hierarchyLevel
+      hierarchyLabel
+      isManager
+      designation {
+        id
+        name
+      }
+      department {
+        id
+        name
+      }
+      profilePictureUrl
     }
   }
 `;

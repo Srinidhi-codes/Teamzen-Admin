@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { usePolicies } from "@/lib/api/hooks";
 import {
@@ -20,6 +20,7 @@ import moment from "moment";
 import { useStore } from "@/lib/store/useStore";
 import ConfirmationModal from "@/components/common/ConfirmationModal";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Pagination } from "@/components/common/Pagination";
 import { cn } from "@/lib/utils";
 
 export default function PoliciesPage() {
@@ -35,6 +36,19 @@ export default function PoliciesPage() {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const { user } = useStore();
+
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
+
+  useEffect(() => {
+    setPage(1);
+  }, [policies]);
+
+  const totalPages = Math.ceil((policies?.length || 0) / pageSize) || 1;
+  const paginatedPolicies = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return (policies || []).slice(start, start + pageSize);
+  }, [policies, page, pageSize]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,83 +152,98 @@ export default function PoliciesPage() {
           <p className="text-sm text-muted-foreground">Loading policies…</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {policies?.map((policy: any) => (
-            <div
-              key={policy.id}
-              className="flex min-h-[180px] flex-col rounded-xl border border-border bg-card p-4"
-            >
-              <div className="mb-3 flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <FileText className="h-5 w-5" />
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {paginatedPolicies.map((policy: any) => (
+              <div
+                key={policy.id}
+                className="flex min-h-[180px] flex-col rounded-xl border border-border bg-card p-4"
+              >
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-sm font-semibold text-foreground">
+                        {policy.title}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {moment(policy.created_at).format("MMM D, YYYY")}
+                        {" · "}
+                        {policy.file_size
+                          ? `${(policy.file_size / 1024 / 1024).toFixed(2)} MB`
+                          : "—"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="truncate text-sm font-semibold text-foreground">
-                      {policy.title}
-                    </h3>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {moment(policy.created_at).format("MMM D, YYYY")}
-                      {" · "}
-                      {policy.file_size
-                        ? `${(policy.file_size / 1024 / 1024).toFixed(2)} MB`
-                        : "—"}
-                    </p>
-                  </div>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                      policy.is_processed
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                    )}
+                  >
+                    {policy.is_processed ? "Ready" : "Processing"}
+                  </span>
                 </div>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                    policy.is_processed
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  )}
-                >
-                  {policy.is_processed ? "Ready" : "Processing"}
-                </span>
-              </div>
 
-              {policy.description && (
-                <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
-                  {policy.description}
-                </p>
-              )}
+                {policy.description && (
+                  <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
+                    {policy.description}
+                  </p>
+                )}
 
-              <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedPdf({
-                      url: policy.file_url || policy.file,
-                      title: policy.title,
-                    });
-                    setIsViewOpen(true);
-                  }}
-                  className="text-sm font-medium text-primary hover:underline"
-                >
-                  View document
-                </button>
-                {isAuthorized && (
+                <div className="mt-auto flex items-center justify-between gap-2 border-t border-border pt-3">
                   <button
                     type="button"
                     onClick={() => {
-                      setPolicyToDelete(policy.id);
-                      setIsDeleteModalOpen(true);
+                      setSelectedPdf({
+                        url: policy.file_url || policy.file,
+                        title: policy.title,
+                      });
+                      setIsViewOpen(true);
                     }}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
-                    title="Delete policy"
+                    className="text-sm font-medium text-primary hover:underline"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    View document
                   </button>
-                )}
+                  {isAuthorized && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPolicyToDelete(policy.id);
+                        setIsDeleteModalOpen(true);
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+                      title="Delete policy"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
 
-          {!isLoading && policies?.length === 0 && (
-            <div className="col-span-full rounded-xl border border-dashed border-border px-6 py-16 text-center">
-              <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">No policies uploaded yet</p>
+            {!isLoading && policies?.length === 0 && (
+              <div className="col-span-full rounded-xl border border-dashed border-border px-6 py-16 text-center">
+                <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground">No policies uploaded yet</p>
+              </div>
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="rounded-xl border border-border bg-card p-3">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                total={policies?.length || 0}
+                pageSize={pageSize}
+                label="policies"
+              />
             </div>
           )}
         </div>

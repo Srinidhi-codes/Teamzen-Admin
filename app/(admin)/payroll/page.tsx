@@ -7,6 +7,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/common/Card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { DataTable } from "@/components/common/DataTable";
+import { Pagination } from "@/components/common/Pagination";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { SegmentedTabs } from "@/components/common/SegmentedTabs";
@@ -96,6 +97,19 @@ export default function PayrollPage() {
   const [activeTab, setActiveTab] = useState("runs");
   const [organizationId, setOrganizationId] = useState("");
   const [uiMode, setUiMode] = useState<"founder" | "advanced">("founder");
+  const [runsPage, setRunsPage] = useState(1);
+  const [advancesPage, setAdvancesPage] = useState(1);
+  const [componentsPage, setComponentsPage] = useState(1);
+  const [structuresPage, setStructuresPage] = useState(1);
+  const structuresPageSize = 9;
+
+  useEffect(() => {
+    setRunsPage(1);
+    setAdvancesPage(1);
+    setComponentsPage(1);
+    setStructuresPage(1);
+  }, [organizationId]);
+
   const orgVars = { organizationId: organizationId || undefined };
   const skipPayroll = !!(user && user.role !== "admin" && user.role !== "superadmin");
   const isAdvanced = uiMode === "advanced";
@@ -541,6 +555,10 @@ export default function PayrollPage() {
             <DataTable
               isLoading={runsLoading && !runsData}
               data={runsData?.payrollRuns || []}
+              currentPage={runsPage}
+              pageSize={10}
+              total={runsData?.payrollRuns?.length || 0}
+              onPageChange={setRunsPage}
               columns={[
                 {
                   key: "period",
@@ -652,6 +670,10 @@ export default function PayrollPage() {
             <DataTable
               isLoading={advancesLoading && !advancesData}
               data={advancesData?.salaryAdvances || []}
+              currentPage={advancesPage}
+              pageSize={10}
+              total={advancesData?.salaryAdvances?.length || 0}
+              onPageChange={setAdvancesPage}
               columns={[
                 {
                   key: "user",
@@ -807,6 +829,10 @@ export default function PayrollPage() {
               <DataTable
                 isLoading={componentsLoading && !componentsData}
                 data={componentsData?.salaryComponents || []}
+                currentPage={componentsPage}
+                pageSize={10}
+                total={componentsData?.salaryComponents?.length || 0}
+                onPageChange={setComponentsPage}
                 columns={[
                   {
                     key: "name",
@@ -875,63 +901,80 @@ export default function PayrollPage() {
               Loading structures…
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {structuresData?.salaryStructures?.map((struct: any) => (
-                <Card key={struct.id}>
-                  <div className="mb-3 flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground">{struct.name}</h3>
-                      <p className="text-xs text-muted-foreground">Salary structure</p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setEditingStructure(struct)}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                        title="Edit structure"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteStructureModal({ isOpen: true, id: struct.id, name: struct.name })}
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
-                        title="Delete structure"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    {struct.description || "No description"}
-                  </p>
-                  <div className="space-y-2 border-t border-border pt-3">
-                    {struct.components.map((sc: any) => (
-                      <div
-                        key={sc.id}
-                        className="flex items-center justify-between gap-2 text-sm"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-foreground">
-                            {sc.component.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{sc.calculationType}</p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {(structuresData?.salaryStructures || [])
+                  .slice((structuresPage - 1) * structuresPageSize, structuresPage * structuresPageSize)
+                  .map((struct: any) => (
+                    <Card key={struct.id}>
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{struct.name}</h3>
+                          <p className="text-xs text-muted-foreground">Salary structure</p>
                         </div>
-                        <span className="shrink-0 tabular-nums text-foreground">
-                          {sc.calculationType === "percentage"
-                            ? `${sc.value}%`
-                            : `₹${Number(sc.value).toLocaleString()}`}
-                          {sc.baseComponent && (
-                            <span className="ml-1 text-xs text-muted-foreground">
-                              of {sc.baseComponent.code}
-                            </span>
-                          )}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingStructure(struct)}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                            title="Edit structure"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteStructureModal({ isOpen: true, id: struct.id, name: struct.name })}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-destructive hover:bg-destructive/10"
+                            title="Delete structure"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                </Card>
-              ))}
+                      <p className="mb-4 text-sm text-muted-foreground">
+                        {struct.description || "No description"}
+                      </p>
+                      <div className="space-y-2 border-t border-border pt-3">
+                        {struct.components.map((sc: any) => (
+                          <div
+                            key={sc.id}
+                            className="flex items-center justify-between gap-2 text-sm"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-foreground">
+                                {sc.component.name}
+                              </p>
+                              <p className="text-xs text-muted-foreground">{sc.calculationType}</p>
+                            </div>
+                            <span className="shrink-0 tabular-nums text-foreground">
+                              {sc.calculationType === "percentage"
+                                ? `${sc.value}%`
+                                : `₹${Number(sc.value).toLocaleString()}`}
+                              {sc.baseComponent && (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  of {sc.baseComponent.code}
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  ))}
+              </div>
+
+              {Math.ceil((structuresData?.salaryStructures?.length || 0) / structuresPageSize) > 1 && (
+                <div className="rounded-xl border border-border bg-card p-3">
+                  <Pagination
+                    currentPage={structuresPage}
+                    totalPages={Math.ceil((structuresData?.salaryStructures?.length || 0) / structuresPageSize)}
+                    onPageChange={setStructuresPage}
+                    total={structuresData?.salaryStructures?.length || 0}
+                    pageSize={structuresPageSize}
+                    label="structures"
+                  />
+                </div>
+              )}
             </div>
           )}
 

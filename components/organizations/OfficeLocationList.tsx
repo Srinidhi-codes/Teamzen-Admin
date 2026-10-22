@@ -9,8 +9,9 @@ import {
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
 import { useStore } from "@/lib/store/useStore";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { Pagination } from "@/components/common/Pagination";
 
 interface OfficeLocationListProps {
   officeLocations: OfficeLocation[];
@@ -22,6 +23,19 @@ export default function OfficeLocationList({ officeLocations, onEdit }: OfficeLo
   const { activateOfficeLocation } = useGraphQLActivateOfficeLocationMutation();
   const { suspendOfficeLocation } = useGraphQLSuspendOfficeLocationMutation();
   const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  const [page, setPage] = useState(1);
+  const pageSize = 9;
+
+  useEffect(() => {
+    setPage(1);
+  }, [officeLocations]);
+
+  const totalPages = Math.ceil((officeLocations?.length || 0) / pageSize) || 1;
+  const paginatedOffices = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return (officeLocations || []).slice(start, start + pageSize);
+  }, [officeLocations, page, pageSize]);
 
   const toggleStatus = async (office: OfficeLocation) => {
     setTogglingId(String(office.id));
@@ -53,78 +67,93 @@ export default function OfficeLocationList({ officeLocations, onEdit }: OfficeLo
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-      {officeLocations.map((office) => (
-        <div key={office.id} className="flex flex-col rounded-xl border border-border bg-card">
-          <div className="flex items-start gap-3 border-b border-border p-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <MapPin className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="truncate text-sm font-semibold text-foreground">{office.name}</h3>
-                <span
-                  className={cn(
-                    "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
-                    office.isActive
-                      ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                      : "bg-destructive/10 text-destructive"
-                  )}
-                >
-                  {office.isActive ? "Active" : "Suspended"}
-                </span>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        {paginatedOffices.map((office) => (
+          <div key={office.id} className="flex flex-col rounded-xl border border-border bg-card">
+            <div className="flex items-start gap-3 border-b border-border p-4">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <MapPin className="h-5 w-5" />
               </div>
-              <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                <Building2 className="h-3 w-3" />
-                {office.organization?.name || "Organization"}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="truncate text-sm font-semibold text-foreground">{office.name}</h3>
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+                      office.isActive
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : "bg-destructive/10 text-destructive"
+                    )}
+                  >
+                    {office.isActive ? "Active" : "Suspended"}
+                  </span>
+                </div>
+                <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Building2 className="h-3 w-3" />
+                  {office.organization?.name || "Organization"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-1 flex-col gap-3 p-4 text-sm">
+              <p className="line-clamp-2 text-muted-foreground">
+                {[office.address, office.city, office.zipCode].filter(Boolean).join(", ") || "—"}
               </p>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Clock className="h-3 w-3" /> Hours
+                  </p>
+                  <p className="text-xs font-medium text-foreground">
+                    {office.loginTime} – {office.logoutTime}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+                  <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Navigation className="h-3 w-3" /> Geo radius
+                  </p>
+                  <p className="text-xs font-medium text-foreground">{office.geoRadiusMeters}m</p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="flex flex-1 flex-col gap-3 p-4 text-sm">
-            <p className="line-clamp-2 text-muted-foreground">
-              {[office.address, office.city, office.zipCode].filter(Boolean).join(", ") || "—"}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
-                <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Clock className="h-3 w-3" /> Hours
-                </p>
-                <p className="text-xs font-medium text-foreground">
-                  {office.loginTime} – {office.logoutTime}
-                </p>
+            {isAuthorized && (
+              <div className="flex items-center justify-between gap-2 border-t border-border p-3">
+                <button
+                  type="button"
+                  onClick={() => onEdit(office)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted"
+                >
+                  <Edit className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Active</span>
+                  {togglingId === String(office.id) ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <Switch checked={office.isActive} onCheckedChange={() => toggleStatus(office)} />
+                  )}
+                </div>
               </div>
-              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
-                <p className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Navigation className="h-3 w-3" /> Geo radius
-                </p>
-                <p className="text-xs font-medium text-foreground">{office.geoRadiusMeters}m</p>
-              </div>
-            </div>
+            )}
           </div>
+        ))}
+      </div>
 
-          {isAuthorized && (
-            <div className="flex items-center justify-between gap-2 border-t border-border p-3">
-              <button
-                type="button"
-                onClick={() => onEdit(office)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-3 text-xs font-medium hover:bg-muted"
-              >
-                <Edit className="h-3.5 w-3.5" />
-                Edit
-              </button>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Active</span>
-                {togglingId === String(office.id) ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                ) : (
-                  <Switch checked={office.isActive} onCheckedChange={() => toggleStatus(office)} />
-                )}
-              </div>
-            </div>
-          )}
+      {totalPages > 1 && (
+        <div className="rounded-xl border border-border bg-card p-3">
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            total={officeLocations.length}
+            pageSize={pageSize}
+            label="offices"
+          />
         </div>
-      ))}
+      )}
     </div>
   );
 }

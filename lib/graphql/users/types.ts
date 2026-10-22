@@ -25,6 +25,9 @@ export interface User {
   employmentType?: "full_time" | "contract" | "intern";
   faceEnrolled?: boolean;
   faceEnrolledAt?: string | null;
+  isPresentToday?: boolean;
+  isOnLeaveToday?: boolean;
+  todayAttendanceStatus?: "present" | "on_leave" | "absent" | string;
 
   organization?: {
     id: string;
@@ -69,6 +72,9 @@ export interface User {
   panNumber?: string | null;
   aadharNumber?: string | null;
   uanNumber?: string | null;
+  hierarchyLevel?: number;
+  hierarchyLabel?: string;
+  isManager?: boolean;
   salaryDetails?: {
     id: string;
     salaryStructure: {
@@ -96,6 +102,38 @@ export interface User {
       overrideValue: number | null;
     }[];
   } | null;
+}
+
+export interface UserFilterInput {
+  search?: string;
+  isActive?: boolean;
+  organizationId?: string;
+  isManager?: boolean;
+  maxHierarchyLevel?: number;
+  roles?: string[];
+  includeAdmins?: boolean;
+}
+
+export interface PromoteEmployeeInput {
+  userId: string;
+  newRole?: string;
+  newHierarchyLevel?: number;
+  newDesignationId?: string;
+  newDepartmentId?: string;
+  newManagerId?: string;
+  annualCtc?: number;
+  effectiveDate?: string;
+  promotionNotes?: string;
+  makeManager?: boolean;
+}
+
+export interface PromoteEmployeeResponse {
+  promoteEmployee: {
+    success: boolean;
+    user?: User | null;
+    error?: string | null;
+    message?: string | null;
+  };
 }
 
 export type UserResponse = User[];

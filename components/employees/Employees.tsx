@@ -13,6 +13,7 @@ import {
   UserCheck as UserCheckIcon,
   RotateCcw,
   Upload,
+  UserPlus2,
 } from "lucide-react";
 import { Stat } from "@/components/common/Stats";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -21,6 +22,7 @@ import { useGraphQLUsers, useGraphQLUserStatusMutations } from "@/lib/graphql/us
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import EmployeeForm from "./EmployeeForm";
 import EmployeeCard from "./EmployeeCard";
+import PromotionModal from "./PromotionModal";
 import { PaginationControls } from "../common/PaginationControls";
 import { AdaptiveModal } from "@/components/common/AdaptiveModal";
 import {
@@ -59,6 +61,7 @@ export default function EmployeesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [promotingEmployee, setPromotingEmployee] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
@@ -248,7 +251,18 @@ export default function EmployeesPage() {
     { header: "UAN Number", accessor: "uanNumber" },
   ];
 
+  const role = (user?.role || "").toLowerCase();
+  const isHigherLevel =
+    role === "superadmin" ||
+    role === "admin" ||
+    role === "hr" ||
+    (user?.hierarchyLevel !== undefined && user?.hierarchyLevel !== null && user.hierarchyLevel <= 2);
+
   const handleExportCSV = () => {
+    if (!isHigherLevel) {
+      toast.error("You do not have permission to export employee data.");
+      return;
+    }
     exportData(users || [], employeeCSVColumns, {
       filename: "employees",
       includeTimestamp: true,
@@ -280,8 +294,8 @@ export default function EmployeesPage() {
           return joinDate > monthAgo;
         }).length || 0,
       icon: UserPlus,
-      color: "text-primary",
-      gradient: "bg-primary/10",
+      color: "text-emerald-700 dark:text-emerald-400",
+      gradient: "bg-emerald-500/10",
     },
     {
       label: "Inactive on page",
@@ -299,37 +313,35 @@ export default function EmployeesPage() {
         description="Directory of all employees"
         actions={
           <>
-            <Link
-              href="/onboarding"
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              Start hire
-            </Link>
-            <button
-              onClick={handleExportCSV}
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              <Download className="h-4 w-4" />
-              Export
-            </button>
-            <Link
-              href={
-                organizationId
-                  ? `/employees/import?organizationId=${encodeURIComponent(organizationId)}`
-                  : "/employees/import"
-              }
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              <Upload className="h-4 w-4" />
-              Import
-            </Link>
-            <button
-              onClick={handleAdd}
-              className="inline-flex h-9 items-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              <UserPlus className="h-4 w-4" />
-              Add employee
-            </button>
+            {isHigherLevel && (
+              <>
+                <Link
+                  href="/onboarding"
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  <UserPlus2 className="h-4 w-4" />
+                  Start hire
+                </Link>
+                <button
+                  onClick={handleExportCSV}
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  <Download className="h-4 w-4" />
+                  Export
+                </button>
+                <Link
+                  href={
+                    organizationId
+                      ? `/employees/import?organizationId=${encodeURIComponent(organizationId)}`
+                      : "/employees/import"
+                  }
+                  className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-background px-3 text-sm font-medium text-foreground hover:bg-muted"
+                >
+                  <Upload className="h-4 w-4" />
+                  Import
+                </Link>
+              </>
+            )}
             <button
               onClick={() => refetchUsers()}
               className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -397,6 +409,7 @@ export default function EmployeesPage() {
                 key={employee.id}
                 employee={employee}
                 onEdit={handleEdit}
+                onPromote={setPromotingEmployee}
                 onStatusToggle={handleStatusToggle}
                 onStartOnboarding={handleStartOnboarding}
                 startingOnboardingId={startingOnboardingId}
@@ -443,6 +456,16 @@ export default function EmployeesPage() {
           isStartingOffboarding={startingOffboardingId === selectedEmployee?.id}
         />
       </AdaptiveModal>
+
+      <PromotionModal
+        open={!!promotingEmployee}
+        onOpenChange={(open) => !open && setPromotingEmployee(null)}
+        employee={promotingEmployee}
+        onSuccess={() => {
+          setPromotingEmployee(null);
+          refetchUsers();
+        }}
+      />
     </div>
   );
 }

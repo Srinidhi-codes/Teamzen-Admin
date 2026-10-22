@@ -15,7 +15,13 @@ import { OrganizationFilterSelect } from '@/components/common/OrganizationFilter
 const CompanyHolidays = () => {
     const [search, setSearch] = useState("");
     const [organizationId, setOrganizationId] = useState("");
+    const [page, setPage] = useState(1);
     const debouncedSearch = useDebounce(search, 500);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, organizationId]);
+
     const { user } = useStore();
     const { companyHolidays, isLoading, error, refetch } = useGraphQLCompanyHolidays(
         debouncedSearch,
@@ -251,6 +257,11 @@ const CompanyHolidays = () => {
                 <DataTable
                     data={filteredHolidays}
                     columns={columns}
+                    total={filteredHolidays.length}
+                    currentPage={page}
+                    pageSize={10}
+                    onPageChange={setPage}
+                    paginationLabel="company holidays"
                 />
             </div>
 

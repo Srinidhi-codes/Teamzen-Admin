@@ -70,6 +70,7 @@ const employeeSchema = z.object({
     salaryStructureId: z.string().optional(),
     annualCtc: z.string().optional(),
     effectiveFrom: z.string().optional(),
+    hierarchyLevel: z.string().optional(),
 });
 
 type EmployeeTab = "identity" | "employment" | "financials" | "payroll" | "documents";
@@ -87,6 +88,7 @@ const FIELD_TAB_MAP: Record<string, EmployeeTab> = {
     employmentType: "employment",
     departmentId: "employment",
     designationId: "employment",
+    hierarchyLevel: "employment",
     officeLocationId: "employment",
     organizationId: "employment",
     managerId: "employment",
@@ -100,6 +102,14 @@ const FIELD_TAB_MAP: Record<string, EmployeeTab> = {
     annualCtc: "payroll",
     effectiveFrom: "payroll",
 };
+
+export const HIERARCHY_GRADE_OPTIONS = [
+    { label: "Level 1 • Executive Leadership (CEO, MD, Founder)", value: "1" },
+    { label: "Level 2 • Senior Leadership (Director, VP, Regional Head)", value: "2" },
+    { label: "Level 3 • Management (Manager, Lead, HRBP) — Eligible Manager", value: "3" },
+    { label: "Level 4 • Professional / Senior IC (Staff, Dev, QA, DevOps)", value: "4" },
+    { label: "Level 5 • Associate / Support (Associate, Operations, IT, Intern)", value: "5" },
+];
 
 const TAB_ORDER: EmployeeTab[] = ["identity", "employment", "financials", "payroll", "documents"];
 
@@ -139,6 +149,10 @@ function buildEmployeeFormData(initialData?: User | null) {
         password: "",
         phoneNumber: initialData?.phoneNumber || "",
         role: initialData?.role || "employee",
+        hierarchyLevel:
+            initialData?.hierarchyLevel !== undefined && initialData?.hierarchyLevel !== null
+                ? String(initialData.hierarchyLevel)
+                : "4",
         dateOfJoining: initialData?.dateOfJoining || moment().format("YYYY-MM-DD"),
         dateOfExit: initialData?.dateOfExit || "",
         employmentType: initialData?.employmentType || "full_time",
@@ -200,6 +214,8 @@ export default function EmployeeForm({
         pageSize: 200,
         filters: {
             isActive: true,
+            isManager: true,
+            includeAdmins: true,
             ...(optionsOrgId ? { organizationId: optionsOrgId } : {}),
         },
     });
@@ -281,14 +297,27 @@ export default function EmployeeForm({
         return orgUsers
             .filter((u) => {
                 if (selfId && String(u.id) === selfId) return false;
-                return ["manager", "admin", "hr", "superadmin"].includes(
-                    (u.role || "").toLowerCase()
+                return (
+                    u.isManager ||
+                    (u.hierarchyLevel !== undefined && u.hierarchyLevel !== null && u.hierarchyLevel <= 3) ||
+                    ["manager", "admin", "hr", "superadmin"].includes(
+                        (u.role || "").toLowerCase()
+                    )
                 );
             })
-            .map((u) => ({
-                label: `${u.firstName || ""} ${u.lastName || ""}`.trim() || u.email,
-                value: String(u.id),
-            }));
+            .map((u) => {
+                const desig = u.designation?.name ? ` • ${u.designation.name}` : "";
+                const lvl =
+                    u.hierarchyLevel !== undefined && u.hierarchyLevel !== null
+                        ? ` (L${u.hierarchyLevel})`
+                        : "";
+                return {
+                    label:
+                        `${u.firstName || ""} ${u.lastName || ""}`.trim() +
+                        `${desig}${lvl}` || u.email,
+                    value: String(u.id),
+                };
+            });
     })();
     const managerSelectOptions = ensureSelectedOption(
         [{ label: "No manager", value: "none" }, ...managerOptions],
@@ -371,6 +400,21 @@ export default function EmployeeForm({
                 newData.designationId = "";
                 newData.officeLocationId = "";
                 newData.managerId = "";
+            }
+
+            if (name === "designationId") {
+                const selectedDesig = designations?.find((d) => String(d.id) === value);
+                if (selectedDesig?.hierarchyLevel) {
+                    newData.hierarchyLevel = String(selectedDesig.hierarchyLevel);
+                }
+            }
+
+            if (name === "role") {
+                if (value === "manager" && Number(newData.hierarchyLevel || 4) > 3) {
+                    newData.hierarchyLevel = "3";
+                } else if (value === "admin" && Number(newData.hierarchyLevel || 4) > 1) {
+                    newData.hierarchyLevel = "1";
+                }
             }
 
             if (name === "salaryStructureId") {
@@ -496,9 +540,10 @@ export default function EmployeeForm({
             setErrors({});
             let savedUser: any = null;
             if (initialData) {
-                const { password, salaryStructureId, annualCtc, effectiveFrom, ...updateData } = formData;
+                const { password, salaryStructureId, annualCtc, effectiveFrom, hierarchyLevel, ...updateData } = formData;
                 const result = await updateUser(initialData.id, {
                     ...updateData,
+                    hierarchyLevel: hierarchyLevel ? parseInt(hierarchyLevel, 10) : undefined,
                     organizationId: formData.organizationId || null,
                     departmentId: formData.departmentId || null,
                     designationId: formData.designationId || null,
@@ -537,9 +582,10 @@ export default function EmployeeForm({
                     setErrors({ password: "Temporary password is required (min 6 characters)" });
                     return;
                 }
-                const { salaryStructureId, annualCtc, effectiveFrom, ...createData } = formData;
+                const { salaryStructureId, annualCtc, effectiveFrom, hierarchyLevel, ...createData } = formData;
                 const result = await createUser({
                     ...createData,
+                    hierarchyLevel: hierarchyLevel ? parseInt(hierarchyLevel, 10) : undefined,
                     managerId: formData.managerId || null,
                     departmentId: formData.departmentId || null,
                     designationId: formData.designationId || null,
@@ -849,6 +895,15 @@ export default function EmployeeForm({
                             onValueChange={(v) => handleSelectChange("designationId", v)}
                             options={designationOptions}
                             error={errors.designationId}
+                        />
+                        <FormSelect
+                            label="Hierarchy Grade / Level"
+                            name="hierarchyLevel"
+                            required
+                            value={formData.hierarchyLevel || "4"}
+                            onValueChange={(v) => handleSelectChange("hierarchyLevel", v)}
+                            options={HIERARCHY_GRADE_OPTIONS}
+                            error={errors.hierarchyLevel}
                         />
                         <FormSelect
                             label="Employment Type"

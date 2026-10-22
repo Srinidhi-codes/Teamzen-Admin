@@ -10,9 +10,6 @@ export const useAuth = () => {
   const login = useMutation({
     mutationFn: async (data: any) => {
       // ⚠️ MUST use fetch to the Next.js proxy — NOT client.post.
-      // client.post hits NEXT_PUBLIC_API_URL (Render backend) cross-origin.
-      // Browsers block Set-Cookie from cross-origin responses regardless of
-      // withCredentials — so cookies would never be stored in production.
       // The proxy at /api/auth/login relays the cookies as same-origin.
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -35,7 +32,62 @@ export const useAuth = () => {
     },
   });
 
-  return { login, register };
+  const requestOtp = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await client.post(API_ENDPOINTS.OTP_SEND, { email });
+      return response.data;
+    }
+  });
+
+  const verifyOtp = useMutation({
+    mutationFn: async (data: { email: string; otp: string; remember_me?: boolean; latitude?: number; longitude?: number }) => {
+      const response = await fetch('/api/auth/otp-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || 'OTP verification failed');
+      }
+      return response.json();
+    }
+  });
+
+  const verifyTotp = useMutation({
+    mutationFn: async (data: { temp_token: string; code: string; remember_me?: boolean; latitude?: number; longitude?: number }) => {
+      const response = await fetch('/api/auth/totp-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || '2FA verification failed');
+      }
+      return response.json();
+    }
+  });
+
+  const googleLogin = useMutation({
+    mutationFn: async (data: { id_token: string; remember_me?: boolean; latitude?: number; longitude?: number }) => {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err?.detail || err?.error || 'Google login failed');
+      }
+      return response.json();
+    }
+  });
+
+  return { login, register, requestOtp, verifyOtp, verifyTotp, googleLogin };
 };
 
 // hooks/useTokenRefresh.ts

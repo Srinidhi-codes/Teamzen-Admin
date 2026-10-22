@@ -20,6 +20,8 @@ import { Bell, Megaphone, Eye } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { AnnouncementModal, AnnouncementItem } from "@/components/common/AnnouncementModal";
 import { Input } from "@/components/common/Input";
+import { Pagination } from "@/components/common/Pagination";
+import { useEffect, useMemo } from "react";
 
 export default function NotificationsPage() {
   const [title, setTitle] = useState("");
@@ -33,6 +35,8 @@ export default function NotificationsPage() {
   const [activeTab, setActiveTab] = useState<"broadcast" | "activity">("broadcast");
   const [showLivePreview, setShowLivePreview] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<AnnouncementItem | null>(null);
+  const [activityPage, setActivityPage] = useState(1);
+  const activityPageSize = 10;
 
   const { data: activityData, refetch: refetchActivity } = useQuery(
     GET_MY_NOTIFICATIONS,
@@ -96,6 +100,16 @@ export default function NotificationsPage() {
   };
 
   const recentActivity = activityData?.myNotifications?.results || [];
+
+  useEffect(() => {
+    setActivityPage(1);
+  }, [recentActivity.length]);
+
+  const totalActivityPages = Math.ceil(recentActivity.length / activityPageSize) || 1;
+  const paginatedActivity = useMemo(() => {
+    const start = (activityPage - 1) * activityPageSize;
+    return recentActivity.slice(start, start + activityPageSize);
+  }, [recentActivity, activityPage, activityPageSize]);
 
   return (
     <div className="page-shell">
@@ -265,7 +279,7 @@ export default function NotificationsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentActivity.map((notif: any) => (
+                  {paginatedActivity.map((notif: any) => (
                     <tr
                       key={notif.id}
                       onClick={() => {
@@ -307,6 +321,18 @@ export default function NotificationsPage() {
                   ))}
                 </tbody>
               </table>
+              {totalActivityPages > 1 && (
+                <div className="p-4 border-t border-border">
+                  <Pagination
+                    currentPage={activityPage}
+                    totalPages={totalActivityPages}
+                    onPageChange={setActivityPage}
+                    total={recentActivity.length}
+                    pageSize={activityPageSize}
+                    label="activities"
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 px-6 py-16 text-center">

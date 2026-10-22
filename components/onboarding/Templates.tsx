@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GripVertical, Loader2, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Pagination } from "@/components/common/Pagination";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 import { Skeleton } from "@/components/common/Skeleton";
 import {
@@ -74,6 +75,19 @@ export default function OnboardingTemplatesPage() {
   const { templates, refetch, isLoading } = useOnboardingTemplates(
     organizationId || undefined
   );
+
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
+
+  useEffect(() => {
+    setPage(1);
+  }, [templates, organizationId]);
+
+  const totalPages = Math.ceil(templates.length / pageSize) || 1;
+  const paginatedTemplates = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return templates.slice(start, start + pageSize);
+  }, [templates, page, pageSize]);
   
   const { users } = useGraphQLUsers({
     page: 1,
@@ -226,7 +240,7 @@ export default function OnboardingTemplatesPage() {
             </div>
           )}
           {!isLoading &&
-            templates.map((t) => (
+            paginatedTemplates.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -248,6 +262,18 @@ export default function OnboardingTemplatesPage() {
               </div>
             </button>
           ))}
+          {totalPages > 1 && (
+            <div className="pt-2 border-t border-border">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                total={templates.length}
+                pageSize={pageSize}
+                label="templates"
+              />
+            </div>
+          )}
           <div className="border-t border-border pt-3">
             <input
               className="mb-2 w-full rounded-lg border border-border px-3 py-2 text-sm"

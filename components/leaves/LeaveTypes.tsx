@@ -15,7 +15,13 @@ import { OrganizationFilterSelect } from '@/components/common/OrganizationFilter
 const LeaveTypes = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [organizationId, setOrganizationId] = useState("");
+    const [page, setPage] = useState(1);
     const debouncedSearch = useDebounce(searchTerm, 500);
+
+    useEffect(() => {
+        setPage(1);
+    }, [debouncedSearch, organizationId]);
+
     const { user } = useStore();
     const { leaveTypes, isLoading, error, refetch } = useGraphQLLeaveTypes(
         debouncedSearch,
@@ -295,6 +301,11 @@ const LeaveTypes = () => {
                 <DataTable
                     data={filteredLeaveTypes}
                     columns={columns}
+                    total={filteredLeaveTypes.length}
+                    currentPage={page}
+                    pageSize={10}
+                    onPageChange={setPage}
+                    paginationLabel="leave types"
                 />
             </div>
 

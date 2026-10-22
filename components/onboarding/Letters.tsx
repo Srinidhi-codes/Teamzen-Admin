@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 import { Skeleton } from "@/components/common/Skeleton";
+import { Pagination } from "@/components/common/Pagination";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
 import {
   useLetterTemplates,
@@ -18,6 +19,8 @@ export default function LetterTemplatesPage() {
   const [polishMsg, setPolishMsg] = useState("");
   const [polishing, setPolishing] = useState(false);
   const [letterTypeFilter, setLetterTypeFilter] = useState("offer");
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
   const [form, setForm] = useState({
     name: "",
     subject: "",
@@ -30,6 +33,13 @@ export default function LetterTemplatesPage() {
   );
   const { createLetter, updateLetter, polishOffer, loading } =
     useOnboardingMutations();
+
+  useEffect(() => {
+    setPage(1);
+  }, [organizationId, letterTypeFilter, templates.length]);
+
+  const totalPages = Math.ceil(templates.length / pageSize) || 1;
+  const paginatedTemplates = templates.slice((page - 1) * pageSize, page * pageSize);
 
   const selected = templates.find((t) => t.id === selectedId) || templates[0];
 
@@ -121,7 +131,7 @@ export default function LetterTemplatesPage() {
             </div>
           )}
           {!isLoading &&
-            templates.map((t) => (
+            paginatedTemplates.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -136,6 +146,18 @@ export default function LetterTemplatesPage() {
               {t.isDefault ? " (default)" : ""}
             </button>
           ))}
+          {totalPages > 1 && (
+            <div className="pt-2 border-t border-border">
+              <Pagination
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                total={templates.length}
+                pageSize={pageSize}
+                label="templates"
+              />
+            </div>
+          )}
           <button
             type="button"
             className="mt-2 w-full rounded-lg border border-dashed border-border py-2 text-sm"

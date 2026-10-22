@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/common/Skeleton";
@@ -91,7 +92,17 @@ export function DataTable<T>({
     }
   };
 
-  const totalPages = pageSize ? Math.ceil((total || 0) / pageSize) : 0;
+  const effectiveTotal = total ?? (data?.length || 0);
+  const totalPages = pageSize ? Math.ceil(effectiveTotal / pageSize) : 0;
+
+  const displayData = useMemo(() => {
+    if (!data) return [];
+    if (currentPage && pageSize && data.length > pageSize && (!total || total === data.length)) {
+      const start = (currentPage - 1) * pageSize;
+      return data.slice(start, start + pageSize);
+    }
+    return data;
+  }, [data, currentPage, pageSize, total]);
 
   return (
     <div className="space-y-4">
@@ -99,19 +110,16 @@ export function DataTable<T>({
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-muted/50">
             <tr>
-
               {columns.map((col) => (
                 <th
                   key={col.key}
                   className={`px-6 py-5 text-left text-xs font-medium text-muted-foreground ${col.sortable && onSortChange ? "cursor-pointer hover:text-primary transition-colors" : ""}`}
                   onClick={() => col.sortable && handleSort(col.key)}
                 >
-
                   <div className="flex items-center gap-1.5">
                     {col.label}
                     {col.sortable && onSortChange && (
                       <div className="text-muted-foreground/50 group-hover:text-primary/70">
-
                         {sortConfig?.key === col.key ? (
                           sortConfig.direction === "asc" ? (
                             <ChevronUp className="w-3.5 h-3.5" />
@@ -129,8 +137,7 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="bg-card divide-y divide-border">
-
-            {data?.map((row, idx) => (
+            {displayData?.map((row, idx) => (
               <tr
                 key={idx}
                 onClick={() => onRowClick?.(row)}
@@ -138,7 +145,6 @@ export function DataTable<T>({
                   group transition-all duration-300
                   ${onRowClick ? "hover:bg-muted/50 cursor-pointer" : ""}
                 `}
-
               >
                 {columns.map((col) => {
                   const value = getNestedValue(row, col.key);
@@ -147,8 +153,6 @@ export function DataTable<T>({
                       key={col.key}
                       className={cn("px-6 py-5 whitespace-nowrap text-sm font-medium text-foreground/80", col.className)}
                     >
-
-
                       {col.render ? col.render(value, row) : value}
                     </td>
                   );
@@ -159,12 +163,12 @@ export function DataTable<T>({
         </table>
       </div>
 
-      {totalPages > 0 && currentPage && onPageChange && (
+      {totalPages > 1 && currentPage && onPageChange && (
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={onPageChange}
-          total={total}
+          total={effectiveTotal}
           pageSize={pageSize}
           label={paginationLabel}
         />

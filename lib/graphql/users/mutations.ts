@@ -46,6 +46,9 @@ export const CREATE_USER = gql`
         firstName
         lastName
         role
+        hierarchyLevel
+        hierarchyLabel
+        isManager
         isActive
         isVerified
         department {
@@ -72,6 +75,9 @@ export const UPDATE_USER = gql`
         firstName
         lastName
         role
+        hierarchyLevel
+        hierarchyLabel
+        isManager
         isActive
         isVerified
         department {
@@ -102,5 +108,44 @@ export const USER_STATUS = gql`
 export const UPDATE_LOGIN_LOCATION = gql`
   mutation UpdateLoginLocation($latitude: Float!, $longitude: Float!) {
     updateLoginLocation(latitude: $latitude, longitude: $longitude)
+  }
+`;
+
+export const PROMOTE_EMPLOYEE = gql`
+  mutation PromoteEmployee($input: PromoteEmployeeInput!) {
+    promoteEmployee(input: $input) {
+      success
+      error
+      message
+      user {
+        id
+        email
+        firstName
+        lastName
+        role
+        hierarchyLevel
+        hierarchyLabel
+        isManager
+        isActive
+        isVerified
+        department {
+          id
+          name
+        }
+        designation {
+          id
+          name
+        }
+        manager {
+          id
+          firstName
+          lastName
+        }
+        salaryDetails {
+          id
+          annualCtc
+        }
+      }
+    }
   }
 `;

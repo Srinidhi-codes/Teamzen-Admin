@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   useApproveOrRejectAttendanceCorrection,
   useGraphQLAttendanceCorrection,
@@ -9,10 +9,17 @@ import {
 } from "@/lib/graphql/attendance/attendanceHooks";
 import { ApprovalModal } from "@/components/attendance/ApprovalModal";
 import { HeartbeatTimelineModal } from "@/components/attendance/HeartbeatTimelineModal";
+import { AttendanceTimelineBar } from "@/components/attendance/AttendanceTimelineBar";
+import { AttendanceDonutCards } from "@/components/attendance/AttendanceDonutCards";
+import { AttendanceTimelineMatrix } from "@/components/attendance/AttendanceTimelineMatrix";
+import { AttendanceDetailDrawer } from "@/components/attendance/AttendanceDetailDrawer";
+import { AttendanceRegularizationMasterDetail } from "@/components/attendance/AttendanceRegularizationMasterDetail";
+import { EmployeeAttendanceReportModal } from "@/components/attendance/EmployeeAttendanceReportModal";
 import { AttendanceCorrection, AttendanceRecord } from "@/lib/graphql/attendance/types";
 import { DataTable, Column } from "@/components/common/DataTable";
 import { PageHeader } from "@/components/common/PageHeader";
 import moment from "moment";
+import Link from "next/link";
 import {
   Calendar,
   Search,
@@ -27,7 +34,11 @@ import {
   ShieldCheck,
   AlertTriangle,
   ScanFace,
+  LayoutGrid,
+  Table as TableIcon,
+  ChevronRight,
   Layers,
+  BarChart3,
 } from "lucide-react";
 import { DatePickerSimple } from "@/components/ui/datePicker";
 import { Stat } from "@/components/common/Stats";
@@ -40,21 +51,21 @@ import { useStore } from "@/lib/store/useStore";
 
 export default function AttendancePage() {
   const { user } = useStore();
-  const [activeTab, setActiveTab] = useState<"presence" | "corrections">("presence");
+  const [activeTab, setActiveTab] = useState<"timeline" | "presence" | "corrections">("timeline");
 
-  const [startDate, setStartDate] = useState(
-    moment().startOf("month").format("YYYY-MM-DD")
-  );
+  const [startDate, setStartDate] = useState(moment().format("YYYY-MM-DD"));
   const [endDate, setEndDate] = useState(moment().format("YYYY-MM-DD"));
   const [selectedCorrection, setSelectedCorrection] = useState<AttendanceCorrection | null>(null);
   const [selectedTimelineRecord, setSelectedTimelineRecord] = useState<AttendanceRecord | null>(null);
+  const [inspectedRecord, setInspectedRecord] = useState<AttendanceRecord | null>(null);
+  const [reportEmployeeId, setReportEmployeeId] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [organizationId, setOrganizationId] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const pageSize = 10;
+  const pageSize = 20;
   const [presencePage, setPresencePage] = useState(1);
   const [correctionsPage, setCorrectionsPage] = useState(1);
 
@@ -92,7 +103,7 @@ export default function AttendancePage() {
     refetchAttendanceCorrections,
   } = useGraphQLAttendanceCorrection({
     page: correctionsPage,
-    pageSize,
+    pageSize: 50,
     filters: {
       search: debouncedSearchTerm || undefined,
       organizationId: organizationId || undefined,
@@ -106,6 +117,9 @@ export default function AttendancePage() {
     try {
       await approveOffHours(record.id, status);
       await refetchPresence(buildPresenceFilters(startDate, endDate) as any);
+      if (inspectedRecord?.id === record.id) {
+        setInspectedRecord(null);
+      }
     } catch (err: any) {
       console.error(err);
     }
@@ -141,6 +155,15 @@ export default function AttendancePage() {
     }
   };
 
+  const handleMasterDetailCorrectionSubmit = async (
+    correctionId: string,
+    status: "approved" | "rejected",
+    comments: string
+  ) => {
+    await approveOrRejectAttendanceCorrection(correctionId, status, comments);
+    await loadData(startDate, endDate);
+  };
+
   // Stats calculation
   const roamingCount = presenceRecords.filter((r) => r.roamingAnomalyDetected).length;
   const verifiedCount = presenceRecords.filter(
@@ -151,7 +174,7 @@ export default function AttendancePage() {
   const presenceStats = [
     {
       label: "Total shift records",
-      value: presenceTotal || 0,
+      value: presenceTotal || presenceRecords.length || 0,
       icon: Calendar,
       color: "text-sky-700 dark:text-sky-400",
       gradient: "bg-sky-500/10",
@@ -180,19 +203,22 @@ export default function AttendancePage() {
   ];
 
   // ---------------------------------------------------------------------------
-  // Columns: Presence & Heartbeats Table
+  // Columns: Presence & Heartbeats Table (Enhanced with Compact Timeline Bar)
   // ---------------------------------------------------------------------------
   const presenceColumns: Column<AttendanceRecord>[] = [
     {
       key: "user",
       label: "Employee",
       render: (_: any, row: AttendanceRecord) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+        <div
+          className="flex items-center gap-3 cursor-pointer group"
+          onClick={() => setInspectedRecord(row)}
+        >
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
             {row.user?.firstName?.charAt(0) || <User className="h-3.5 w-3.5" />}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
+            <p className="truncate text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
               {row.user ? `${row.user.firstName} ${row.user.lastName}` : "Member"}
             </p>
             <p className="truncate text-xs text-muted-foreground">
@@ -215,6 +241,28 @@ export default function AttendancePage() {
       ),
     },
     {
+      key: "timeline",
+      label: "Visual Day Timeline",
+      render: (_: any, row: AttendanceRecord) => (
+        <div className="w-52 h-6 flex items-center">
+          <AttendanceTimelineBar
+            loginTime={row.loginTime}
+            logoutTime={row.logoutTime}
+            attendanceDate={row.attendanceDate}
+            status={row.status}
+            workedHours={row.workedHours}
+            effectiveWorkedHours={row.effectiveWorkedHours}
+            roamingAnomalyDetected={row.roamingAnomalyDetected}
+            outOfFenceHeartbeats={row.outOfFenceHeartbeats}
+            compact={true}
+            showTimeMarkers={false}
+            interactive={true}
+            onClick={() => setInspectedRecord(row)}
+          />
+        </div>
+      ),
+    },
+    {
       key: "timing",
       label: "Recorded Shift",
       render: (_: any, row: AttendanceRecord) => (
@@ -231,25 +279,6 @@ export default function AttendancePage() {
           )}
         </div>
       ),
-    },
-    {
-      key: "workedHours",
-      label: "Gross Hours",
-      render: (val: number | null, row: AttendanceRecord) => {
-        let gross = val != null ? Number(val) : 0;
-        const isShiftActive = !row.logoutTime && row.loginTime;
-        if (isShiftActive && row.loginTime && row.attendanceDate) {
-          const loginDateTime = moment(`${row.attendanceDate} ${row.loginTime}`, "YYYY-MM-DD HH:mm:ss");
-          const now = moment();
-          gross = Math.max(0, now.diff(loginDateTime, "hours", true));
-        }
-
-        return (
-          <span className="text-sm font-medium tabular-nums text-muted-foreground">
-            {val != null || isShiftActive ? `${gross.toFixed(2)}h` : "—"}
-          </span>
-        );
-      },
     },
     {
       key: "effectiveWorkedHours",
@@ -297,7 +326,7 @@ export default function AttendancePage() {
     },
     {
       key: "heartbeats",
-      label: "Presence & Heartbeats",
+      label: "Presence Telemetry",
       render: (_: any, row: AttendanceRecord) => {
         const officeRadius = row.officeLocation?.geoRadiusMeters || 200;
         const total = row.totalHeartbeats ?? (row.heartbeats?.length || 0);
@@ -323,11 +352,6 @@ export default function AttendancePage() {
               {hasAnomaly ? <AlertTriangle className="h-3 w-3" /> : <ShieldCheck className="h-3 w-3" />}
               {total > 0 ? `${pct}% (${valid}/${total})` : `0% (${Math.round((row.loginDistance || 0) / 100) / 10}km away)`}
             </span>
-            {row.roamingNotes && (
-              <span className="text-[10px] text-destructive truncate max-w-[140px]" title={row.roamingNotes}>
-                {row.roamingNotes}
-              </span>
-            )}
           </div>
         );
       },
@@ -359,23 +383,6 @@ export default function AttendancePage() {
                 {row.isWeekendWork ? "Weekend Pending" : "Off-Hours Pending"}
               </span>
             )}
-            {row.approvalStatus === "approved" && (row.isWeekendWork || row.isOffHours) && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-                <CheckCircle2 className="h-2.5 w-2.5" />
-                Approved {row.isWeekendWork ? "Weekend" : "Overtime"}
-              </span>
-            )}
-            {row.approvalStatus === "rejected" && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-destructive">
-                <XCircle className="h-2.5 w-2.5" />
-                Rejected
-              </span>
-            )}
-            {row.approvalRemarks && (
-              <span className="text-[10px] text-muted-foreground truncate max-w-[150px]" title={row.approvalRemarks}>
-                {row.approvalRemarks}
-              </span>
-            )}
           </div>
         );
       },
@@ -388,13 +395,26 @@ export default function AttendancePage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setSelectedTimelineRecord(row)}
-            className="h-8 gap-1.5 text-xs hover:border-primary/50"
-            title="View GPS Breadcrumbs Timeline"
+            onClick={() => setInspectedRecord(row)}
+            className="h-8 gap-1 text-xs hover:border-primary/50"
+            title="Inspect Day Timeline"
           >
             <Activity className="h-3.5 w-3.5 text-primary" />
-            Audit
+            Inspect
           </Button>
+
+          {row.user?.id && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setReportEmployeeId(row.user!.id)}
+              className="h-8 gap-1 text-xs hover:border-primary/50"
+              title="View Complete Attendance Report"
+            >
+              <BarChart3 className="h-3.5 w-3.5 text-primary" />
+              Report
+            </Button>
+          )}
 
           {row.approvalStatus === "pending" && (
             <>
@@ -427,152 +447,48 @@ export default function AttendancePage() {
     },
   ];
 
-  // ---------------------------------------------------------------------------
-  // Columns: Corrections Table
-  // ---------------------------------------------------------------------------
-  const correctionColumns: Column<AttendanceCorrection>[] = [
-    {
-      key: "requestedBy",
-      label: "Employee",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
-            {row.requestedBy?.firstName?.charAt(0) || <User className="h-3.5 w-3.5" />}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {row.requestedBy?.firstName} {row.requestedBy?.lastName}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {row.requestedBy?.designation?.name || "—"}
-            </p>
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: "attendanceRecord.attendanceDate",
-      label: "Date",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div>
-          <p className="text-sm text-foreground">
-            {moment(row.attendanceRecord?.attendanceDate).format("DD MMM YYYY")}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {moment(row.attendanceRecord?.attendanceDate).format("dddd")}
-          </p>
-        </div>
-      ),
-    },
-    {
-      key: "correctionRequest",
-      label: "Recorded",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div className="inline-flex items-center gap-1.5 text-sm tabular-nums text-foreground">
-          {row.attendanceRecord?.loginTime
-            ? moment(row.attendanceRecord.loginTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-          <ArrowRight className="h-3 w-3 text-muted-foreground" />
-          {row.attendanceRecord?.logoutTime
-            ? moment(row.attendanceRecord.logoutTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-        </div>
-      ),
-    },
-    {
-      key: "loginInfo",
-      label: "Requested",
-      render: (_: any, row: AttendanceCorrection) => (
-        <div className="inline-flex items-center gap-1.5 text-sm tabular-nums text-muted-foreground">
-          {row.correctedLoginTime
-            ? moment(row.correctedLoginTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-          <ArrowRight className="h-3 w-3" />
-          {row.correctedLogoutTime
-            ? moment(row.correctedLogoutTime, "HH:mm:ss").format("hh:mm A")
-            : "—"}
-        </div>
-      ),
-    },
-    {
-      key: "reason",
-      label: "Reason",
-      render: (_: string, row: AttendanceCorrection) => (
-        <p className="max-w-[200px] line-clamp-2 text-sm text-muted-foreground">
-          {row.reason || "—"}
-        </p>
-      ),
-    },
-    {
-      key: "status",
-      label: "Status",
-      render: (_: string, row: AttendanceCorrection) => (
-        <span
-          className={cn(
-            "rounded-md px-1.5 py-0.5 text-[11px] font-medium capitalize",
-            row.status === "approved"
-              ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-              : row.status === "rejected"
-                ? "bg-destructive/10 text-destructive"
-                : row.status === "pending"
-                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  : "bg-muted text-muted-foreground"
-          )}
-        >
-          {row.status}
-        </span>
-      ),
-    },
-    {
-      key: "correctionActions",
-      label: "Actions",
-      render: (_: unknown, row: AttendanceCorrection) => {
-        if (row.status === "pending") {
-          return (
-            <button
-              onClick={() => setSelectedCorrection(row)}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-border px-2.5 text-xs font-medium hover:bg-muted"
-            >
-              <FilePenLine className="h-3.5 w-3.5" />
-              Review
-            </button>
-          );
-        }
-        return <span className="text-xs text-muted-foreground">Processed</span>;
-      },
-    },
-  ];
-
   return (
     <div className="page-shell space-y-6">
       <PageHeader
-        title="Attendance & Presence Hub"
-        description="Monitor verified presence, periodic geo-heartbeats, effective work hours, and regularization requests."
+        title="Attendance Management"
+        description="Monitor verified presence and regularization requests."
         actions={
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-border bg-muted/50 p-1">
+          <div className="flex items-center gap-2 max-w-full">
+            <div className="flex rounded-xl border border-border bg-muted/50 p-1 shadow-xs max-w-full overflow-x-auto">
+              <button
+                onClick={() => setActiveTab("timeline")}
+                className={cn(
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
+                  activeTab === "timeline"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Clock className="h-3.5 w-3.5 text-primary" />
+                Timeline View
+              </button>
               <button
                 onClick={() => setActiveTab("presence")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
                   activeTab === "presence"
                     ? "bg-card text-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <Activity className="h-3.5 w-3.5 text-primary" />
-                Presence Logs & Heartbeats
+                <TableIcon className="h-3.5 w-3.5 text-primary" />
+                Presence Logs
               </button>
               <button
                 onClick={() => setActiveTab("corrections")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0",
                   activeTab === "corrections"
                     ? "bg-card text-foreground shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <FilePenLine className="h-3.5 w-3.5" />
+                <FilePenLine className="h-3.5 w-3.5 text-primary" />
                 Regularization Requests
                 {(correctionsTotal || 0) > 0 && (
                   <span className="rounded-full bg-primary/10 px-1.5 py-0.2 text-[10px] font-bold text-primary">
@@ -581,11 +497,32 @@ export default function AttendancePage() {
                 )}
               </button>
             </div>
+
+            <Link
+              href="/attendance/report"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 text-xs font-bold text-primary transition-all cursor-pointer whitespace-nowrap shadow-xs"
+              title="Open full Employee Attendance & Compliance Report"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              Employee Reports
+            </Link>
           </div>
         }
       />
 
-      {/* Stats Summary Cards */}
+      {/* Top Work Started & Work Finished Donut Analytics Cards (Reference Image Inspired) */}
+      <AttendanceDonutCards
+        records={presenceRecords}
+        totalEmployees={presenceTotal || presenceRecords.length}
+        onFilterSelect={(filter) => {
+          if (filter === "all") setStatusFilter("");
+          else if (filter === "late") setStatusFilter("late_login");
+          else if (filter === "early") setStatusFilter("early_logout");
+          else if (filter === "off work") setStatusFilter("absent");
+        }}
+      />
+
+      {/* Quick Presence Stats Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {presenceStats.map((stat, i) => (
           <Stat
@@ -599,8 +536,8 @@ export default function AttendancePage() {
         ))}
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="rounded-xl border border-border bg-card p-4 sm:p-5 space-y-4">
+      {/* Date & Filter Toolbar */}
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5 space-y-4 shadow-xs">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
             <DatePickerSimple
@@ -614,17 +551,66 @@ export default function AttendancePage() {
               onChange={(date) => setEndDate(moment(date).format("YYYY-MM-DD"))}
             />
           </div>
+
+          {/* Quick Date Presets */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <button
+              onClick={() => {
+                const today = moment().format("YYYY-MM-DD");
+                setStartDate(today);
+                setEndDate(today);
+              }}
+              className={cn(
+                "px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer",
+                startDate === moment().format("YYYY-MM-DD") && endDate === moment().format("YYYY-MM-DD")
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+              )}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => {
+                const yesterday = moment().subtract(1, "day").format("YYYY-MM-DD");
+                setStartDate(yesterday);
+                setEndDate(yesterday);
+              }}
+              className={cn(
+                "px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer",
+                startDate === moment().subtract(1, "day").format("YYYY-MM-DD") && endDate === moment().subtract(1, "day").format("YYYY-MM-DD")
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+              )}
+            >
+              Yesterday
+            </button>
+            <button
+              onClick={() => {
+                setStartDate(moment().startOf("month").format("YYYY-MM-DD"));
+                setEndDate(moment().format("YYYY-MM-DD"));
+              }}
+              className={cn(
+                "px-2.5 py-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer",
+                startDate === moment().startOf("month").format("YYYY-MM-DD")
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+              )}
+            >
+              This Month
+            </button>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => loadData(startDate, endDate)}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 md:flex-none"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 md:flex-none shadow-xs cursor-pointer"
             >
               <Search className="h-4 w-4" />
               Apply
             </button>
             <button
               onClick={() => loadData(startDate, endDate)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
               title="Refresh"
             >
               <RotateCcw className="h-4 w-4" />
@@ -635,28 +621,29 @@ export default function AttendancePage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
           <div className="max-w-md flex-1">
             <SearchInput
-              placeholder="Search employees by name or email…"
+              placeholder="Search employees by name, email or designation…"
               value={searchTerm}
               onChange={setSearchTerm}
             />
           </div>
 
-          {activeTab === "presence" && (
+          {activeTab !== "corrections" && (
             <div className="flex flex-wrap items-center gap-1.5">
               {[
                 { label: "All", value: "" },
                 { label: "Present", value: "present" },
                 { label: "Late Login", value: "late_login" },
-                { label: "⏳ Pending Approval", value: "pending_approval" },
-                { label: "🌙 Off-Hours", value: "off_hours" },
-                { label: "🏖️ Weekend Work", value: "weekend_work" },
-                { label: "🚩 Roaming Flagged", value: "roaming" },
+                { label: "Early Logout", value: "early_logout" },
+                { label: "Pending Approval", value: "pending_approval" },
+                { label: "Off-Hours", value: "off_hours" },
+                { label: "Weekend Work", value: "weekend_work" },
+                { label: "Roaming Flagged", value: "roaming" },
               ].map((pill) => (
                 <button
                   key={pill.value}
                   onClick={() => setStatusFilter(pill.value)}
                   className={cn(
-                    "rounded-lg px-2.5 py-1 text-xs font-medium transition-colors border",
+                    "rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors border cursor-pointer",
                     statusFilter === pill.value
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
@@ -677,8 +664,16 @@ export default function AttendancePage() {
         </div>
       </div>
 
-      {/* Main Content Table based on Active Tab */}
-      {activeTab === "presence" ? (
+      {/* Main Tab Content */}
+      {activeTab === "timeline" ? (
+        <AttendanceTimelineMatrix
+          records={presenceRecords}
+          isLoading={presenceLoading}
+          selectedDate={startDate === endDate ? startDate : undefined}
+          onSelectRecord={(rec) => setInspectedRecord(rec)}
+          onOpenReport={(empId) => setReportEmployeeId(empId)}
+        />
+      ) : activeTab === "presence" ? (
         <DataTable
           data={presenceRecords}
           columns={presenceColumns}
@@ -690,19 +685,35 @@ export default function AttendancePage() {
           paginationLabel="attendance records"
         />
       ) : (
-        <DataTable
-          data={attendanceCorrections}
-          columns={correctionColumns}
+        <AttendanceRegularizationMasterDetail
+          corrections={attendanceCorrections}
           isLoading={correctionsLoading}
-          total={correctionsTotal}
-          currentPage={correctionsPage}
-          pageSize={pageSize}
-          onPageChange={setCorrectionsPage}
-          paginationLabel="corrections"
+          onApproveReject={handleMasterDetailCorrectionSubmit}
         />
       )}
 
-      {/* Regularization Approval Modal */}
+      {/* Detailed Day Timeline Inspector Drawer */}
+      {inspectedRecord && (
+        <AttendanceDetailDrawer
+          record={inspectedRecord}
+          onClose={() => setInspectedRecord(null)}
+          onOpenAuditModal={(rec) => setSelectedTimelineRecord(rec)}
+          onOpenReportModal={(empId) => setReportEmployeeId(empId)}
+          onApproveOffHours={handleApproveOffHours}
+          isApproving={approvingOffHours}
+        />
+      )}
+
+      {/* Complete Employee Attendance & Compliance Report Modal */}
+      {reportEmployeeId && (
+        <EmployeeAttendanceReportModal
+          employeeId={reportEmployeeId}
+          isOpen={!!reportEmployeeId}
+          onClose={() => setReportEmployeeId(null)}
+        />
+      )}
+
+      {/* Regularization Approval Modal (Fallback) */}
       {selectedCorrection && (
         <ApprovalModal
           correction={selectedCorrection}
@@ -711,7 +722,7 @@ export default function AttendancePage() {
         />
       )}
 
-      {/* Periodic Geo-Heartbeat Audit Timeline Modal */}
+      {/* Periodic Geo-Heartbeat Breadcrumb Modal */}
       {selectedTimelineRecord && (
         <HeartbeatTimelineModal
           record={selectedTimelineRecord}

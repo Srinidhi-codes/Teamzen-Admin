@@ -12,6 +12,8 @@ import {
   Zap,
   Info,
   Globe,
+  Mail,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -23,7 +25,6 @@ import { PlanGate } from "@/components/common/PlanGate";
 import { useOrgPlan } from "@/lib/hooks/useOrgPlan";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { Mail } from "lucide-react";
 import apiClient from "@/lib/api/client";
 
 const MODELS = [
@@ -258,6 +259,8 @@ function SettingsPageContent() {
             <OrganizationAISettings user={user} />
           </PlanGate>
 
+          <AccessControlSettingsCard />
+
           <EmailSettings />
 
           <section className="rounded-xl border border-border bg-card p-5">
@@ -447,30 +450,84 @@ function EmailSettings() {
   };
 
   return (
-    <section className="rounded-xl border border-border bg-card p-5 mt-4">
-      <div className="mb-4 flex items-center gap-2">
-        <Mail className="h-4 w-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold text-foreground">Test Email Settings</h2>
-      </div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Send a test welcome email to verify your SMTP and provider settings are working correctly.
-      </p>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@example.com"
-          className="input flex-1"
-        />
-        <button
-          type="button"
-          onClick={handleTestEmail}
-          disabled={isSending || !email}
-          className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+    <section className="rounded-xl border border-border bg-card p-5 mt-4 space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Email Automations &amp; Templates</h2>
+        </div>
+        <a
+          href="/settings/email-templates"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
         >
-          {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Test Email"}
-        </button>
+          <span>Open Email Designer &amp; Delivery Controls</span>
+          <span>&rarr;</span>
+        </a>
+      </div>
+      <p className="text-xs text-muted-foreground leading-relaxed">
+        Toggle which system transactional emails are sent (leave, login alerts, attendance, payslips) and customize templates with raw JSX/HTML copy.
+      </p>
+
+      <div className="pt-3 border-t border-border/60">
+        <p className="text-xs font-semibold text-foreground mb-2">Send Instant SMTP Health Test:</p>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="admin@example.com"
+            className="input flex-1 text-xs"
+          />
+          <button
+            type="button"
+            onClick={handleTestEmail}
+            disabled={isSending || !email}
+            className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
+          >
+            {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Test Email"}
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function AccessControlSettingsCard() {
+  return (
+    <section className="rounded-xl border border-primary/30 bg-primary/5 p-5 mt-4 space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/20 text-primary border border-primary/30">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">3-Tier Access Control &amp; Feature Governance</h2>
+            <p className="text-xs text-muted-foreground">
+              Plan feature baselines, organization overrides, and company admin delegation.
+            </p>
+          </div>
+        </div>
+        <a
+          href="/access-control"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shrink-0"
+        >
+          <span>Open Access Control Studio</span>
+          <span>&rarr;</span>
+        </a>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+        <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs">
+          <p className="text-xs font-bold text-foreground">Tier 1: Plan Defaults</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Global Starter, Pro &amp; Elite module feature matrices.</p>
+        </div>
+        <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs">
+          <p className="text-xs font-bold text-foreground">Tier 2: Org Overrides</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Super Admin custom unlocks per organization.</p>
+        </div>
+        <div className="rounded-xl border border-border/80 bg-card p-3 shadow-xs">
+          <p className="text-xs font-bold text-foreground">Tier 3: Delegation &amp; Roles</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">Company Admin granular delegation &amp; employee permissions.</p>
+        </div>
       </div>
     </section>
   );

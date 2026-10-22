@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { client as apolloClient } from "@/lib/apolloClient";
 import moment from "moment";
 import { Loader2, Eye, ArrowRight } from "lucide-react";
@@ -11,6 +11,7 @@ import { DatePickerSimple } from "@/components/ui/datePicker";
 import { AsyncSearchSelect } from "@/components/ui/async-search-select";
 import { FormSelect } from "@/components/common/FormSelect";
 import { PageHeader } from "@/components/common/PageHeader";
+import { Pagination } from "@/components/common/Pagination";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
 import { Skeleton } from "@/components/common/Skeleton";
 import { HrOnboardingTourButton } from "@/components/onboarding/OnboardingTour";
@@ -61,13 +62,13 @@ function Kpi({ label, value }: { label: string; value: string | number }) {
 
 function statusBadge(status: string) {
   const map: Record<string, string> = {
-    invited: "bg-slate-100 text-slate-700",
-    preboarding: "bg-amber-100 text-amber-800",
-    in_progress: "bg-yellow-100 text-yellow-800",
-    completed: "bg-emerald-100 text-emerald-800",
-    cancelled: "bg-rose-100 text-rose-800",
+    invited: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700",
+    preboarding: "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40",
+    in_progress: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/40",
+    completed: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/40",
+    cancelled: "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800/40",
   };
-  return map[status] || "bg-muted text-muted-foreground";
+  return map[status] || "bg-muted text-muted-foreground border border-border";
 }
 
 export default function OnboardingPage() {
@@ -102,6 +103,20 @@ export default function OnboardingPage() {
     status: status || undefined,
     search: search || undefined,
   });
+
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    setPage(1);
+  }, [onboardings, status, search, organizationId]);
+
+  const totalPages = Math.ceil(onboardings.length / pageSize) || 1;
+  const paginatedOnboardings = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return onboardings.slice(start, start + pageSize);
+  }, [onboardings, page, pageSize]);
+
   const { templates } = useOnboardingTemplates(organizationId || undefined);
   const { users } = useGraphQLUsers();
   const { departments } = useGraphQLDepartments(undefined, organizationId || undefined);
@@ -121,6 +136,8 @@ export default function OnboardingPage() {
             filters: {
               search: search || undefined,
               isActive: true,
+              isManager: true,
+              includeAdmins: true,
               organizationId: organizationId || undefined,
             },
           },
@@ -131,10 +148,14 @@ export default function OnboardingPage() {
         const total = data?.allUsers?.total || 0;
         const fetchedCount = (page - 1) * 20 + usersData.length;
 
-        const options = usersData.map((u: any) => ({
-          label: `${u.firstName || ""} ${u.lastName || ""} (${u.email})`.trim(),
-          value: u.id,
-        }));
+        const options = usersData.map((u: any) => {
+          const title = u.designation?.name || (u.role ? u.role.toUpperCase() : "MANAGER");
+          const levelTag = u.hierarchyLevel !== undefined ? ` • L${u.hierarchyLevel}` : "";
+          return {
+            label: `${u.firstName || ""} ${u.lastName || ""} — ${title}${levelTag} (${u.email})`.trim(),
+            value: u.id,
+          };
+        });
 
         return {
           options,
@@ -377,7 +398,7 @@ export default function OnboardingPage() {
               </tr>
             )}
             {!isLoading &&
-              onboardings.map((row) => (
+              paginatedOnboardings.map((row) => (
               <tr key={row.id} className="border-t border-border">
                 <td className="px-4 py-3">
                   <div className="font-medium">{row.userName}</div>
@@ -421,6 +442,19 @@ export default function OnboardingPage() {
             ))}
           </tbody>
         </table>
+
+        {totalPages > 1 && (
+          <div className="border-t border-border p-3">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              total={onboardings.length}
+              pageSize={pageSize}
+              label="onboardings"
+            />
+          </div>
+        )}
       </div>
 
       {showStart && (

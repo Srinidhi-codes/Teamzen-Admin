@@ -105,6 +105,7 @@ export const GET_DESIGNATIONS = gql`
         designations(search: $search, organizationId: $organizationId, isActive: $isActive) {
             id
             name
+            hierarchyLevel
             organization {
                 id
                 name

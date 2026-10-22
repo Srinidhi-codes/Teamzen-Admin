@@ -66,7 +66,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <div
         className={cn(
           "flex min-h-screen flex-col transition-[margin] duration-200 ease-out",
-          isCollapsed ? "md:ml-16" : "md:ml-60"
+          isCollapsed ? "md:ml-[84px]" : "md:ml-64"
         )}
       >
         <PlanExpiryBanner />

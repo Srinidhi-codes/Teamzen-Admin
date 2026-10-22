@@ -1,9 +1,9 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
-import { useEffect, useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
 import { GET_MY_LOGIN_HISTORY } from "@/lib/graphql/users/queries";
 import { SecurityLogResponse } from "@/lib/graphql/users/types";
@@ -19,12 +19,14 @@ import {
   LogOut,
   Menu,
   ExternalLink,
+  ChevronDown,
+  Settings,
+  Sparkles,
 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -59,8 +61,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
     setAccent,
   } = useStore();
   const { user: graphqlUser, isLoading: isUserLoading } = useGraphQLUser();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
   const { data } = useQuery<SecurityLogResponse>(GET_MY_LOGIN_HISTORY, {
     variables: { page: 1, pageSize: 1 },
+    skip: !userMenuOpen,
     fetchPolicy: "cache-first",
   });
   const pathname = usePathname();
@@ -145,7 +150,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
     return (
       <span
         className={cn(
-          "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+          "shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
           planBadgeClass(plan)
         )}
       >
@@ -155,141 +160,228 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   }, [plan, planReady]);
 
   return (
-    <header className="sticky top-0 z-70 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/80 backdrop-blur-md transition-colors">
+      <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        {/* Left Section: Mobile toggle & Org Brand */}
         <div className="flex min-w-0 items-center gap-3">
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-muted/20 text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground md:hidden cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               aria-label="Open menu"
             >
               <Menu className="h-5 w-5" />
             </button>
           )}
 
-          <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary text-primary-foreground">
+          <Link
+            href="/dashboard"
+            className="group flex min-w-0 items-center gap-3 transition-opacity hover:opacity-90"
+          >
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary/90 to-primary text-primary-foreground shadow-xs ring-1 ring-border/50">
               {orgLogo ? (
-                <Image src={orgLogo} alt="Organization" width={32} height={32} className="h-full w-full object-cover" unoptimized />
+                <Image
+                  src={orgLogo}
+                  alt="Organization"
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
               ) : (
-                <span className="text-xs font-semibold">
+                <span className="text-sm font-bold tracking-tight">
                   {user?.organization?.name?.charAt(0) || "T"}
                 </span>
               )}
             </div>
             <div className="hidden min-w-0 sm:block">
-              <p className="truncate text-sm font-semibold text-foreground">
-                {user?.organization?.name || "Teamzen"}
-              </p>
-              <div className="flex min-w-0 items-center gap-1.5">
+              <div className="flex items-center gap-1.5">
+                <p className="truncate text-sm font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
+                  {user?.organization?.name || "Teamzen"}
+                </p>
                 {planBadge}
-                <span className="truncate text-xs text-muted-foreground">
-                  {roleLabel(user?.role)}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <span className="truncate">
+                  {roleLabel(user?.role) || "Workspace Admin"}
                 </span>
               </div>
             </div>
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-1 lg:flex">
-          {IMPORTANT_ROUTES.filter(
-            (route) => !route.roles || (user && route.roles.includes(user.role))
-          ).map((route) => {
-            const isActive =
-              route.href === "/dashboard" ? pathname === route.href : pathname.startsWith(route.href);
-            return (
-              <Link
-                key={route.href}
-                href={route.href}
-                id={`navbar-nav-${route.name.toLowerCase()}`}
-                onClick={(e) => handleNavClick(e, route.href)}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
-                  isActive
-                    ? "bg-muted font-medium text-foreground"
-                    : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                )}
-              >
-                <route.icon className="h-4 w-4" />
-                <span className="hidden xl:inline">{route.name}</span>
-              </Link>
-            );
-          })}
+        {/* Center Section: Floating Segmented Navigation Track */}
+        <nav className="hidden items-center lg:flex">
+          <div className="flex items-center gap-1 rounded-full border border-border/70 bg-muted/40 p-1 shadow-xs backdrop-blur-md">
+            {IMPORTANT_ROUTES.filter(
+              (route) => !route.roles || (user && route.roles.includes(user.role))
+            ).map((route) => {
+              const isActive =
+                route.href === "/dashboard" ? pathname === route.href : pathname.startsWith(route.href);
+              return (
+                <Link
+                  key={route.href}
+                  href={route.href}
+                  id={`navbar-nav-${route.name.toLowerCase()}`}
+                  onClick={(e) => handleNavClick(e, route.href)}
+                  className={cn(
+                    "relative flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-150",
+                    isActive
+                      ? "bg-background text-foreground shadow-xs font-semibold ring-1 ring-border/80"
+                      : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
+                  )}
+                >
+                  <route.icon
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    )}
+                  />
+                  <span>{route.name}</span>
+                  {isActive && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
-        <div className="flex shrink-0 items-center gap-1">
+        {/* Right Section: Upgrade Plan, Employee Portal Launcher, Theme, Notifications, User Menu */}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {showUpgrade && (
             <Link
               href="/settings?section=plan"
-              className="mr-1 hidden items-center gap-1.5 rounded-md border border-primary/25 bg-primary/10 px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15 sm:inline-flex"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary transition-all hover:bg-primary/20 hover:border-primary/30"
             >
-              Upgrade to {planLabel(nextPlan(plan) || "pro")}
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Upgrade to {planLabel(nextPlan(plan) || "pro")}</span>
             </Link>
           )}
-          <NotificationBell />
+
+          {/* Quick Employee Portal Launcher */}
+          <a
+            href={
+              process.env.NEXT_PUBLIC_FRONTEND_URL
+                ? `${process.env.NEXT_PUBLIC_FRONTEND_URL.replace(/\/$/, "")}/dashboard`
+                : (typeof window !== "undefined"
+                    ? `${window.location.origin.replace("3001", "3000")}/dashboard`
+                    : "http://localhost:3000/dashboard")
+            }
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden xl:inline-flex items-center gap-1.5 rounded-xl border border-border/70 bg-muted/30 px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-muted/60 hover:border-border"
+            title="Open Employee Portal in a new tab"
+          >
+            <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>Employee Portal</span>
+          </a>
+
+          {/* Theme Selector */}
           <ThemeSelector />
 
+          {/* Notifications */}
+          <NotificationBell />
+
+          {/* User Profile Pill & Dropdown */}
           {user && (
-            <DropdownMenu modal={false}>
+            <DropdownMenu modal={false} onOpenChange={setUserMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   id="user-menu-trigger"
-                  className="ml-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border border-border bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                  className="group ml-0.5 flex items-center gap-2 rounded-xl border border-border/70 bg-muted/30 p-1 sm:pr-3 transition-all hover:bg-muted/60 hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
                   aria-label="Account menu"
                 >
-                  {user.profilePictureUrl ? (
-                    <Image
-                      src={user.profilePictureUrl as string}
-                      alt=""
-                      width={32}
-                      height={32}
-                      className="h-full w-full object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    <span className="text-xs font-medium text-foreground">
-                      {user.firstName?.charAt(0)}
-                      {user.lastName?.charAt(0)}
-                    </span>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-1">
-                <DropdownMenuLabel className="px-2 py-2 font-normal">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium text-foreground">
-                      {user.firstName} {user.lastName}
-                    </span>
-                    <span className="text-xs text-muted-foreground">{roleLabel(user.role)}</span>
-                    {user.organization?.name && (
-                      <span className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="truncate">{user.organization.name}</span>
-                        {planReady && plan ? (
-                          <span
-                            className={cn(
-                              "shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                              planBadgeClass(plan)
-                            )}
-                          >
-                            {planLabel(plan)}
-                          </span>
-                        ) : null}
+                  <div className="relative flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary/10 text-primary font-semibold text-xs border border-primary/20">
+                    {user.profilePictureUrl ? (
+                      <Image
+                        src={user.profilePictureUrl as string}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <span>
+                        {user.firstName?.charAt(0)}
+                        {user.lastName?.charAt(0)}
                       </span>
                     )}
+                    <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-background" />
+                  </div>
+
+                  <div className="hidden min-w-0 text-left sm:block">
+                    <p className="truncate text-xs font-semibold text-foreground group-hover:text-primary transition-colors">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="truncate text-[10px] text-muted-foreground leading-tight">
+                      {roleLabel(user.role)}
+                    </p>
+                  </div>
+
+                  <ChevronDown
+                    className={cn(
+                      "hidden h-3.5 w-3.5 text-muted-foreground transition-transform duration-200 sm:block",
+                      userMenuOpen && "rotate-180"
+                    )}
+                  />
+                </button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent
+                align="end"
+                sideOffset={8}
+                className="w-64 p-2 rounded-2xl border-border bg-card/95 backdrop-blur-md shadow-xl"
+              >
+                {/* Profile Card Header */}
+                <div className="flex items-center gap-3 p-2 rounded-xl bg-muted/40 border border-border/50 mb-1.5">
+                  <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-primary text-primary-foreground font-bold text-sm">
+                    {user.profilePictureUrl ? (
+                      <Image
+                        src={user.profilePictureUrl as string}
+                        alt=""
+                        width={40}
+                        height={40}
+                        className="h-full w-full object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <span>
+                        {user.firstName?.charAt(0)}
+                        {user.lastName?.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between px-2 py-1 mb-1.5 text-[11px]">
+                  <span className="font-medium text-muted-foreground">Location</span>
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-medium",
+                      locationVerified
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                    )}
+                  >
                     <span
                       className={cn(
-                        "mt-1 w-fit rounded px-1.5 py-0.5 text-[10px] font-medium",
-                        locationVerified
-                          ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                          : "bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                        "h-1.5 w-1.5 rounded-full",
+                        locationVerified ? "bg-emerald-500" : "bg-amber-500"
                       )}
-                    >
-                      {locationVerified ? "Location verified" : "Location unverified"}
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                    />
+                    {locationVerified ? "Verified" : "Unverified"}
+                  </span>
+                </div>
+
+                <DropdownMenuSeparator className="my-1" />
+
+                {/* Employee Portal link */}
                 <DropdownMenuItem asChild>
                   <a
                     href={
@@ -299,35 +391,54 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                             ? `${window.location.origin.replace("3001", "3000")}/dashboard`
                             : "http://localhost:3000/dashboard")
                     }
-                    className="flex cursor-pointer items-center gap-2"
+                    className="flex cursor-pointer items-center justify-between rounded-lg px-2.5 py-2 text-xs font-medium transition-colors hover:bg-muted"
                   >
-                    <ExternalLink className="h-4 w-4" />
-                    Employee portal
+                    <span className="flex items-center gap-2.5">
+                      <ExternalLink className="h-4 w-4 text-primary" />
+                      <span>Employee Portal</span>
+                    </span>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground opacity-60" />
                   </a>
                 </DropdownMenuItem>
+
+                {/* Plan management */}
                 {user.role === "admin" && planReady && (
                   <DropdownMenuItem asChild>
-                    <Link href="/settings?section=plan" className="cursor-pointer">
-                      {showUpgrade
-                        ? `Upgrade to ${planLabel(nextPlan(plan) || "pro")}`
-                        : "Manage plan"}
+                    <Link
+                      href="/settings?section=plan"
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors hover:bg-muted"
+                    >
+                      <Sparkles className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        {showUpgrade
+                          ? `Upgrade to ${planLabel(nextPlan(plan) || "pro")}`
+                          : "Manage plan"}
+                      </span>
                     </Link>
                   </DropdownMenuItem>
                 )}
+
+                {/* Settings */}
                 {(user.role === "admin" || user.role === "superadmin") && (
                   <DropdownMenuItem asChild>
-                    <Link href="/settings" className="cursor-pointer">
-                      Settings
+                    <Link
+                      href="/settings"
+                      className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors hover:bg-muted"
+                    >
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      <span>Settings</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuSeparator />
+
+                <DropdownMenuSeparator className="my-1" />
+
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="cursor-pointer text-destructive focus:text-destructive"
+                  className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive"
                 >
                   <LogOut className="h-4 w-4" />
-                  Log out
+                  <span>Sign out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

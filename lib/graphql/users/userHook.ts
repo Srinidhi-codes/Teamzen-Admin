@@ -1,20 +1,16 @@
-import { useQuery, useMutation } from "@apollo/client/react"
-import { User } from "./types"
-import { GET_ALL_USERS } from "./queries"
-import { CREATE_USER, UPDATE_USER, USER_STATUS } from "./mutations"
+import { useQuery, useMutation } from "@apollo/client/react";
+import { User, PromoteEmployeeInput, PromoteEmployeeResponse, UserFilterInput } from "./types";
+import { GET_ALL_USERS, GET_ELIGIBLE_MANAGERS } from "./queries";
+import { CREATE_USER, UPDATE_USER, USER_STATUS, PROMOTE_EMPLOYEE } from "./mutations";
 
 export interface UsersVariables {
-    page?: number;
-    pageSize?: number;
-    filters?: {
-        search?: string;
-        isActive?: boolean;
-        organizationId?: string;
-    };
-    sort?: {
-        field: string;
-        direction: string;
-    };
+  page?: number;
+  pageSize?: number;
+  filters?: UserFilterInput;
+  sort?: {
+    field: string;
+    direction: string;
+  };
 }
 
 export function useGraphQLUsers(variables?: UsersVariables) {
@@ -72,4 +68,36 @@ export function useGraphQLUserStatusMutations() {
         isUpdatingUserStatus,
         updateUserStatusError
     }
+}
+
+export function useGraphQLPromoteEmployee() {
+  const [promoteMutation, { loading: isPromoting, error: promoteError }] = useMutation<{
+    promoteEmployee: PromoteEmployeeResponse["promoteEmployee"];
+  }>(PROMOTE_EMPLOYEE);
+
+  return {
+    promoteEmployee: async (input: PromoteEmployeeInput) => {
+      const response = await promoteMutation({ variables: { input } });
+      return response.data?.promoteEmployee;
+    },
+    isPromoting,
+    promoteError,
+  };
+}
+
+export function useGraphQLEligibleManagers(organizationId?: string, search?: string) {
+  const { data, loading, error, refetch } = useQuery<{ eligibleManagers: User[] }>(
+    GET_ELIGIBLE_MANAGERS,
+    {
+      variables: { organizationId: organizationId || undefined, search: search || undefined },
+      fetchPolicy: "network-only",
+    }
+  );
+
+  return {
+    managers: data?.eligibleManagers || [],
+    isLoading: loading,
+    error,
+    refetch,
+  };
 }

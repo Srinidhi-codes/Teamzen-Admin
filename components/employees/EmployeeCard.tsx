@@ -1,7 +1,7 @@
 "use client";
 
 import { User } from "@/lib/graphql/users/types";
-import { Mail, Phone, Building2, Edit, MapPin, QrCode, ShieldCheck, Briefcase, Download } from "lucide-react";
+import { Mail, Phone, Building2, Edit, MapPin, QrCode, ShieldCheck, Briefcase, Download, TrendingUp, Award } from "lucide-react";
 import { Switch } from "../ui/switch";
 import Image from "next/image";
 import { useState } from "react";
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 interface EmployeeCardProps {
   employee: User;
   onEdit: (employee: User) => void;
+  onPromote?: (employee: User) => void;
   onStatusToggle: (userId: string, newStatus: boolean) => void;
   onStartOnboarding?: (employee: User) => void | Promise<void>;
   startingOnboardingId?: string | null;
@@ -25,6 +26,7 @@ interface EmployeeCardProps {
 export default function EmployeeCard({
   employee,
   onEdit,
+  onPromote,
   onStatusToggle,
   onStartOnboarding,
   startingOnboardingId,
@@ -74,7 +76,19 @@ export default function EmployeeCard({
         className="h-24 w-full relative bg-gradient-to-r from-primary/10 to-primary/5"
         style={employee.organization?.accent ? { background: `linear-gradient(135deg, ${employee.organization.accent}20, transparent)` } : undefined}
       >
-        <div className="absolute top-3 right-3 flex gap-2">
+        <div className="absolute top-3 right-3 flex items-center gap-1.5">
+            {employee.isOnLeaveToday || employee.todayAttendanceStatus === "on_leave" ? (
+              <span className="rounded-full bg-amber-500/15 border border-amber-500/35 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md flex items-center gap-1 shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                On Leave
+              </span>
+            ) : employee.isPresentToday || employee.todayAttendanceStatus === "present" ? (
+              <span className="rounded-full bg-emerald-500/15 border border-emerald-500/35 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider backdrop-blur-md flex items-center gap-1 shadow-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Present
+              </span>
+            ) : null}
+
             <button
                 onClick={() => setIsQrOpen(true)}
                 className="rounded-full bg-background/50 p-1.5 backdrop-blur-md hover:bg-background/80 transition-colors shadow-sm"
@@ -97,30 +111,43 @@ export default function EmployeeCard({
 
       {/* Profile Photo & ID Number */}
       <div className="px-5 relative flex justify-between items-end -mt-12 mb-3">
-        <button
-          type="button"
-          onClick={() => employee.profilePictureUrl && setIsPhotoOpen(true)}
-          className={cn(
-            "relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-sm",
-            employee.profilePictureUrl ? "cursor-zoom-in" : "cursor-default"
-          )}
-          title={employee.profilePictureUrl ? "View photo" : undefined}
-        >
-          {employee.profilePictureUrl ? (
-            <Image
-              src={employee.profilePictureUrl}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => employee.profilePictureUrl && setIsPhotoOpen(true)}
+            className={cn(
+              "relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-4 border-card bg-muted shadow-sm block",
+              employee.profilePictureUrl ? "cursor-zoom-in" : "cursor-default"
+            )}
+            title={employee.profilePictureUrl ? "View photo" : undefined}
+          >
+            {employee.profilePictureUrl ? (
+              <Image
+                src={employee.profilePictureUrl}
+                alt=""
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-primary bg-primary/10">
+                {employee.firstName?.charAt(0)}
+                {employee.lastName?.charAt(0)}
+              </div>
+            )}
+          </button>
+          {employee.isOnLeaveToday || employee.todayAttendanceStatus === "on_leave" ? (
+            <span
+              className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-card bg-amber-500 shadow-xs"
+              title="On Leave Today"
             />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-primary bg-primary/10">
-              {employee.firstName?.charAt(0)}
-              {employee.lastName?.charAt(0)}
-            </div>
-          )}
-        </button>
+          ) : employee.isPresentToday || employee.todayAttendanceStatus === "present" ? (
+            <span
+              className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-card bg-emerald-500 shadow-xs ring-2 ring-emerald-500/30"
+              title="Present Today"
+            />
+          ) : null}
+        </div>
         
         {employee.employeeId && (
             <div className="text-right pb-1">
@@ -172,9 +199,32 @@ export default function EmployeeCard({
 
         {/* Tags */}
         <div className="flex flex-wrap items-center gap-2">
+            {employee.isOnLeaveToday || employee.todayAttendanceStatus === "on_leave" ? (
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                On Leave
+              </span>
+            ) : employee.isPresentToday || employee.todayAttendanceStatus === "present" ? (
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Present
+              </span>
+            ) : null}
+
             <Badge variant="default" className="text-[10px] capitalize tracking-wider">
                 {employee.employmentType?.replace("_", " ") || "—"}
             </Badge>
+            {employee.hierarchyLevel !== undefined && employee.hierarchyLevel !== null && (
+                <span className="rounded-md bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-bold tracking-wider text-primary flex items-center gap-1">
+                    <Award className="h-2.5 w-2.5" />
+                    L{employee.hierarchyLevel}
+                </span>
+            )}
+            {employee.isManager && (
+                <span className="rounded-md bg-amber-500/10 border border-amber-500/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                    Manager
+                </span>
+            )}
             {employee.faceEnrolled && (
                 <span className="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
                 Face Enrolled
@@ -187,6 +237,17 @@ export default function EmployeeCard({
       {isAdminOrHr && (
         <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/10 px-5 py-3.5">
           <div className="flex items-center gap-2">
+            {onPromote && (
+              <button
+                type="button"
+                onClick={() => onPromote(employee)}
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 text-primary px-3 text-xs font-semibold hover:bg-primary/20 transition-colors shadow-sm"
+                aria-label="Promote employee"
+              >
+                <TrendingUp className="h-3.5 w-3.5" />
+                Promote
+              </button>
+            )}
             <button
               onClick={() => onEdit(employee)}
               className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-4 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm"

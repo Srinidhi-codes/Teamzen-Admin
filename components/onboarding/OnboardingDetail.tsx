@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import axios from "axios";
 import moment from "moment";
-import { CheckCircle2Icon, CheckCircleIcon, CheckIcon, Loader2, TicketCheckIcon } from "lucide-react";
+import { CheckCircle2Icon, CheckCircleIcon, CheckIcon, Loader2, TicketCheckIcon, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -421,7 +421,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
               onboarding.status !== "completed" &&
               onboarding.status !== "cancelled" && (
                 <Button
-                  className="cursor-pointer bg-green-500 hover:bg-green-600"
+                  className="cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white font-medium shadow-xs"
                   type="button"
                   disabled={activateLoading || headerBusy}
                   onClick={() => setActivateModalOpen(true)}
@@ -464,26 +464,33 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
       />
 
       {nextHrActions.length > 0 && (
-        <section className="rounded-xl border border-primary/20 bg-primary/5 p-4 sm:p-5">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Next HR action
-          </p>
+        <section className="rounded-2xl border border-border/80 bg-muted/30 dark:bg-muted/10 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Next HR action
+            </p>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              Recommended
+            </span>
+          </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {nextHrActions.map((action) => (
               <div
                 key={action.title}
-                className="rounded-lg border border-border p-4 bg-gray-800"
+                className="flex flex-col justify-between rounded-xl border border-border bg-card p-4 shadow-xs transition-all hover:border-primary/40 hover:shadow-sm"
               >
-                <p className="text-sm font-semibold text-foreground">
-                  {action.title}
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                  {action.message}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    {action.title}
+                  </p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                    {action.message}
+                  </p>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-border/60">
                   <button
                     type="button"
-                    className="text-xs font-medium text-primary hover:underline"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-xs cursor-pointer"
                     onClick={() => {
                       if (action.primary === "activate") {
                         setActivateModalOpen(true);
@@ -512,12 +519,13 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   {action.askQuery ? (
                     <button
                       type="button"
-                      className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                      className="inline-flex items-center gap-1 rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
                       onClick={() => {
                         setAssistantQuery(action.askQuery!);
                         setAssistantOpen(true);
                       }}
                     >
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
                       Ask assistant
                     </button>
                   ) : null}
@@ -757,7 +765,7 @@ export default function OnboardingDetailPage({ id }: { id: string }) {
                   href={onboarding.offerLetter.signedPdfUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="ml-3 inline-flex text-emerald-700 underline"
+                  className="ml-3 inline-flex text-emerald-600 dark:text-emerald-400 font-semibold hover:underline"
                 >
                   Download signed PDF
                 </a>

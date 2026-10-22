@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const ORGANIZATION_DOCUMENT_REQUESTS = gql`
-  query OrganizationDocumentRequests($status: String) {
-    organizationDocumentRequests(status: $status) {
+  query OrganizationDocumentRequests($status: String, $organizationId: ID) {
+    organizationDocumentRequests(status: $status, organizationId: $organizationId) {
       id
       title
       category
@@ -59,8 +59,8 @@ export const VERIFY_VAULT_DOCUMENT = gql`
 `;
 
 export const ORG_EMPLOYEE_DOCUMENT_REQUESTS = gql`
-  query OrgEmployeeDocumentRequests($status: String) {
-    orgEmployeeDocumentRequests(status: $status) {
+  query OrgEmployeeDocumentRequests($status: String, $organizationId: ID) {
+    orgEmployeeDocumentRequests(status: $status, organizationId: $organizationId) {
       id
       category
       customTitle
@@ -73,6 +73,24 @@ export const ORG_EMPLOYEE_DOCUMENT_REQUESTS = gql`
       userId
       userName
       userEmail
+    }
+  }
+`;
+
+export const ORG_ISSUED_DOCUMENTS = gql`
+  query OrgIssuedDocuments($organizationId: ID, $category: String) {
+    orgIssuedDocuments(organizationId: $organizationId, category: $category) {
+      id
+      category
+      title
+      financialYear
+      fileName
+      downloadUrl
+      notes
+      publishedAt
+      visibleToEmployee
+      userId
+      userName
     }
   }
 `;
@@ -96,3 +114,4 @@ export const REJECT_EMPLOYEE_DOCUMENT = gql`
     }
   }
 `;
+
