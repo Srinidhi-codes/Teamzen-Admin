@@ -17,7 +17,7 @@ function EmployeeReportPageContent() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl py-1 sm:py-4 w-full min-w-0">
       <EmployeeAttendanceReportView
         initialEmployeeId={employeeId}
         onEmployeeChange={handleEmployeeChange}

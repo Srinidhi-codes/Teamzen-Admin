@@ -22,11 +22,13 @@ import { AttendanceRecord } from "@/lib/graphql/attendance/types";
 import { AttendanceTimelineBar } from "./AttendanceTimelineBar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 interface AttendanceDetailDrawerProps {
   record: AttendanceRecord | null;
   onClose: () => void;
   onOpenAuditModal?: (record: AttendanceRecord) => void;
+  onOpenReport?: (employeeId: string) => void;
   onOpenReportModal?: (employeeId: string) => void;
   onApproveOffHours?: (record: AttendanceRecord, status: "approved" | "rejected") => void;
   isApproving?: boolean;
@@ -36,10 +38,12 @@ export function AttendanceDetailDrawer({
   record,
   onClose,
   onOpenAuditModal,
+  onOpenReport,
   onOpenReportModal,
   onApproveOffHours,
   isApproving = false,
 }: AttendanceDetailDrawerProps) {
+  const router = useRouter();
   if (!record) return null;
 
   const officeRadius = record.officeLocation?.geoRadiusMeters || 200;
@@ -329,24 +333,6 @@ export function AttendanceDetailDrawer({
               >
                 <Activity className="h-3.5 w-3.5 text-primary" />
                 GPS Breadcrumbs
-              </Button>
-            )}
-
-            {record.user?.id && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (onOpenReportModal) {
-                    onOpenReportModal(record.user!.id);
-                  } else {
-                    window.location.href = `/attendance/report?employeeId=${record.user!.id}`;
-                  }
-                }}
-                className="gap-1.5 text-xs font-semibold hover:border-primary/50 text-foreground"
-              >
-                <BarChart3 className="h-3.5 w-3.5 text-primary" />
-                Complete Attendance Report
               </Button>
             )}
           </div>

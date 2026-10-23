@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store/useStore";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { PageHeader } from "@/components/common/PageHeader";
 import EmployeeRequestsPanel from "@/components/documents/EmployeeRequestsPanel";
 import DocumentRequestsPanel from "@/components/documents/DocumentRequestsPanel";
 import OrgIssuedDocumentsPanel from "@/components/documents/OrgIssuedDocumentsPanel";
@@ -124,37 +125,28 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Top Header with Eyebrow, Title, Description, and Organization Filter */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between pb-2 border-b border-border/60">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-teal-500/10 text-teal-600 border border-teal-500/20 mb-2">
-            Workforce Governance & Compliance
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2.5">
-            Documents Hub
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl">
-            Request official documentation from employees, fulfill letter requests, verify submitted records, and publish Form 16s to personal vaults.
-          </p>
-        </div>
-
-        {/* Organization Filter Selector */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 bg-card p-1.5 rounded-xl border border-border shadow-sm">
-            <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
-              <Building2 className="h-4 w-4" />
-            </div>
-            <div className="min-w-[220px]">
-              <OrganizationFilterSelect
-                value={selectedOrgId}
-                onChange={setSelectedOrgId}
-                placeholder="All Organizations"
-                triggerClassName="h-8 text-xs border-0 bg-transparent shadow-none focus:ring-0"
-              />
+      {/* Top Header with Breadcrumbs, Title, Description, and Organization Filter */}
+      <PageHeader
+        title="Documents Hub"
+        description="Request official documentation from employees, fulfill letter requests, verify submitted records, and publish Form 16s to personal vaults."
+        actions={
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-card p-1.5 rounded-xl border border-border shadow-sm">
+              <div className="w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
+                <Building2 className="h-4 w-4" />
+              </div>
+              <div className="min-w-[220px]">
+                <OrganizationFilterSelect
+                  value={selectedOrgId}
+                  onChange={setSelectedOrgId}
+                  placeholder="All Organizations"
+                  triggerClassName="h-8 text-xs border-0 bg-transparent shadow-none focus:ring-0"
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* 4 Interactive KPI Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">

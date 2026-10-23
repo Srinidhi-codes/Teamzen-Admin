@@ -250,7 +250,7 @@ export default function OnboardingPage() {
               id="onboarding-nav-templates"
               className="rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
             >
-              Templates
+              Onboarding Templates
             </Link>
             <Link
               href="/onboarding/letters"

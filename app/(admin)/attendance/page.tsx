@@ -14,12 +14,12 @@ import { AttendanceDonutCards } from "@/components/attendance/AttendanceDonutCar
 import { AttendanceTimelineMatrix } from "@/components/attendance/AttendanceTimelineMatrix";
 import { AttendanceDetailDrawer } from "@/components/attendance/AttendanceDetailDrawer";
 import { AttendanceRegularizationMasterDetail } from "@/components/attendance/AttendanceRegularizationMasterDetail";
-import { EmployeeAttendanceReportModal } from "@/components/attendance/EmployeeAttendanceReportModal";
 import { AttendanceCorrection, AttendanceRecord } from "@/lib/graphql/attendance/types";
 import { DataTable, Column } from "@/components/common/DataTable";
 import { PageHeader } from "@/components/common/PageHeader";
 import moment from "moment";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Search,
@@ -50,6 +50,7 @@ import { OrganizationFilterSelect } from "@/components/common/OrganizationFilter
 import { useStore } from "@/lib/store/useStore";
 
 export default function AttendancePage() {
+  const router = useRouter();
   const { user } = useStore();
   const [activeTab, setActiveTab] = useState<"timeline" | "presence" | "corrections">("timeline");
 
@@ -58,16 +59,23 @@ export default function AttendancePage() {
   const [selectedCorrection, setSelectedCorrection] = useState<AttendanceCorrection | null>(null);
   const [selectedTimelineRecord, setSelectedTimelineRecord] = useState<AttendanceRecord | null>(null);
   const [inspectedRecord, setInspectedRecord] = useState<AttendanceRecord | null>(null);
-  const [reportEmployeeId, setReportEmployeeId] = useState<string | null>(null);
+
+  const handleOpenReport = (employeeId: string) => {
+    router.push(`/attendance/report?employeeId=${employeeId}`);
+  };
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [organizationId, setOrganizationId] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  const pageSize = 20;
+  const [timelinePage, setTimelinePage] = useState(1);
   const [presencePage, setPresencePage] = useState(1);
   const [correctionsPage, setCorrectionsPage] = useState(1);
+
+  // Timeline view explicitly paginates 10 per page, Presence table paginates 20 per page
+  const activePage = activeTab === "timeline" ? timelinePage : presencePage;
+  const activePageSize = activeTab === "timeline" ? 10 : 20;
 
   const buildPresenceFilters = (start: string, end: string) => ({
     startDate: start,
@@ -90,8 +98,8 @@ export default function AttendancePage() {
     isLoading: presenceLoading,
     refetch: refetchPresence,
   } = useGraphQLOrgAttendanceRecords({
-    page: presencePage,
-    pageSize,
+    page: activePage,
+    pageSize: activePageSize,
     filters: buildPresenceFilters(startDate, endDate),
   });
 
@@ -129,8 +137,8 @@ export default function AttendancePage() {
     if (!start || !end) return;
     await Promise.all([
       refetchPresence({
-        page: presencePage,
-        pageSize,
+        page: activePage,
+        pageSize: activePageSize,
         filters: buildPresenceFilters(start, end),
       }),
       refetchAttendanceCorrections({ startDate: start, endDate: end }),
@@ -138,8 +146,19 @@ export default function AttendancePage() {
   };
 
   useEffect(() => {
+    setTimelinePage(1);
+    setPresencePage(1);
     loadData(startDate, endDate);
   }, [startDate, endDate, statusFilter, debouncedSearchTerm, organizationId]);
+
+  // Refetch when tab changes so page size switches smoothly between 10 (timeline) and 20 (table)
+  useEffect(() => {
+    refetchPresence({
+      page: activePage,
+      pageSize: activePageSize,
+      filters: buildPresenceFilters(startDate, endDate),
+    });
+  }, [activeTab]);
 
   const { approveOrRejectAttendanceCorrection } =
     useApproveOrRejectAttendanceCorrection();
@@ -391,7 +410,7 @@ export default function AttendancePage() {
       key: "actions",
       label: "Actions",
       render: (_: any, row: AttendanceRecord) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap" onClick={(e) => e.stopPropagation()}>
           <Button
             variant="outline"
             size="sm"
@@ -402,19 +421,6 @@ export default function AttendancePage() {
             <Activity className="h-3.5 w-3.5 text-primary" />
             Inspect
           </Button>
-
-          {row.user?.id && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setReportEmployeeId(row.user!.id)}
-              className="h-8 gap-1 text-xs hover:border-primary/50"
-              title="View Complete Attendance Report"
-            >
-              <BarChart3 className="h-3.5 w-3.5 text-primary" />
-              Report
-            </Button>
-          )}
 
           {row.approvalStatus === "pending" && (
             <>
@@ -671,7 +677,11 @@ export default function AttendancePage() {
           isLoading={presenceLoading}
           selectedDate={startDate === endDate ? startDate : undefined}
           onSelectRecord={(rec) => setInspectedRecord(rec)}
-          onOpenReport={(empId) => setReportEmployeeId(empId)}
+          onOpenReport={handleOpenReport}
+          total={presenceTotal}
+          currentPage={timelinePage}
+          pageSize={10}
+          onPageChange={setTimelinePage}
         />
       ) : activeTab === "presence" ? (
         <DataTable
@@ -680,8 +690,13 @@ export default function AttendancePage() {
           isLoading={presenceLoading}
           total={presenceTotal}
           currentPage={presencePage}
-          pageSize={pageSize}
+          pageSize={20}
           onPageChange={setPresencePage}
+          onRowClick={(row) => {
+            if (row.user?.id) {
+              handleOpenReport(row.user.id);
+            }
+          }}
           paginationLabel="attendance records"
         />
       ) : (
@@ -698,18 +713,9 @@ export default function AttendancePage() {
           record={inspectedRecord}
           onClose={() => setInspectedRecord(null)}
           onOpenAuditModal={(rec) => setSelectedTimelineRecord(rec)}
-          onOpenReportModal={(empId) => setReportEmployeeId(empId)}
+          onOpenReport={handleOpenReport}
           onApproveOffHours={handleApproveOffHours}
           isApproving={approvingOffHours}
-        />
-      )}
-
-      {/* Complete Employee Attendance & Compliance Report Modal */}
-      {reportEmployeeId && (
-        <EmployeeAttendanceReportModal
-          employeeId={reportEmployeeId}
-          isOpen={!!reportEmployeeId}
-          onClose={() => setReportEmployeeId(null)}
         />
       )}
 

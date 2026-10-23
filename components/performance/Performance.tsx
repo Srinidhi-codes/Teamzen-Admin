@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { Pagination } from "@/components/common/Pagination";
 import { OrganizationFilterSelect } from "@/components/common/OrganizationFilterSelect";
+import { PageHeader } from "@/components/common/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
@@ -1173,27 +1174,17 @@ export default function PerformancePage() {
   return (
     <div className="w-full space-y-6 pb-10">
       {/* ── Header ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-              <TrendingUp className="h-4 w-4" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              Performance & Talent
-            </h1>
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            {currentMeta.desc}
-          </p>
-        </div>
-
-        <OrganizationFilterSelect
-          value={organizationId}
-          onChange={setOrganizationId}
-          placeholder="Select organization"
-        />
-      </div>
+      <PageHeader
+        title="Performance & Talent"
+        description={currentMeta.desc}
+        actions={
+          <OrganizationFilterSelect
+            value={organizationId}
+            onChange={setOrganizationId}
+            placeholder="Select organization"
+          />
+        }
+      />
 
       {/* ── Main Tabbed Architecture ───────────────────────────────── */}
       <Tabs value={tab} onValueChange={setTab} className="space-y-5">

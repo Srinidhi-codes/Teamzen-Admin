@@ -215,7 +215,10 @@ export default function OnboardingTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Onboarding templates"
-        backHref="/onboarding"
+        breadcrumbs={[
+          { label: "Onboarding", href: "/onboarding" },
+          { label: "Templates" },
+        ]}
         description="Checklist definitions by phase and assignee. Drag to reorder, then save."
         actions={
           <div className="flex flex-wrap gap-2">

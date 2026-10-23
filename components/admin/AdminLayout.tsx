@@ -65,14 +65,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       <div
         className={cn(
-          "flex min-h-screen flex-col transition-[margin] duration-200 ease-out",
+          "flex min-h-screen flex-col transition-[margin] duration-200 ease-out min-w-0 overflow-x-hidden",
           isCollapsed ? "md:ml-[84px]" : "md:ml-64"
         )}
       >
         <PlanExpiryBanner />
         <LocationSyncBanner />
         <Navbar onMenuClick={() => setIsMobileOpen(true)} />
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <main className="flex-1 px-3 py-4 sm:px-6 lg:px-8 min-w-0">{children}</main>
       </div>
 
       {can("ai_assistant") && <AssistantWidget />}

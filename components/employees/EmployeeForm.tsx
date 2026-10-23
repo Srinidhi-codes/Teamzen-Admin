@@ -22,13 +22,45 @@ import { FormSkeleton } from "../common/Skeleton";
 import { usePayrollQueries, usePayrollMutations } from "@/lib/graphql/payroll/payrollHook";
 import { Switch as ToggleSwitch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "../ui/tabs";
-import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase, FileText } from "lucide-react";
+import { CreditCard, Wallet, Landmark, User as UserIcon, Briefcase, FileText, TrendingUp } from "lucide-react";
 import { useGraphQLUser } from "@/lib/api/graphqlHooks";
 import { cn } from "@/lib/utils";
 import { SegmentedTabs } from "@/components/common/SegmentedTabs";
 import { useOnboardingMutations } from "@/lib/graphql/onboarding/onboardingHook";
 import Link from "next/link";
 import EmployeeDocumentsPanel from "./EmployeeDocumentsPanel";
+
+export function getPromotionEligibility(employee?: User | null): { eligible: boolean; reason?: string } {
+    if (!employee) return { eligible: false, reason: "No employee selected." };
+
+    if (!employee.isActive) {
+        return { eligible: false, reason: "Inactive or deactivated employees cannot be promoted." };
+    }
+
+    if (employee.dateOfExit && moment(employee.dateOfExit).isBefore(moment(), "day")) {
+        return { eligible: false, reason: "Exited employees cannot be promoted." };
+    }
+
+    if (employee.employmentType === "intern") {
+        return { eligible: false, reason: "Interns must first be converted to regular full-time employees before promotion." };
+    }
+
+    if (!employee.isVerified) {
+        return { eligible: false, reason: "Employee has not completed required onboarding verification." };
+    }
+
+    if (employee.dateOfJoining) {
+        const daysSinceJoining = moment().diff(moment(employee.dateOfJoining), "days");
+        if (daysSinceJoining < 90) {
+            return {
+                eligible: false,
+                reason: `Employee is still within the 90-day probation period (${daysSinceJoining} days served). Minimum 90 days tenure required.`,
+            };
+        }
+    }
+
+    return { eligible: true };
+}
 
 interface EmployeeFormProps {
     initialData?: User | null;
@@ -38,6 +70,7 @@ interface EmployeeFormProps {
     isStartingOffboarding?: boolean;
     onStartOnboarding?: (employee: User) => void;
     isStartingOnboarding?: boolean;
+    onPromote?: (employee: User) => void;
 }
 
 const employeeSchema = z.object({
@@ -191,6 +224,7 @@ export default function EmployeeForm({
     isStartingOffboarding,
     onStartOnboarding,
     isStartingOnboarding,
+    onPromote,
 }: EmployeeFormProps) {
     const router = useRouter();
     const [formData, setFormData] = useState(() => buildEmployeeFormData(initialData));
@@ -553,28 +587,60 @@ export default function EmployeeForm({
                     dateOfJoining: formData.dateOfJoining || null,
                     dateOfExit: formData.dateOfExit || null,
                 });
-                if (result?.success) {
-                    savedUser = initialData;
-                    // Handle Photo Upload via REST if selected
-                    if (profilePicture) {
-                        const uploadFormData = new FormData();
-                        uploadFormData.append("profile_picture", profilePicture);
-                        try {
+                if (!result?.success) {
+                    toast.error(result?.error || "Failed to update employee");
+                    return;
+                }
+
+                // Check if salary structure or CTC actually changed
+                const salaryChanged =
+                    formData.salaryStructureId &&
+                    formData.annualCtc &&
+                    (formData.salaryStructureId !== initialData.salaryDetails?.salaryStructure?.id ||
+                        String(formData.annualCtc) !== String(initialData.salaryDetails?.annualCtc) ||
+                        formData.effectiveFrom !== initialData.salaryDetails?.effectiveFrom);
+
+                const backgroundTasks: Promise<any>[] = [];
+
+                if (salaryChanged) {
+                    backgroundTasks.push(
+                        assignSalaryToEmployee(
+                            initialData.id,
+                            formData.salaryStructureId,
+                            Number(formData.annualCtc),
+                            formData.effectiveFrom
+                        )
+                    );
+                }
+
+                // Handle Photo Upload via REST if selected
+                if (profilePicture) {
+                    const uploadFormData = new FormData();
+                    uploadFormData.append("profile_picture", profilePicture);
+                    backgroundTasks.push(
+                        (async () => {
                             const axios = (await import("axios")).default;
                             await axios.post(`/api/users/${initialData.id}/upload_photo/`, uploadFormData, {
                                 headers: { "Content-Type": "multipart/form-data" },
                                 withCredentials: true
                             });
-                            toast.success("Profile photo updated");
-                        } catch (err) {
-                            toast.error("Failed to upload photo");
-                        }
-                    }
-                    toast.success("Employee updated successfully");
-                } else {
-                    toast.error(result?.error || "Failed to update employee");
-                    return;
+                        })().catch(() => undefined)
+                    );
                 }
+
+                const overridesList = buildOverridePayload();
+                const salaryId = initialData?.salaryDetails?.id;
+                if (salaryId && overridesList.length > 0) {
+                    backgroundTasks.push(saveEmployeeComponentOverrides(salaryId, overridesList));
+                }
+
+                if (backgroundTasks.length > 0) {
+                    await Promise.all(backgroundTasks);
+                }
+
+                toast.success("Employee details updated successfully");
+                onSuccess();
+                return;
             } else {
                 if (!formData.password || formData.password.length < 6) {
                     toast.error("Temporary password is required (min 6 characters)");
@@ -605,40 +671,13 @@ export default function EmployeeForm({
                                 withCredentials: true
                             });
                         } catch (err) {
-                            toast.error("User created, but photo upload failed");
+                            // Non-blocking
                         }
                     }
                     toast.success("Employee created successfully. Welcome email with login credentials sent.");
                 } else {
                     toast.error(result?.error || "Failed to create employee");
                     return;
-                }
-            }
-
-            // Handle Payroll Assignment...
-            let savedSalaryId = initialData?.salaryDetails?.id || null;
-            if (savedUser && formData.salaryStructureId && formData.annualCtc) {
-                const payrollResult = await assignSalaryToEmployee(
-                    savedUser.id,
-                    formData.salaryStructureId,
-                    Number(formData.annualCtc),
-                    formData.effectiveFrom
-                );
-                if (payrollResult.success) {
-                    savedSalaryId = payrollResult.salary?.id || savedSalaryId;
-                    toast.success("Salary structure assigned successfully");
-                } else {
-                    toast.error("User saved, but failed to assign salary structure: " + payrollResult.error);
-                }
-            }
-
-            // Save component overrides if employee has a salary record
-            const salaryId = savedSalaryId;
-            if (salaryId && Object.keys(componentOverrides).length > 0) {
-                const overridesList = buildOverridePayload();
-                const ovrResult = await saveEmployeeComponentOverrides(salaryId, overridesList);
-                if (!ovrResult.success) {
-                    toast.error("Failed to save component overrides: " + ovrResult.error);
                 }
             }
 
@@ -1133,6 +1172,32 @@ export default function EmployeeForm({
 
             <div className="sticky bottom-0 z-10 bg-background px-6 py-4 border-t border-border flex justify-between gap-2 mt-auto">
                 <div className="flex items-center gap-2">
+                    {initialData && onPromote && (() => {
+                        const eligibility = getPromotionEligibility(initialData);
+                        return (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (eligibility.eligible) {
+                                        onPromote(initialData);
+                                    } else {
+                                        toast.error(eligibility.reason || "Employee is not eligible for promotion.");
+                                    }
+                                }}
+                                disabled={!eligibility.eligible}
+                                className={cn(
+                                    "inline-flex h-9 items-center gap-2 rounded-md border px-3.5 text-sm font-semibold transition-colors shadow-xs",
+                                    eligibility.eligible
+                                        ? "border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 cursor-pointer"
+                                        : "border-border bg-muted/40 text-muted-foreground opacity-60 cursor-not-allowed"
+                                )}
+                                title={eligibility.eligible ? "Promote this employee (level, title, compensation)" : eligibility.reason}
+                            >
+                                <TrendingUp className="w-4 h-4" />
+                                <span>Promote</span>
+                            </button>
+                        );
+                    })()}
 
                     {initialData && onStartOffboarding && (
                         <button

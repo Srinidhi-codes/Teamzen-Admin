@@ -30,6 +30,7 @@ import Image from "next/image";
 import moment from "moment";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getPromotionEligibility } from "./EmployeeForm";
 
 interface PromotionModalProps {
   open: boolean;
@@ -237,9 +238,16 @@ export default function PromotionModal({
     return [...list, ...available];
   }, [eligibleManagers, employee?.id]);
 
+  const eligibility = useMemo(() => getPromotionEligibility(employee), [employee]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!employee) return;
+
+    if (!eligibility.eligible) {
+      toast.error(eligibility.reason || "Employee is not eligible for promotion.");
+      return;
+    }
 
     const newErrors: Record<string, string> = {};
     if (!newDesignationId) {
@@ -378,6 +386,19 @@ export default function PromotionModal({
               </div>
             </div>
           </div>
+
+          {!eligibility.eligible && (
+            <div className="flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-xs text-destructive">
+              <Info className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+              <div>
+                <p className="font-bold text-sm">Promotion Restricted</p>
+                <p className="mt-0.5 text-destructive/90">{eligibility.reason}</p>
+                <p className="mt-1 text-[11px] opacity-75">
+                  HR Rule: Employees must be active, verified through onboarding, and have completed at least 90 days of tenure before promotion.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Manager Authority Switch Highlight */}
           <div
@@ -540,8 +561,8 @@ export default function PromotionModal({
           </button>
           <button
             type="submit"
-            disabled={isPromoting}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+            disabled={isPromoting || !eligibility.eligible}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-xs font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isPromoting ? (
               <>

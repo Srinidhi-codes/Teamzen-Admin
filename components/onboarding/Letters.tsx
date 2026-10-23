@@ -59,7 +59,10 @@ export default function LetterTemplatesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Letter templates"
-        backHref="/onboarding"
+        breadcrumbs={[
+          { label: "Onboarding", href: "/onboarding" },
+          { label: "Letters" },
+        ]}
         description="Offer, experience, relieving, and salary certificates. Tokens like {{exit_date}} work on exit letters."
         actions={
           <div className="flex flex-wrap gap-2">

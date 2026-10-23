@@ -2,10 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useEffect } from "react";
-import { ToastProvider } from "@/components/common/ToastProvider";
 import { ApolloProvider } from "@apollo/client/react";
 import { client } from "@/lib/apolloClient";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
 import { useStore } from "@/lib/store/useStore";
 import { ColorAccent } from "@/lib/store/slices/themeSlice";
@@ -49,10 +48,8 @@ export function Providers({ children }: { children: ReactNode }) {
           storageKey="theme"
         >
           <ThemeInitializer>
-            <Toaster />
-            <ToastProvider>
-              {children}
-            </ToastProvider>
+            <Toaster position="top-right" richColors />
+            {children}
           </ThemeInitializer>
         </ThemeProvider>
       </QueryClientProvider>

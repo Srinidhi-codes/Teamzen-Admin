@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import moment from "moment";
 import dynamic from "next/dynamic";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -87,7 +88,31 @@ const TAB_CONFIG: Record<
 };
 
 export default function ReportsPage() {
-  const [tab, setTab] = useState<TabKey>("workforce");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams?.get("tab") as TabKey | null;
+
+  const [tab, setTab] = useState<TabKey>(() => {
+    if (tabParam && ["workforce", "attendance", "leave", "payroll"].includes(tabParam)) {
+      return tabParam;
+    }
+    return "workforce";
+  });
+
+  useEffect(() => {
+    if (tabParam && ["workforce", "attendance", "leave", "payroll"].includes(tabParam) && tabParam !== tab) {
+      setTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (nextTab: string) => {
+    const k = nextTab as TabKey;
+    setTab(k);
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : "");
+    params.set("tab", k);
+    router.replace(`/reports?${params.toString()}`, { scroll: false });
+  };
+
   const [filters, setFilters] = useState<ReportFilters>(defaultFilters);
   const { exportData } = useCSVExport();
 
@@ -161,25 +186,13 @@ export default function ReportsPage() {
 
   return (
     <div className="w-full space-y-6 pb-10">
-      {/* ── Page Header ─────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary border border-primary/20">
-              <BarChart3 className="h-4 w-4" />
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-              Executive Reports
-            </h1>
-          </div>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            {currentTabConfig.description}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Executive Reports"
+        description={currentTabConfig.description}
+      />
 
       {/* ── Main Tabbed View ────────────────────────────────────────── */}
-      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} className="space-y-5">
+      <Tabs value={tab} onValueChange={handleTabChange} className="space-y-5">
         <TabsList className="h-auto w-full flex-wrap justify-start gap-1.5 rounded-2xl border border-border bg-card p-1.5 shadow-xs sm:w-fit">
           {(["workforce", "attendance", "leave", "payroll"] as TabKey[]).map((key) => {
             const conf = TAB_CONFIG[key];

@@ -79,6 +79,14 @@ export const GET_ATTENDANCE_CORRECTIONS = gql`
         }
         correctedLoginTime
         correctedLogoutTime
+        originalLoginTime
+        originalLogoutTime
+        systemSuggestedLoginTime
+        systemSuggestedLogoutTime
+        category
+        supportingEvidenceUrl
+        escalatedToHr
+        policyViolationNotes
         status
         reason
         approvalComments

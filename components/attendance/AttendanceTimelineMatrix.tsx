@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import moment from "moment";
+import { useRouter } from "next/navigation";
 import { AttendanceRecord } from "@/lib/graphql/attendance/types";
 import { AttendanceTimelineBar } from "./AttendanceTimelineBar";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ import {
   SlidersHorizontal,
   BarChart3,
 } from "lucide-react";
+import { Pagination } from "@/components/common/Pagination";
 
 interface AttendanceTimelineMatrixProps {
   records: AttendanceRecord[];
@@ -27,6 +29,10 @@ interface AttendanceTimelineMatrixProps {
   shiftStart?: string;
   shiftEnd?: string;
   className?: string;
+  total?: number;
+  currentPage?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export function AttendanceTimelineMatrix({
@@ -38,7 +44,12 @@ export function AttendanceTimelineMatrix({
   shiftStart = "09:00:00",
   shiftEnd = "18:00:00",
   className,
+  total,
+  currentPage = 1,
+  pageSize = 10,
+  onPageChange,
 }: AttendanceTimelineMatrixProps) {
+  const router = useRouter();
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
 
   // Curated major hour ticks for the 24-hour ruler to prevent text collision
@@ -191,7 +202,17 @@ export function AttendanceTimelineMatrix({
                     key={record.id}
                     onMouseEnter={() => setHoveredRowId(record.id)}
                     onMouseLeave={() => setHoveredRowId(null)}
-                    onClick={() => onSelectRecord && onSelectRecord(record)}
+                    onClick={() => {
+                      if (record.user?.id) {
+                        if (onOpenReport) {
+                          onOpenReport(record.user.id);
+                        } else {
+                          router.push(`/attendance/report?employeeId=${record.user.id}`);
+                        }
+                      } else if (onSelectRecord) {
+                        onSelectRecord(record);
+                      }
+                    }}
                     className={cn(
                       "flex items-center h-12 px-2 rounded-xl transition-colors cursor-pointer group relative",
                       isHovered ? "bg-muted/40" : "hover:bg-muted/20"
@@ -250,33 +271,11 @@ export function AttendanceTimelineMatrix({
                       />
                     </div>
 
-                    {/* Quick Report Trigger on Hover */}
-                    {record.user?.id && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onOpenReport) {
-                            onOpenReport(record.user!.id);
-                          } else {
-                            window.location.href = `/attendance/report?employeeId=${record.user!.id}`;
-                          }
-                        }}
-                        className={cn(
-                          "h-7 w-7 rounded-lg border border-border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary flex items-center justify-center shrink-0 ml-1.5 transition-all cursor-pointer shadow-xs",
-                          isHovered ? "opacity-100" : "opacity-0 pointer-events-none md:opacity-0"
-                        )}
-                        title="View Complete Attendance Report"
-                      >
-                        <BarChart3 className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-
                     {/* Arrow hint on hover */}
                     <ChevronRight
                       className={cn(
-                        "h-4 w-4 text-muted-foreground/40 shrink-0 ml-1 transition-transform",
-                        isHovered && "translate-x-0.5 text-primary"
+                        "h-4 w-4 text-muted-foreground/40 shrink-0 ml-1.5 transition-transform",
+                        isHovered && "translate-x-1 text-primary"
                       )}
                     />
                   </div>
@@ -308,7 +307,17 @@ export function AttendanceTimelineMatrix({
             return (
               <div
                 key={record.id}
-                onClick={() => onSelectRecord && onSelectRecord(record)}
+                onClick={() => {
+                  if (record.user?.id) {
+                    if (onOpenReport) {
+                      onOpenReport(record.user.id);
+                    } else {
+                      router.push(`/attendance/report?employeeId=${record.user.id}`);
+                    }
+                  } else if (onSelectRecord) {
+                    onSelectRecord(record);
+                  }
+                }}
                 className="rounded-xl border border-border/80 bg-card p-4 shadow-xs space-y-3 cursor-pointer transition-all hover:border-primary/50"
               >
                 {/* Employee Header Row */}
@@ -393,29 +402,9 @@ export function AttendanceTimelineMatrix({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {record.user?.id && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onOpenReport) {
-                            onOpenReport(record.user!.id);
-                          } else {
-                            window.location.href = `/attendance/report?employeeId=${record.user!.id}`;
-                          }
-                        }}
-                        className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-semibold text-foreground hover:bg-muted"
-                      >
-                        <BarChart3 className="h-3 w-3 text-primary" />
-                        Report
-                      </button>
-                    )}
-
-                    <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-primary">
-                      Inspect
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </span>
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-primary">
+                    <span>View Report</span>
+                    <ChevronRight className="h-3.5 w-3.5" />
                   </div>
                 </div>
               </div>
@@ -446,6 +435,19 @@ export function AttendanceTimelineMatrix({
           Shift Hours: {moment(shiftStart, "HH:mm:ss").format("hh:mm A")} – {moment(shiftEnd, "HH:mm:ss").format("hh:mm A")}
         </span>
       </div>
+
+      {/* Pagination Footer */}
+      {typeof total === "number" && total > 0 && onPageChange && pageSize > 0 && Math.ceil(total / pageSize) > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(total / pageSize)}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={onPageChange}
+          label="attendance records"
+          className="border-t border-border/60 rounded-t-none"
+        />
+      )}
     </div>
   );
 }

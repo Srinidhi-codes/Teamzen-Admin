@@ -165,7 +165,10 @@ export default function OffboardingDetail() {
       <div id="offboarding-detail-header">
         <PageHeader
           title={ob.userName}
-          backHref="/offboarding"
+          breadcrumbs={[
+            { label: "Offboarding", href: "/offboarding" },
+            { label: ob.userName },
+          ]}
           description={`${ob.userEmail} · ${ob.status?.replace(/_/g, " ")} · ${ob.progressPct}%`}
           actions={
             <div id="offboarding-detail-actions" className="flex flex-wrap gap-2">

@@ -307,7 +307,7 @@ export default function EmployeesPage() {
   ];
 
   return (
-    <div className="page-shell">
+    <div className="page-shell pb-24">
       <PageHeader
         title="Employees"
         description="Directory of all employees"
@@ -409,7 +409,6 @@ export default function EmployeesPage() {
                 key={employee.id}
                 employee={employee}
                 onEdit={handleEdit}
-                onPromote={setPromotingEmployee}
                 onStatusToggle={handleStatusToggle}
                 onStartOnboarding={handleStartOnboarding}
                 startingOnboardingId={startingOnboardingId}
@@ -454,6 +453,10 @@ export default function EmployeesPage() {
           onCancel={handleClose}
           onStartOffboarding={handleStartOffboarding}
           isStartingOffboarding={startingOffboardingId === selectedEmployee?.id}
+          onPromote={(emp) => {
+            setIsModalOpen(false);
+            setPromotingEmployee(emp);
+          }}
         />
       </AdaptiveModal>
 

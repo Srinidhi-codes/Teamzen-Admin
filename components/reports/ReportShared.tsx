@@ -92,6 +92,7 @@ export function ReportTableShell({
   children,
   empty,
   emptyMessage = "No records found matching criteria.",
+  footer,
 }: {
   title: string;
   subtitle?: string;
@@ -99,10 +100,11 @@ export function ReportTableShell({
   children: React.ReactNode;
   empty?: boolean;
   emptyMessage?: string;
+  footer?: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between border-b border-border/70 bg-muted/20 px-5 py-4">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-border/70 bg-muted/20 px-5 py-4">
         <div>
           <h2 className="text-sm font-bold tracking-tight text-foreground">{title}</h2>
           {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
@@ -115,7 +117,14 @@ export function ReportTableShell({
           <p className="text-xs font-medium">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">{children}</div>
+        <>
+          <div className="overflow-x-auto">{children}</div>
+          {footer && (
+            <div className="border-t border-border/70 bg-muted/10 p-3 sm:p-4">
+              {footer}
+            </div>
+          )}
+        </>
       )}
     </section>
   );

@@ -66,10 +66,22 @@ function suggestionsForPath(pathname: string): string[] {
 }
 
 export function AssistantWidget() {
-  const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, user } = useStore();
+  const { assistantOpen: isOpen, setAssistantOpen: setIsOpen, assistantQuery, setAssistantQuery, user } = useStore();
   const pathname = usePathname() || "/dashboard";
   const suggestions = useMemo(() => suggestionsForPath(pathname), [pathname]);
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (assistantQuery) {
+      setInput(assistantQuery);
+      setAssistantQuery("");
+      if (!isOpen) setIsOpen(true);
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 120);
+    }
+  }, [assistantQuery, setAssistantQuery, isOpen, setIsOpen]);
+
   const {
     messages,
     setMessages,

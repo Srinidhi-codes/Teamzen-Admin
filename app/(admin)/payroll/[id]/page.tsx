@@ -267,23 +267,15 @@ export default function PayrollRunDetailsPage({
 
   return (
     <div className="page-shell">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-3">
-          <Link
-            href="/payroll"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to payroll
-          </Link>
-          <PageHeader
-            eyebrow="Payroll run"
-            title={`${monthNames[run.month - 1]} ${run.year}`}
-            description="Follow the steps: process → review → publish → payout."
-          />
-        </div>
-        <PayrollTourButton variant="detail" />
-      </div>
+      <PageHeader
+        title={`${monthNames[run.month - 1]} ${run.year}`}
+        description="Follow the steps: process → review → publish → payout."
+        breadcrumbs={[
+          { label: "Payroll", href: "/payroll" },
+          { label: `${monthNames[run.month - 1]} ${run.year}` },
+        ]}
+        actions={<PayrollTourButton variant="detail" />}
+      />
 
       <Card id="payroll-run-stepper" className="p-4">
         <ol className="grid gap-3 sm:grid-cols-5">

@@ -20,6 +20,8 @@ import {
   Check,
   X,
   MessageSquare,
+  Info,
+  FileText,
 } from "lucide-react";
 
 interface AttendanceRegularizationMasterDetailProps {
@@ -77,6 +79,10 @@ export function AttendanceRegularizationMasterDetail({
 
   const handleAction = async (status: "approved" | "rejected") => {
     if (!effectiveSelected) return;
+    if (status === "rejected" && !comments.trim()) {
+      alert("A reason or comment is required when rejecting an attendance correction.");
+      return;
+    }
     try {
       setIsSubmitting(true);
       await onApproveReject(effectiveSelected.id, status, comments);
@@ -214,6 +220,18 @@ export function AttendanceRegularizationMasterDetail({
                     </div>
                   </div>
 
+                  {/* Category and Escalation Badge */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                    <span className="rounded bg-muted/80 border border-border px-1.5 py-0.5 text-[10px] font-medium text-foreground">
+                      {item.category?.replace(/_/g, " ") || "FORGOT TO PUNCH"}
+                    </span>
+                    {item.escalatedToHr && (
+                      <span className="rounded bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                        Escalated to HR
+                      </span>
+                    )}
+                  </div>
+
                   {/* Reason snippet */}
                   {item.reason && (
                     <p className="text-xs text-muted-foreground/80 line-clamp-1 italic">
@@ -254,6 +272,30 @@ export function AttendanceRegularizationMasterDetail({
 
             {/* Content Body */}
             <div className="p-6 space-y-6 flex-1">
+              {/* Escalation Alert */}
+              {effectiveSelected.escalatedToHr && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Tier-2 HR Escalation:</span>
+                    <p className="mt-0.5 opacity-90">
+                      This request has exceeded the manager threshold for monthly corrections and was escalated to HR for formal review.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Policy Engine Notes */}
+              {effectiveSelected.policyViolationNotes && (
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 flex items-start gap-2 text-xs text-blue-900 dark:text-blue-300">
+                  <Info className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Policy Evaluation:</span>
+                    <p className="mt-0.5">{effectiveSelected.policyViolationNotes}</p>
+                  </div>
+                </div>
+              )}
+
               {/* Date & Shift Context */}
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -341,6 +383,27 @@ export function AttendanceRegularizationMasterDetail({
                   "{effectiveSelected.reason || "No explanation provided."}"
                 </p>
               </div>
+
+              {/* Supporting Evidence Attachment */}
+              {effectiveSelected.supportingEvidenceUrl && (
+                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-primary" />
+                    Supporting Evidence Document
+                  </span>
+                  <div>
+                    <a
+                      href={effectiveSelected.supportingEvidenceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View Uploaded Evidence
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {/* Admin Decision Actions */}
               {effectiveSelected.status === "pending" ? (

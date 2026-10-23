@@ -68,9 +68,17 @@ export interface AttendanceCorrection {
   attendanceRecord: AttendanceRecord;
   reason: string;
   status: "pending" | "approved" | "rejected";
+  category?: string | null;
+  supportingEvidenceUrl?: string | null;
+  escalatedToHr?: boolean;
+  policyViolationNotes?: string | null;
 
   correctedLoginTime?: string | null;
   correctedLogoutTime?: string | null;
+  originalLoginTime?: string | null;
+  originalLogoutTime?: string | null;
+  systemSuggestedLoginTime?: string | null;
+  systemSuggestedLogoutTime?: string | null;
 
   approvalComments?: string | null;
   createdAt?: string;

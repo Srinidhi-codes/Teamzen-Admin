@@ -237,17 +237,6 @@ export default function EmployeeCard({
       {isAdminOrHr && (
         <div className="flex items-center justify-end gap-3 border-t border-border bg-muted/10 px-5 py-3.5">
           <div className="flex items-center gap-2">
-            {onPromote && (
-              <button
-                type="button"
-                onClick={() => onPromote(employee)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 text-primary px-3 text-xs font-semibold hover:bg-primary/20 transition-colors shadow-sm"
-                aria-label="Promote employee"
-              >
-                <TrendingUp className="h-3.5 w-3.5" />
-                Promote
-              </button>
-            )}
             <button
               onClick={() => onEdit(employee)}
               className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary text-primary-foreground px-4 text-xs font-semibold hover:bg-primary/90 transition-colors shadow-sm"
